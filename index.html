@@ -2,8 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WODLY — Fitness Adventure Board Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WODLY — The Fitness Adventure Board Game</title>
+<meta name="description" content="WODLY turns your workout into a board game. Roll, move, flip a card, and do the reps. Train. Play. Compete.">
+<meta name="theme-color" content="#0d0d0d">
+
+<!-- Icons -->
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="WODLY">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<!-- Open Graph / social share.
+     NOTE: update the URLs below to your real deployed domain once Vercel is live
+     (e.g. https://wodly-game.vercel.app or your custom domain). -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="WODLY">
+<meta property="og:title" content="WODLY — The Fitness Adventure Board Game">
+<meta property="og:description" content="Turn your workout into a board game. Roll, move, flip a card, do the reps. Train. Play. Compete.">
+<meta property="og:url" content="https://wodly-game.vercel.app/">
+<meta property="og:image" content="https://wodly-game.vercel.app/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="WODLY — The Fitness Adventure Board Game">
+<meta name="twitter:description" content="Turn your workout into a board game. Roll, move, flip a card, do the reps.">
+<meta name="twitter:image" content="https://wodly-game.vercel.app/assets/og-image.png">
 <style>
 /*
   WODLY v18 — "The Box" Theme
@@ -187,9 +211,33 @@ input:checked+.slider:before{transform:translateX(18px);}
 .win-wrap p{font-size:13px;color:var(--text2);margin-bottom:6px;}
 .win-time{font-size:20px;font-weight:700;margin-bottom:1.5rem;letter-spacing:1px;color:var(--orange);}
 .play-again{padding:12px 28px;font-size:14px;font-weight:700;background:var(--orange);border:none;border-radius:12px;color:#000;cursor:pointer;letter-spacing:1px;}
+/* Health/safety disclaimer */
+.site-foot{margin-top:22px;padding-top:14px;border-top:1px solid var(--border);text-align:center;}
+.site-foot button{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit;}
+.disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000;align-items:center;justify-content:center;padding:18px;}
+.disc-overlay.show{display:flex;}
+.disc-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:22px 20px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto;}
+.disc-box h2{font-size:20px;font-weight:900;letter-spacing:2px;text-align:center;margin-bottom:4px;}
+.disc-box .disc-sub{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--orange);text-align:center;margin-bottom:14px;}
+.disc-box p{font-size:13px;line-height:1.6;color:var(--text2);margin-bottom:11px;}
+.disc-box p strong{color:#fff;}
+.disc-accept{width:100%;padding:13px;font-size:14px;font-weight:700;background:var(--orange);border:none;border-radius:12px;color:#000;cursor:pointer;letter-spacing:.5px;margin-top:6px;}
+.disc-note{font-size:10px;color:var(--text3);text-align:center;margin-top:10px;}
 </style>
 </head>
 <body>
+
+<div class="disc-overlay" id="discOverlay">
+  <div class="disc-box">
+    <h2>WODLY</h2>
+    <div class="disc-sub">Before you play</div>
+    <p>WODLY is a fitness game that prompts physical exercise. <strong>Exercise carries risk of injury.</strong></p>
+    <p>Consult a physician before starting any exercise program, especially if you have a medical condition, are pregnant, or have been inactive. Stop immediately if you feel pain, dizziness, or discomfort.</p>
+    <p>You play at your own risk. By continuing, you agree that <strong>you are responsible for exercising safely</strong> within your own ability, and that the creators of WODLY are not liable for any injury, loss, or damage arising from use of this game.</p>
+    <button class="disc-accept" id="discAccept">I understand — let's go</button>
+    <div class="disc-note">You can re-read this anytime from the link at the bottom of the setup screen.</div>
+  </div>
+</div>
 
 <div id="setupScreen" class="screen active">
   <h1>WODLY</h1>
@@ -262,6 +310,7 @@ input:checked+.slider:before{transform:translateX(18px);}
   <div class="p-row"><label>Players</label><div class="ctr"><button id="decP">−</button><span id="pCnt">2</span><button id="incP">+</button></div></div>
   <div id="pNamesWrap"></div>
   <button class="bigbtn" id="toCharBtn">NEXT: CHOOSE CHARACTERS →</button>
+  <div class="site-foot"><button id="discLink">Health &amp; safety disclaimer</button></div>
 </div>
 
 <div id="charScreen" class="screen">
@@ -493,6 +542,7 @@ renderPInputs();
 document.getElementById('toCharBtn').onclick=()=>{
   const move=document.getElementById('ace-move').value.trim();
   if(!move){alert('Please set an Ace penalty movement.');return;}
+  saveSettings();
   tempP=[];for(let i=0;i<numP;i++){const el=document.getElementById('pn-'+i);tempP.push({name:el?el.value||'Player '+(i+1):'Player '+(i+1),color:PCOLS[i],avId:null,pos:0,lastZone:-1});}
   charIdx=0;renderChar();showScr('charScreen');
 };
@@ -925,6 +975,45 @@ function renderPList(){
 }
 function showScr(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 window.addEventListener('resize',()=>{if(gs){sizeCanvases();drawBoard();drawTokens(null);}});
+
+// ── Health/safety disclaimer ──────────────────────────────────────────────
+const DISC_KEY='wodly_disc_v1';
+const discOverlay=document.getElementById('discOverlay');
+function showDisc(){discOverlay.classList.add('show');}
+function hideDisc(){discOverlay.classList.remove('show');}
+document.getElementById('discAccept').onclick=()=>{try{localStorage.setItem(DISC_KEY,'1');}catch(e){}hideDisc();};
+document.getElementById('discLink').onclick=showDisc;
+(function(){let seen=false;try{seen=localStorage.getItem(DISC_KEY)==='1';}catch(e){}if(!seen)showDisc();})();
+
+// ── Settings persistence ──────────────────────────────────────────────────
+const SET_KEY='wodly_settings_v1';
+function _v(id){const e=document.getElementById(id);return e?e.value:'';}
+function _setV(id,v){if(v===undefined||v===null||v==='')return;const e=document.getElementById(id);if(e)e.value=v;}
+function gatherSettings(){
+  const names=[];for(let i=0;i<numP;i++){const el=document.getElementById('pn-'+i);names.push(el?el.value:'Player '+(i+1));}
+  return{mv:{hearts:_v('mv-hearts'),diamonds:_v('mv-diamonds'),clubs:_v('mv-clubs'),spades:_v('mv-spades')},
+    aceReps:_v('ace-reps'),aceMove:_v('ace-move'),deckSz,diff,theme,
+    useTimer:document.getElementById('turnTimerToggle').checked,turnSec:_v('turnTimerInput'),penSec:_v('penTimerInput'),
+    cap:document.getElementById('capToggle').checked,capMin:_v('capInput'),numP,names};
+}
+function saveSettings(){try{localStorage.setItem(SET_KEY,JSON.stringify(gatherSettings()));}catch(e){}}
+function loadSettings(){
+  let s;try{s=JSON.parse(localStorage.getItem(SET_KEY)||'null');}catch(e){}
+  if(!s)return;
+  if(s.mv){_setV('mv-hearts',s.mv.hearts);_setV('mv-diamonds',s.mv.diamonds);_setV('mv-clubs',s.mv.clubs);_setV('mv-spades',s.mv.spades);}
+  _setV('ace-reps',s.aceReps);_setV('ace-move',s.aceMove);updateAcePreview();
+  if(s.deckSz){deckSz=s.deckSz;document.querySelectorAll('#deckRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.deckSz));}
+  if(s.diff){diff=s.diff;document.querySelectorAll('#diffRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.diff));}
+  if(s.theme&&THEMES[s.theme]){theme=s.theme;document.querySelectorAll('.theme-btn').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.theme));}
+  if(typeof s.useTimer==='boolean'){document.getElementById('turnTimerToggle').checked=s.useTimer;document.getElementById('timerSettings').classList.toggle('show',s.useTimer);}
+  _setV('turnTimerInput',s.turnSec);_setV('penTimerInput',s.penSec);
+  if(typeof s.cap==='boolean')document.getElementById('capToggle').checked=s.cap;
+  _setV('capInput',s.capMin);
+  if(s.numP){numP=Math.max(1,Math.min(6,s.numP));document.getElementById('pCnt').textContent=numP;renderPInputs();}
+  if(s.names){for(let i=0;i<numP;i++){const el=document.getElementById('pn-'+i);if(el&&s.names[i])el.value=s.names[i];}}
+}
+loadSettings();
+
 drawDice(null);
 </script>
 </body>
