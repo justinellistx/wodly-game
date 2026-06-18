@@ -32,7 +32,9 @@
   .me-head .mpos{margin-left:auto;text-align:right;}.me-head .mpos b{font-size:20px;color:var(--orange);}.me-head .mpos span{font-size:11px;color:var(--text3);display:block;}
   /* dice + roll */
   .rollwrap{text-align:center;padding:8px 0 4px;}
-  .die{width:130px;height:130px;margin:0 auto 16px;border-radius:24px;background:#fafafa;color:#111;display:flex;align-items:center;justify-content:center;font-size:96px;line-height:1;box-shadow:0 8px 26px rgba(0,0,0,.5);}
+  .die{width:130px;height:130px;margin:0 auto 16px;border-radius:26px;background:linear-gradient(145deg,#262626,#0b0b0b);border:2px solid #3a3a3a;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:6px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 24px rgba(245,166,35,.28);}
+  .die .pip{width:100%;height:100%;border-radius:50%;}
+  .die .pip.on{background:radial-gradient(circle at 34% 30%,#ffe0a0,#F5A623);box-shadow:0 0 10px rgba(245,166,35,.8);}
   .die.rolling{animation:shake .35s infinite;}
   @keyframes shake{0%,100%{transform:rotate(-6deg) translateY(0);}50%{transform:rotate(6deg) translateY(-6px);}}
   .rollbtn{width:100%;padding:20px;font-size:22px;font-weight:900;letter-spacing:1px;background:var(--orange);border:none;border-radius:18px;color:#000;cursor:pointer;}
@@ -150,6 +152,8 @@
 const W=window.WODLY, sb=W.makeClient(), myId=W.clientId();
 const $=id=>document.getElementById(id);
 const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,3,6,2,5,8]};
+function renderDie(n){const on=PIPS[n]||[];let h='';for(let i=0;i<9;i++)h+=`<span class="pip${on.indexOf(i)>=0?' on':''}"></span>`;return h;}
 let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null;
 function showEvent(ev){const el=$('ohno');const skip=ev.type==='skip';
   el.innerHTML=`<div class="ohno-card${skip?' boost':''}"><div class="ohno-big${skip?' boost':''}">${skip?'BOOST!':'OH NO!'}</div><div class="ohno-arrow${skip?' boost':''}">${skip?'↑':'↓'}</div><div class="ohno-txt">${skip?'Skip +2':('Go back '+ev.val)}</div><div class="ohno-sub">${W.SYM[ev.suit]||''} — ${skip?'forward 2 spaces':('back '+ev.val+' space'+(ev.val>1?'s':''))}</div><div class="ohno-tap">tap to dismiss</div></div>`;
@@ -234,7 +238,7 @@ function renderState(state){
   }
   // idle -> roll
   clearCd();
-  body.innerHTML=`<div class="rollwrap"><div class="die" id="die">${mp.lastRoll?DICE_FACE[mp.lastRoll-1]:'⚄'}</div>
+  body.innerHTML=`<div class="rollwrap"><div class="die" id="die">${renderDie(mp.lastRoll||5)}</div>
     <button class="rollbtn" id="rollBtn">🎲 ROLL</button></div>`;
   $('rollBtn').onclick=doRoll;
   lastStatus='idle';
@@ -244,7 +248,7 @@ function doRoll(){
   if(rolling)return;rolling=true;
   const die=$('die'), btn=$('rollBtn');btn.disabled=true;die.classList.add('rolling');
   const dv=1+Math.floor(Math.random()*6);
-  let ticks=0;const iv=setInterval(()=>{die.textContent=DICE_FACE[Math.floor(Math.random()*6)];if(++ticks>10){clearInterval(iv);die.textContent=DICE_FACE[dv-1];die.classList.remove('rolling');
+  let ticks=0;const iv=setInterval(()=>{die.innerHTML=renderDie(1+Math.floor(Math.random()*6));if(++ticks>10){clearInterval(iv);die.innerHTML=renderDie(dv);die.classList.remove('rolling');
     sendIntent('roll',{dv});setTimeout(()=>{rolling=false;renderState(room.state||{});},500);}},70);
 }
 
