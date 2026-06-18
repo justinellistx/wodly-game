@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WODLY — Board</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;--border:#333;--text:#fff;--text2:#aaa;--text3:#666;}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:#fff;min-height:100vh;padding:24px;}
+  .wrap{max-width:1100px;margin:0 auto;}
+  h1{font-size:40px;font-weight:900;letter-spacing:8px;text-align:center;}
+  .tagline{text-align:center;font-size:13px;font-weight:700;letter-spacing:3px;margin-bottom:24px;}
+  .tagline .t1{color:var(--green);}.tagline .t2{color:var(--orange);}.tagline .t3{color:var(--red);}
+  .join-card{display:flex;align-items:center;justify-content:center;gap:40px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;margin-bottom:24px;flex-wrap:wrap;}
+  .join-text{text-align:left;}
+  .join-text .lbl{font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;}
+  .join-url{font-size:22px;color:var(--text2);margin-bottom:14px;}
+  .join-url b{color:#fff;}
+  .code{font-size:64px;font-weight:900;letter-spacing:10px;color:var(--orange);line-height:1;}
+  #qr{background:#fff;padding:12px;border-radius:12px;width:180px;height:180px;display:flex;align-items:center;justify-content:center;}
+  .sec{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:18px 0 10px;}
+  .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
+  .pcard{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:14px;text-align:center;animation:pop .3s ease;}
+  @keyframes pop{from{transform:scale(.8);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .pcard img{width:90px;height:90px;object-fit:contain;}
+  .pcard .pn{font-size:15px;font-weight:700;margin-top:6px;}
+  .pcard .pa{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+  .empty{color:var(--text3);font-size:15px;text-align:center;padding:30px;}
+  .bar{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:28px;flex-wrap:wrap;}
+  .bigbtn{padding:15px 40px;font-size:17px;font-weight:800;letter-spacing:1px;background:var(--orange);border:none;border-radius:14px;color:#000;cursor:pointer;}
+  .bigbtn:disabled{opacity:.4;cursor:not-allowed;}
+  .ghost{padding:13px 22px;font-size:14px;background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--text2);cursor:pointer;}
+  .status{position:fixed;bottom:12px;left:12px;font-size:11px;color:var(--text3);}
+  .status.ok{color:var(--green);}.status.err{color:var(--red);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>WODLY</h1>
+  <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
+
+  <div class="join-card">
+    <div class="join-text">
+      <div class="lbl">Join on your phone</div>
+      <div class="join-url"><b id="joinHost">wodly-game.vercel.app/play</b></div>
+      <div class="lbl">Room code</div>
+      <div class="code" id="code">····</div>
+    </div>
+    <div id="qr"></div>
+  </div>
+
+  <div class="sec">Players <span id="pcount" style="color:var(--text2)"></span></div>
+  <div class="roster" id="roster"><div class="empty">Waiting for players to join…</div></div>
+
+  <div class="bar">
+    <button class="bigbtn" id="startBtn" disabled>START GAME</button>
+    <button class="ghost" id="newRoomBtn">New room</button>
+  </div>
+</div>
+<div class="status" id="status">connecting…</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="wodly-core.js"></script>
+<script>
+const W = window.WODLY;
+const sb = W.makeClient();
+const hostId = W.clientId();
+let room = null, channel = null, players = [];
+
+const $ = id => document.getElementById(id);
+function setStatus(t, cls){ const s=$('status'); s.textContent=t; s.className='status'+(cls?' '+cls:''); }
+
+const PLAY_URL = location.origin + '/play';
+
+async function createRoom(){
+  $('roster').innerHTML = '<div class="empty">Waiting for players to join…</div>';
+  $('startBtn').disabled = true;
+  // generate a unique code (retry on collision)
+  for(let attempt=0; attempt<6; attempt++){
+    const code = W.genCode();
+    const { data, error } = await sb.from('rooms')
+      .insert({ code, status:'lobby', host_id:hostId, settings:{} })
+      .select().single();
+    if(!error){ room = data; break; }
+    if(error && !/duplicate|unique/i.test(error.message)){ setStatus('create failed: '+error.message,'err'); return; }
+  }
+  if(!room){ setStatus('could not create room','err'); return; }
+  $('code').textContent = room.code;
+  $('qr').innerHTML = '';
+  new QRCode($('qr'), { text: PLAY_URL + '?room=' + room.code, width:156, height:156,
+    colorDark:'#0d0d0d', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  subscribe();
+  await refreshPlayers();
+  setStatus('room '+room.code+' live','ok');
+}
+
+function subscribe(){
+  if(channel) sb.removeChannel(channel);
+  channel = sb.channel('room-'+room.id)
+    .on('postgres_changes', { event:'*', schema:'public', table:'players', filter:'room_id=eq.'+room.id },
+        () => refreshPlayers())
+    .subscribe(s => { if(s==='SUBSCRIBED') setStatus('room '+room.code+' live','ok'); });
+}
+
+async function refreshPlayers(){
+  const { data } = await sb.from('players').select('*').eq('room_id', room.id).order('seat',{ascending:true});
+  players = data || [];
+  renderRoster();
+}
+
+function renderRoster(){
+  const r = $('roster');
+  $('pcount').textContent = players.length ? '('+players.length+')' : '';
+  if(!players.length){ r.innerHTML = '<div class="empty">Waiting for players to join…</div>'; $('startBtn').disabled = true; return; }
+  r.innerHTML = '';
+  players.forEach(p => {
+    const av = W.AVATARS.find(a => a.id === p.avatar);
+    const d = document.createElement('div');
+    d.className = 'pcard';
+    d.style.borderColor = p.color || 'var(--border)';
+    d.innerHTML = `<img src="${av?av.img:''}" alt="${p.avatar||''}">
+      <div class="pn">${escapeHtml(p.name)}</div>
+      <div class="pa">${av?av.name:'…'}</div>`;
+    r.appendChild(d);
+  });
+  $('startBtn').disabled = players.length < 1;
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+$('startBtn').onclick = async () => {
+  // Gameplay engine is wired in the next milestone. For now flip status to 'playing'.
+  await sb.from('rooms').update({ status:'playing' }).eq('id', room.id);
+  setStatus('game started (gameplay UI coming next)','ok');
+};
+$('newRoomBtn').onclick = async () => { if(room) await sb.from('rooms').delete().eq('id', room.id); room=null; createRoom(); };
+
+createRoom();
+</script>
+</body>
+</html>

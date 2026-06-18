@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WODLY — Play</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta name="theme-color" content="#0d0d0d">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;--border:#333;--text:#fff;--text2:#aaa;--text3:#666;}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:#fff;min-height:100vh;padding:18px;}
+  .screen{display:none;}.screen.active{display:block;}
+  h1{font-size:30px;font-weight:900;letter-spacing:6px;text-align:center;margin-top:8px;}
+  .tagline{text-align:center;font-size:11px;font-weight:700;letter-spacing:2px;margin-bottom:22px;}
+  .tagline .t1{color:var(--green);}.tagline .t2{color:var(--orange);}.tagline .t3{color:var(--red);}
+  label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;display:block;margin:14px 0 6px;}
+  input{width:100%;font-size:18px;padding:13px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:#fff;}
+  #codeIn{letter-spacing:8px;text-align:center;text-transform:uppercase;font-weight:800;}
+  .bigbtn{width:100%;padding:15px;font-size:16px;font-weight:800;letter-spacing:1px;background:var(--orange);border:none;border-radius:14px;color:#000;cursor:pointer;margin-top:20px;}
+  .bigbtn:disabled{opacity:.4;}
+  .err{color:var(--red);font-size:13px;text-align:center;margin-top:12px;min-height:16px;}
+  .av-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;}
+  .av-card{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;transition:.12s;}
+  .av-card.sel{border-color:var(--orange);background:rgba(245,166,35,.12);}
+  .av-card.taken{opacity:.3;pointer-events:none;}
+  .av-card img{width:84px;height:84px;object-fit:contain;}
+  .av-card .nm{font-size:12px;color:var(--text2);margin-top:4px;font-weight:600;}
+  .av-card.sel .nm{color:var(--orange);}
+  .waitwrap{text-align:center;padding-top:30px;}
+  .waitwrap img{width:140px;height:140px;object-fit:contain;}
+  .waitwrap h2{font-size:22px;font-weight:800;margin-top:10px;}
+  .waitwrap .sub{color:var(--text2);font-size:14px;margin-top:8px;}
+  .pill{display:inline-block;margin-top:18px;padding:8px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text2);}
+  .pill b{color:var(--orange);letter-spacing:3px;}
+</style>
+</head>
+<body>
+
+<div id="joinScreen" class="screen active">
+  <h1>WODLY</h1>
+  <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
+  <label>Room code</label>
+  <input id="codeIn" maxlength="4" placeholder="ABCD" autocomplete="off" autocapitalize="characters">
+  <label>Your name</label>
+  <input id="nameIn" maxlength="16" placeholder="Your name" autocomplete="off">
+  <button class="bigbtn" id="toAvatars">NEXT: PICK CHARACTER →</button>
+  <div class="err" id="joinErr"></div>
+</div>
+
+<div id="avatarScreen" class="screen">
+  <h1>WODLY</h1>
+  <div class="tagline" style="margin-bottom:14px;">Pick your character</div>
+  <div class="av-grid" id="avGrid"></div>
+  <button class="bigbtn" id="joinBtn" disabled>JOIN GAME</button>
+  <div class="err" id="avErr"></div>
+</div>
+
+<div id="waitScreen" class="screen">
+  <div class="waitwrap">
+    <img id="waitImg" alt="">
+    <h2 id="waitName">You're in!</h2>
+    <div class="sub" id="waitSub">Waiting for the game to start…</div>
+    <div class="pill">Room <b id="waitCode">····</b></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="wodly-core.js"></script>
+<script>
+const W = window.WODLY;
+const sb = W.makeClient();
+const myId = W.clientId();
+const $ = id => document.getElementById(id);
+let room = null, me = null, chosen = null, takenIds = [];
+
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
+
+// Prefill code from ?room=
+const params = new URLSearchParams(location.search);
+const pre = (params.get('room')||'').toUpperCase().slice(0,4);
+if(pre) $('codeIn').value = pre;
+
+async function lookupRoom(code){
+  const { data } = await sb.from('rooms').select('*').eq('code', code).maybeSingle();
+  return data;
+}
+
+$('toAvatars').onclick = async () => {
+  const code = $('codeIn').value.trim().toUpperCase();
+  const name = $('nameIn').value.trim();
+  $('joinErr').textContent = '';
+  if(code.length !== 4){ $('joinErr').textContent = 'Enter the 4-letter room code.'; return; }
+  if(!name){ $('joinErr').textContent = 'Enter your name.'; return; }
+  room = await lookupRoom(code);
+  if(!room){ $('joinErr').textContent = "That room code wasn't found."; return; }
+  // existing player for this device? (reconnect)
+  const { data: existing } = await sb.from('players').select('*').eq('room_id', room.id).eq('client_id', myId).maybeSingle();
+  const { data: roster } = await sb.from('players').select('avatar,client_id').eq('room_id', room.id);
+  takenIds = (roster||[]).filter(p=>p.client_id!==myId).map(p=>p.avatar);
+  if(existing){ me = existing; chosen = existing.avatar; }
+  renderAvatars();
+  show('avatarScreen');
+};
+
+function renderAvatars(){
+  const g = $('avGrid'); g.innerHTML = '';
+  W.AVATARS.forEach(a => {
+    const taken = takenIds.includes(a.id);
+    const d = document.createElement('div');
+    d.className = 'av-card' + (chosen===a.id?' sel':'') + (taken?' taken':'');
+    d.innerHTML = `<img src="${a.img}" alt="${a.name}"><div class="nm">${a.name}</div>`;
+    if(!taken) d.onclick = () => { chosen = a.id; renderAvatars(); $('joinBtn').disabled = false; };
+    g.appendChild(d);
+  });
+  $('joinBtn').disabled = !chosen;
+}
+
+$('joinBtn').onclick = async () => {
+  if(!chosen) return;
+  $('avErr').textContent = '';
+  const name = $('nameIn').value.trim();
+  const av = W.AVATARS.find(a=>a.id===chosen);
+  const { count } = await sb.from('players').select('*',{count:'exact',head:true}).eq('room_id', room.id);
+  const row = { room_id:room.id, client_id:myId, name, avatar:chosen, color:av.color, connected:true, last_seen:new Date().toISOString() };
+  if(!me) row.seat = count || 0;
+  const { data, error } = await sb.from('players')
+    .upsert(row, { onConflict:'room_id,client_id' }).select().single();
+  if(error){ $('avErr').textContent = 'Join failed: '+error.message; return; }
+  me = data;
+  enterWaiting();
+};
+
+function enterWaiting(){
+  const av = W.AVATARS.find(a=>a.id===me.avatar);
+  $('waitImg').src = av ? av.img : '';
+  $('waitName').textContent = me.name + ", you're in!";
+  $('waitCode').textContent = room.code;
+  show('waitScreen');
+  sb.channel('pl-'+room.id)
+    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'rooms', filter:'id=eq.'+room.id },
+        p => { if(p.new.status==='playing'){ $('waitSub').textContent='Game starting…'; } })
+    .subscribe();
+}
+</script>
+</body>
+</html>
