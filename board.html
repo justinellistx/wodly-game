@@ -414,9 +414,9 @@ function finishTurn(p,pos){p.pos=pos;drawTokens(null);
   game.active=null;game.busy=false;banner('Tap “I’m up!” on your phone when ready','info');renderGPlist();drawBoard();writeState();}
 function win(p){game.winner={id:p.id,name:p.name,avatar:p.avatar,timeSec:Math.floor((Date.now()-game.startTime)/1000)};game.active=null;game.busy=false;stopClocks();
   const av=W.AVATARS.find(a=>a.id===p.avatar);$('winImg').src=av?av.img:'';$('winName').textContent=p.name+' wins!';$('winTime').textContent='Total time: '+fmt(game.winner.timeSec);
-  show('winScreen');sb.from('rooms').update({status:'finished'}).eq('id',room.id);writeState();}
+  show('winScreen');sb.from('rooms').update({status:'finished'}).eq('id',room.id).then(()=>{});writeState();}
 function triggerCap(){if(capFired||!game)return;capFired=true;let leader=game.players[0];game.players.forEach(p=>{if(p.pos>leader.pos)leader=p;});game.winner={id:leader.id,name:leader.name,avatar:leader.avatar,timeSec:Math.floor((Date.now()-game.startTime)/1000),cap:true};stopClocks();
-  const av=W.AVATARS.find(a=>a.id===leader.avatar);$('winImg').src=av?av.img:'';$('winName').textContent=leader.name+' wins!';$('winTime').textContent='Time cap — furthest along.';show('winScreen');sb.from('rooms').update({status:'finished'}).eq('id',room.id);writeState();}
+  const av=W.AVATARS.find(a=>a.id===leader.avatar);$('winImg').src=av?av.img:'';$('winName').textContent=leader.name+' wins!';$('winTime').textContent='Time cap — furthest along.';show('winScreen');sb.from('rooms').update({status:'finished'}).eq('id',room.id).then(()=>{});writeState();}
 
 function renderGPlist(){const l=$('gplist');if(!game)return;l.innerHTML='';
   game.players.slice().sort((a,b)=>b.pos-a.pos).forEach(p=>{const act=game.active&&game.active.playerId===p.id;const row=document.createElement('div');row.className='gprow'+(act?' active':'');

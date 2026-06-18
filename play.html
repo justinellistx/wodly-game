@@ -148,7 +148,7 @@ function enterPlay(){
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:'id=eq.'+room.id},p=>{room=Object.assign(room,p.new);renderState(p.new.state||{});})
     .subscribe();
 }
-function sendIntent(type){sb.from('intents').insert({room_id:room.id,player_id:me.id,type});}
+function sendIntent(type){return sb.from('intents').insert({room_id:room.id,player_id:me.id,type}).then(({error})=>{if(error)console.warn('intent failed:',error.message);});}
 
 function renderState(state){
   const body=$('playBody');const phase=state.phase;
