@@ -72,6 +72,9 @@
   .ohno-txt{font-size:30px;font-weight:900;color:#fff;}
   .ohno-sub{font-size:16px;color:var(--text2);margin-top:6px;}
   .ohno-tap{font-size:12px;color:var(--text3);margin-top:16px;}
+  .ohno-card.boost{border-color:var(--green);box-shadow:0 0 55px rgba(76,175,80,.6);background:linear-gradient(160deg,#0c2a12,#051405);}
+  .ohno-big.boost{color:var(--green);text-shadow:0 0 22px rgba(76,175,80,.7);}
+  .ohno-arrow.boost{color:var(--green);}
   .stand{margin-top:22px;}
   .stand .sh{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-weight:700;margin-bottom:8px;}
   .srow{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;}
@@ -148,7 +151,8 @@ const W=window.WODLY, sb=W.makeClient(), myId=W.clientId();
 const $=id=>document.getElementById(id);
 const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
 let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null;
-function showOhNo(ev){const el=$('ohno');el.innerHTML=`<div class="ohno-card"><div class="ohno-big">OH NO!</div><div class="ohno-arrow">↓</div><div class="ohno-txt">Go back ${ev.val}</div><div class="ohno-sub">${W.SYM[ev.suit]||''} — back ${ev.val} space${ev.val>1?'s':''}</div><div class="ohno-tap">tap to dismiss</div></div>`;
+function showEvent(ev){const el=$('ohno');const skip=ev.type==='skip';
+  el.innerHTML=`<div class="ohno-card${skip?' boost':''}"><div class="ohno-big${skip?' boost':''}">${skip?'BOOST!':'OH NO!'}</div><div class="ohno-arrow${skip?' boost':''}">${skip?'↑':'↓'}</div><div class="ohno-txt">${skip?'Skip +2':('Go back '+ev.val)}</div><div class="ohno-sub">${W.SYM[ev.suit]||''} — ${skip?'forward 2 spaces':('back '+ev.val+' space'+(ev.val>1?'s':''))}</div><div class="ohno-tap">tap to dismiss</div></div>`;
   el.classList.add('show');el.onclick=()=>el.classList.remove('show');
   clearTimeout(ohnoT);ohnoT=setTimeout(()=>el.classList.remove('show'),2800);}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
@@ -212,7 +216,7 @@ function renderState(state){
   const body=$('playBody'), phase=state.phase;
   const mp=myPlayer(state);
   if(mp)$('mePos').textContent=mp.pos;
-  if(mp&&mp.event&&mp.event.type==='back'&&mp.event.eid!==seenEid){seenEid=mp.event.eid;showOhNo(mp.event);}
+  if(mp&&mp.event&&(mp.event.type==='back'||mp.event.type==='skip')&&mp.event.eid!==seenEid){seenEid=mp.event.eid;showEvent(mp.event);}
   renderStandings(state);renderRecentLog(state);
   // finished
   if(phase==='finished'&&state.winner){const av=W.AVATARS.find(a=>a.id===state.winner.avatar);clearCd();
