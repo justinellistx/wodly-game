@@ -69,6 +69,11 @@
   .srow .spos{font-size:12px;color:var(--text3);}
   .srow .sdo{font-size:12px;color:var(--orange);font-weight:600;margin-left:8px;}
   .srow .sdo.ace{color:var(--purple);}
+  .lrow{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;}
+  .lrow .ld{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .lrow .ln{font-size:13px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lrow .lc{font-size:14px;font-weight:700;}
+  .lrow .lk{font-size:14px;font-weight:800;margin-left:8px;}
   .winbox{text-align:center;padding:30px 16px;}.winbox img{width:130px;height:130px;object-fit:contain;}.winbox h2{font-size:26px;font-weight:900;margin-top:10px;}
   .pill{display:inline-block;margin-top:14px;padding:8px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text2);}.pill b{color:var(--orange);letter-spacing:3px;}
   .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:16px;}
@@ -118,6 +123,7 @@
   </div>
   <div id="playBody"></div>
   <div class="stand" id="standWrap" style="display:none;"><div class="sh">Standings</div><div id="standList"></div></div>
+  <div class="stand" id="logWrap" style="display:none;"><div class="sh">Last 5 cards</div><div id="logList"></div></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -188,7 +194,7 @@ function renderState(state){
   const body=$('playBody'), phase=state.phase;
   const mp=myPlayer(state);
   if(mp)$('mePos').textContent=mp.pos;
-  renderStandings(state);
+  renderStandings(state);renderRecentLog(state);
   // finished
   if(phase==='finished'&&state.winner){const av=W.AVATARS.find(a=>a.id===state.winner.avatar);clearCd();
     body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${state.winner.id===me.id?'You win! 🏆':esc(state.winner.name)+' wins!'}</h2><div class="pill">Room <b>${room.code}</b></div></div>`;return;}
@@ -231,6 +237,13 @@ function renderStandings(state){const list=$('standList'),wrap=$('standWrap');co
   ranked.forEach(p=>{const doing=p.status==='working'&&p.card?`<span class="sdo ${p.card.kind==='ace'?'ace':''}">${p.card.reps} ${esc(p.card.move||'')}</span>`:'';
     const row=document.createElement('div');row.className='srow'+(p.id===me.id?' me':'');
     row.innerHTML=`<span class="sd" style="background:${p.color}"></span><span class="sn">${esc(p.name)}</span><span class="spos">${p.pos}/${total-1}</span>${doing}`;
+    list.appendChild(row);});}
+function renderRecentLog(state){const wrap=$('logWrap'),list=$('logList');const lg=state.log||[];
+  if(!lg.length||state.phase!=='playing'){wrap.style.display='none';return;}
+  wrap.style.display='';list.innerHTML='';
+  lg.slice().reverse().forEach(e=>{const ace=e.kind==='ace';const col=ace?'#9b59b6':(W.SCOL[e.suit]||'#F5A623');const sym=W.SYM[e.suit]||'';const label=ace?'A':(e.label||'');
+    const row=document.createElement('div');row.className='lrow';
+    row.innerHTML=`<span class="ld" style="background:${e.color}"></span><span class="ln">${esc(e.name)}</span><span class="lc" style="color:${col}">${e.reps} ${esc(e.move)}</span><span class="lk" style="color:${col}">${label}${sym}</span>`;
     list.appendChild(row);});}
 </script>
 </body>

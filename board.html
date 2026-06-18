@@ -92,6 +92,13 @@
   .doing{font-size:15px;font-weight:700;}
   .doing.idle{color:var(--text3);font-weight:400;font-size:14px;}
   .doing.work{color:var(--orange);}.doing.ace{color:var(--purple);}
+  .recent{display:flex;gap:12px;margin-bottom:6px;flex-wrap:wrap;}
+  .mini{position:relative;width:96px;border-radius:12px;border:2px solid;background:radial-gradient(circle at 50% 40%,#1a1a1c,#0a0a0a);padding:10px 6px 8px;text-align:center;}
+  .mini .mt{position:absolute;top:6px;right:6px;width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,.5);}
+  .mini .mv{font-size:12px;font-weight:800;line-height:1;}
+  .mini .mp{font-size:26px;font-weight:900;line-height:1.1;}
+  .mini .mr{font-size:18px;font-weight:900;color:#fff;}
+  .mini .mm{font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .winwrap{text-align:center;padding:40px 16px;}
   .winwrap img{width:160px;height:160px;object-fit:contain;}
   .winwrap h2{font-size:34px;font-weight:900;margin-top:10px;}
@@ -204,6 +211,8 @@
       <div class="clock" id="capBox" style="display:none;"><div class="cl">Time cap</div><div class="cv" id="capClock">—</div></div>
     </div>
     <div id="boardWrap"><canvas id="boardCanvas"></canvas><canvas id="tokenCanvas"></canvas></div>
+    <div class="sec">Last 5 cards</div>
+    <div class="recent" id="recent"><div style="color:var(--text3);font-size:14px;">No cards played yet…</div></div>
     <div class="sec">Standings — everyone rolls on their own phone</div>
     <table class="stand"><thead><tr><th>Team</th><th>Position</th><th>Rolled</th><th>Now doing</th></tr></thead><tbody id="standBody"></tbody></table>
   </div>
@@ -307,13 +316,13 @@ $('startBtn').onclick=async()=>{
   game={ players:players.map((p,i)=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle'})),
     total, diff:s.diff||'easy', mv:s.mv, ace:{reps:s.aceReps,move:s.aceMove},
     useTimer:!!s.useTimer, turnSec:s.turnSec||60, penSec:s.penSec||45, timeCap:(s.cap?(s.capMin||20)*60:0),
-    deck:W.buildDeck(), landed:{}, winner:null, startTime:Date.now() };
+    deck:W.buildDeck(), landed:{}, log:[], winner:null, startTime:Date.now() };
   capFired=false;vpos={};
   await sb.from('rooms').update({status:'playing'}).eq('id',room.id);
   show('gameScreen');$('gameCode').textContent=room.code;
   $('capBox').style.display=game.timeCap>0?'':'none';
   if(game.timeCap>0)$('capClock').textContent=fmt(game.timeCap);
-  sizeCanvas();drawBoard();drawTokens();renderStandings();startGameClock();
+  sizeCanvas();drawBoard();drawTokens();renderStandings();renderRecent();startGameClock();
   await writeState();
 };
 
@@ -390,7 +399,8 @@ function onRoll(pid,dvRaw){
   }
   p.lastRoll=dv;p.pos=res.pos;
   if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
-  drawBoard();renderStandings();writeState();
+  if(res.kind==='workout'||res.kind==='ace'){game.log.push({name:p.name,color:p.color,kind:res.kind,reps:res.card.reps,move:res.card.move,label:res.card.label||'',suit:res.card.suit});if(game.log.length>10)game.log.shift();}
+  drawBoard();renderStandings();renderRecent();writeState();
   // cosmetic: walk through each landing in order — forward to a back/skip card, pause, then move.
   vpos[p.id]=from;drawTokens();
   animateHops(p.id,from,hops,()=>{if(res.win)win(p);});
@@ -421,12 +431,20 @@ function renderStandings(){const b=$('standBody');if(!game)return;b.innerHTML=''
       <td>${p.lastRoll?`<span class="die">${DICE_FACE[p.lastRoll-1]}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
       <td>${doing}</td>`;
     b.appendChild(tr);});}
+function renderRecent(){const el=$('recent');if(!el||!game)return;const lg=game.log.slice(-5).reverse();
+  if(!lg.length){el.innerHTML='<div style="color:var(--text3);font-size:14px;">No cards played yet…</div>';return;}
+  el.innerHTML='';
+  lg.forEach(e=>{const ace=e.kind==='ace';const col=ace?'#9b59b6':(SCOL[e.suit]||'#F5A623');const sym=SYM[e.suit]||'';const label=ace?'A':(e.label||'');
+    const d=document.createElement('div');d.className='mini';d.style.borderColor=col;d.style.boxShadow='0 0 14px '+col+'44';
+    d.innerHTML=`<div class="mt" style="background:${e.color}"></div><div class="mv" style="color:${col}">${label} ${sym}</div><div class="mp" style="color:${col}">${ace?'A':sym}</div><div class="mr">${e.reps}</div><div class="mm">${esc(e.move)}</div>`;
+    el.appendChild(d);});}
 
 // ── State sync ──
 async function writeState(){if(!room||!game)return;
   const state={phase:game.winner?'finished':'playing',total:game.total,
     players:game.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,pos:p.pos,lastRoll:p.lastRoll,card:p.card,status:p.status})),
     winner:game.winner?{id:game.winner.id,name:game.winner.name,avatar:game.winner.avatar,timeSec:game.winner.timeSec,cap:!!game.winner.cap}:null,
+    log:game.log.slice(-5),
     useTimer:game.useTimer,turnSec:game.turnSec,penSec:game.penSec};
   try{await sb.from('rooms').update({state}).eq('id',room.id);}catch(e){}}
 
