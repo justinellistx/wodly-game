@@ -375,8 +375,9 @@ function onRoll(pid,dvRaw){
   const p=game.players.find(x=>x.id===pid);if(!p||game.winner||p.status==='working')return;
   let dv=parseInt(dvRaw);if(!(dv>=1&&dv<=6))dv=1+Math.floor(Math.random()*6);
   const from=p.pos, total=game.total;
-  let pos=Math.min(from+dv,total-1), guard=0, res=null, segEnd=pos;
+  let pos=Math.min(from+dv,total-1), guard=0, res=null, hops=[];
   while(guard++<60){
+    hops.push(pos);                       // record each landing so the token visibly visits it
     if(pos>=total-1){res={win:true,pos:total-1};break;}
     if(pos<=0){res={none:true,pos:0};break;}
     let lc=game.landed[pos];
@@ -388,13 +389,16 @@ function onRoll(pid,dvRaw){
     res={kind:'workout',pos,card:{kind:'workout',reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit}};break;
   }
   p.lastRoll=dv;p.pos=res.pos;
-  if(res.win){p.card=null;p.status='idle';drawBoard();renderStandings();vpos[p.id]=from;walkToken(p.id,from,res.pos,()=>{delete vpos[p.id];drawBoard();drawTokens();win(p);});return;}
-  if(res.none){p.card=null;p.status='idle';}
-  else{p.card=res.card;p.status='working';}
+  if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
   drawBoard();renderStandings();writeState();
+  // cosmetic: walk through each landing in order — forward to a back/skip card, pause, then move.
   vpos[p.id]=from;drawTokens();
-  walkToken(p.id,from,res.pos,()=>{delete vpos[p.id];drawBoard();drawTokens();});
+  animateHops(p.id,from,hops,()=>{if(res.win)win(p);});
 }
+function animateHops(pid,from,hops,done){let prev=from,i=0;
+  (function next(){if(i>=hops.length){delete vpos[pid];drawBoard();drawTokens();if(done)done();return;}
+    const to=hops[i++];walkToken(pid,prev,to,()=>{prev=to;drawBoard();drawTokens();
+      if(i<hops.length)setTimeout(next,600);else next();});})();}
 function onDone(pid){const p=game.players.find(x=>x.id===pid);if(!p||p.status!=='working')return;
   p.card=null;p.status='idle';renderStandings();writeState();}
 function win(p){game.winner={id:p.id,name:p.name,avatar:p.avatar,timeSec:Math.floor((Date.now()-game.startTime)/1000)};stopClocks();

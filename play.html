@@ -47,6 +47,19 @@
   .card-do .cd{font-size:13px;color:var(--text3);margin-bottom:14px;font-variant-numeric:tabular-nums;}
   .card-do .cd.urgent{color:var(--red);font-weight:700;}
   .donebtn{width:100%;padding:18px;font-size:20px;font-weight:900;background:var(--green);border:none;border-radius:16px;color:#000;cursor:pointer;}
+  /* on-brand WODLY card */
+  .cardpop{animation:pop .38s cubic-bezier(.2,1.25,.4,1);}
+  @keyframes pop{from{transform:scale(.8) rotate(-3deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+  .wcard{position:relative;max-width:300px;margin:0 auto 14px;padding:24px 18px 16px;border-radius:18px;border:3px solid;background:radial-gradient(circle at 50% 38%, #1b1b1e, #090909);text-align:center;overflow:hidden;}
+  .wcard:before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 2px,transparent 2px 8px);pointer-events:none;}
+  .wc-corner{position:absolute;font-size:17px;font-weight:800;line-height:.92;letter-spacing:.5px;}
+  .wc-corner.tl{top:9px;left:12px;}.wc-corner.br{bottom:9px;right:12px;transform:rotate(180deg);}
+  .wc-tag{font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:4px;}
+  .wc-pip{width:88px;height:88px;margin:8px auto 12px;border:2px solid;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;box-shadow:inset 0 0 18px rgba(255,255,255,.06);}
+  .wc-reps{font-size:66px;font-weight:900;line-height:1;color:#fff;}
+  .wc-move{font-size:22px;font-weight:700;margin-top:2px;color:#fff;}
+  .wc-foot{margin-top:14px;font-size:14px;letter-spacing:1px;}
+  .wc-foot b{color:#fff;letter-spacing:3px;margin-left:6px;}
   .stand{margin-top:22px;}
   .stand .sh{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-weight:700;margin-bottom:8px;}
   .srow{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;}
@@ -116,6 +129,16 @@ const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
 let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null;
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
 function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function cardHTML(c){const ace=c.kind==='ace';const col=ace?'#9b59b6':(W.SCOL[c.suit]||'#F5A623');const sym=W.SYM[c.suit]||'';const label=ace?'A':(c.label||'');
+  return `<div class="wcard" style="border-color:${col};box-shadow:0 0 34px ${col}66, inset 0 0 44px ${col}1a;">
+    <div class="wc-corner tl" style="color:${col}">${esc(label)}<br>${sym}</div>
+    <div class="wc-corner br" style="color:${col}">${esc(label)}<br>${sym}</div>
+    ${ace?`<div class="wc-tag" style="color:${col}">Ace Penalty</div>`:''}
+    <div class="wc-pip" style="color:${col};border-color:${col}">${ace?'A':sym}</div>
+    <div class="wc-reps">${c.reps}</div>
+    <div class="wc-move">${esc(c.move||'')}</div>
+    <div class="wc-foot"><span style="color:#E8363D">♥</span><span style="color:#F5A623">♦</span><span style="color:#4CAF50">♣</span><span style="color:#2196F3">♠</span><b>WODLY</b></div>
+  </div>`;}
 
 const DISC_KEY='wodly_disc_v1';
 $('discAccept').onclick=()=>{try{localStorage.setItem(DISC_KEY,'1');}catch(e){}$('discOverlay').classList.remove('show');};
@@ -174,9 +197,7 @@ function renderState(state){
   if(rolling){return;} // keep local dice animation until it sends
   if(mp.status==='working'&&mp.card){
     clearCd();const isAce=mp.card.kind==='ace';
-    body.innerHTML=`<div class="card-do ${isAce?'ace':'work'}"><div class="tag">${isAce?'Ace penalty':'Your card'}</div>
-      <div class="reps">${mp.card.reps}</div><div class="move">${esc(mp.card.move||'')}</div>
-      <div class="cd" id="cd"></div>
+    body.innerHTML=`<div class="cardpop">${cardHTML(mp.card)}<div class="cd" id="cd"></div>
       <button class="donebtn" id="doneBtn">DONE ✓</button></div>`;
     $('doneBtn').onclick=()=>{$('doneBtn').disabled=true;$('doneBtn').textContent='Saved!';clearCd();sendIntent(isAce?'penalty_done':'done');};
     startCd(state, isAce);
