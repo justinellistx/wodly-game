@@ -99,6 +99,7 @@
   .mini .mp{font-size:26px;font-weight:900;line-height:1.1;}
   .mini .mr{font-size:18px;font-weight:900;color:#fff;}
   .mini .mm{font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mini .mtime{font-size:9px;color:var(--text3);margin-top:4px;font-variant-numeric:tabular-nums;}
   .winwrap{text-align:center;padding:40px 16px;}
   .winwrap img{width:160px;height:160px;object-fit:contain;}
   .winwrap h2{font-size:34px;font-weight:900;margin-top:10px;}
@@ -385,6 +386,7 @@ function onRoll(pid,dvRaw){
   let dv=parseInt(dvRaw);if(!(dv>=1&&dv<=6))dv=1+Math.floor(Math.random()*6);
   const from=p.pos, total=game.total;
   let pos=Math.min(from+dv,total-1), guard=0, res=null, hops=[];
+  const gnow=()=>Math.floor((Date.now()-game.startTime)/1000);
   while(guard++<60){
     hops.push(pos);                       // record each landing so the token visibly visits it
     if(pos>=total-1){res={win:true,pos:total-1};break;}
@@ -392,14 +394,13 @@ function onRoll(pid,dvRaw){
     let lc=game.landed[pos];
     if(!lc){if(!game.deck.length)game.deck=W.buildDeck();const c=game.deck.pop();const kind=W.cardType(c.val);
       lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
-    if(lc.kind==='skip'){pos=Math.min(pos+2,total-1);continue;}
-    if(lc.kind==='back'){pos=Math.max(pos-lc.val,0);continue;}
-    if(lc.kind==='ace'){res={kind:'ace',pos,card:{kind:'ace',reps:game.ace.reps,move:game.ace.move,suit:lc.suit}};break;}
-    res={kind:'workout',pos,card:{kind:'workout',reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit}};break;
+    if(lc.kind==='skip'){logPush(p,{kind:'skip',suit:lc.suit,label:lc.label,gs:gnow()});pos=Math.min(pos+2,total-1);continue;}
+    if(lc.kind==='back'){logPush(p,{kind:'back',suit:lc.suit,label:lc.label,val:lc.val,gs:gnow()});pos=Math.max(pos-lc.val,0);continue;}
+    if(lc.kind==='ace'){logPush(p,{kind:'ace',suit:lc.suit,label:'A',reps:game.ace.reps,move:game.ace.move,gs:gnow()});res={kind:'ace',pos,card:{kind:'ace',reps:game.ace.reps,move:game.ace.move,suit:lc.suit}};break;}
+    logPush(p,{kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,gs:gnow()});res={kind:'workout',pos,card:{kind:'workout',reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit}};break;
   }
   p.lastRoll=dv;p.pos=res.pos;
   if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
-  if(res.kind==='workout'||res.kind==='ace'){game.log.push({name:p.name,color:p.color,kind:res.kind,reps:res.card.reps,move:res.card.move,label:res.card.label||'',suit:res.card.suit});if(game.log.length>10)game.log.shift();}
   drawBoard();renderStandings();renderRecent();writeState();
   // cosmetic: walk through each landing in order — forward to a back/skip card, pause, then move.
   vpos[p.id]=from;drawTokens();
@@ -431,12 +432,16 @@ function renderStandings(){const b=$('standBody');if(!game)return;b.innerHTML=''
       <td>${p.lastRoll?`<span class="die">${DICE_FACE[p.lastRoll-1]}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
       <td>${doing}</td>`;
     b.appendChild(tr);});}
+function logPush(p,e){game.log.push(Object.assign({name:p.name,color:p.color},e));if(game.log.length>12)game.log.shift();}
 function renderRecent(){const el=$('recent');if(!el||!game)return;const lg=game.log.slice(-5).reverse();
   if(!lg.length){el.innerHTML='<div style="color:var(--text3);font-size:14px;">No cards played yet…</div>';return;}
   el.innerHTML='';
-  lg.forEach(e=>{const ace=e.kind==='ace';const col=ace?'#9b59b6':(SCOL[e.suit]||'#F5A623');const sym=SYM[e.suit]||'';const label=ace?'A':(e.label||'');
+  lg.forEach(e=>{const skip=e.kind==='skip',back=e.kind==='back',ace=e.kind==='ace';
+    const col=skip?BRAND.green:back?BRAND.red:ace?'#9b59b6':(SCOL[e.suit]||'#F5A623');
+    const sym=SYM[e.suit]||'',label=ace?'A':(e.label||'');
+    const pip=skip?'↑':back?'↓':ace?'A':sym, big=skip?'+2':back?('-'+e.val):e.reps, sub=skip?'Skip':back?'Back':esc(e.move||'');
     const d=document.createElement('div');d.className='mini';d.style.borderColor=col;d.style.boxShadow='0 0 14px '+col+'44';
-    d.innerHTML=`<div class="mt" style="background:${e.color}"></div><div class="mv" style="color:${col}">${label} ${sym}</div><div class="mp" style="color:${col}">${ace?'A':sym}</div><div class="mr">${e.reps}</div><div class="mm">${esc(e.move)}</div>`;
+    d.innerHTML=`<div class="mt" style="background:${e.color}"></div><div class="mv" style="color:${col}">${label} ${sym}</div><div class="mp" style="color:${col}">${pip}</div><div class="mr">${big}</div><div class="mm">${sub}</div><div class="mtime">⏱ ${fmt(e.gs||0)}</div>`;
     el.appendChild(d);});}
 
 // ── State sync ──

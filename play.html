@@ -72,6 +72,7 @@
   .lrow{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;}
   .lrow .ld{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
   .lrow .ln{font-size:13px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lrow .lt{font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums;margin-right:6px;}
   .lrow .lc{font-size:14px;font-weight:700;}
   .lrow .lk{font-size:14px;font-weight:800;margin-left:8px;}
   .winbox{text-align:center;padding:30px 16px;}.winbox img{width:130px;height:130px;object-fit:contain;}.winbox h2{font-size:26px;font-weight:900;margin-top:10px;}
@@ -238,12 +239,16 @@ function renderStandings(state){const list=$('standList'),wrap=$('standWrap');co
     const row=document.createElement('div');row.className='srow'+(p.id===me.id?' me':'');
     row.innerHTML=`<span class="sd" style="background:${p.color}"></span><span class="sn">${esc(p.name)}</span><span class="spos">${p.pos}/${total-1}</span>${doing}`;
     list.appendChild(row);});}
+function pfmt(s){s=s||0;const m=Math.floor(s/60),sc=s%60;return m+':'+(sc<10?'0':'')+sc;}
 function renderRecentLog(state){const wrap=$('logWrap'),list=$('logList');const lg=state.log||[];
   if(!lg.length||state.phase!=='playing'){wrap.style.display='none';return;}
   wrap.style.display='';list.innerHTML='';
-  lg.slice().reverse().forEach(e=>{const ace=e.kind==='ace';const col=ace?'#9b59b6':(W.SCOL[e.suit]||'#F5A623');const sym=W.SYM[e.suit]||'';const label=ace?'A':(e.label||'');
+  lg.slice().reverse().forEach(e=>{const skip=e.kind==='skip',back=e.kind==='back',ace=e.kind==='ace';
+    const col=skip?'#4CAF50':back?'#E8363D':ace?'#9b59b6':(W.SCOL[e.suit]||'#F5A623');
+    const sym=W.SYM[e.suit]||'',label=ace?'A':(e.label||'');
+    const desc=skip?'Skip +2':back?('Back '+e.val):((e.reps)+' '+(e.move||''));
     const row=document.createElement('div');row.className='lrow';
-    row.innerHTML=`<span class="ld" style="background:${e.color}"></span><span class="ln">${esc(e.name)}</span><span class="lc" style="color:${col}">${e.reps} ${esc(e.move)}</span><span class="lk" style="color:${col}">${label}${sym}</span>`;
+    row.innerHTML=`<span class="ld" style="background:${e.color}"></span><span class="ln">${esc(e.name)}</span><span class="lt">⏱${pfmt(e.gs)}</span><span class="lc" style="color:${col}">${esc(desc)}</span><span class="lk" style="color:${col}">${label}${sym}</span>`;
     list.appendChild(row);});}
 </script>
 </body>
