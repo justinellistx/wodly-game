@@ -26,31 +26,38 @@
   .av-card.taken{opacity:.3;pointer-events:none;}
   .av-card img{width:84px;height:84px;object-fit:contain;}
   .av-card .nm{font-size:12px;color:var(--text2);margin-top:4px;font-weight:600;}.av-card.sel .nm{color:var(--orange);}
-  /* play screen */
   .me-head{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;}
   .me-head img{width:54px;height:54px;object-fit:contain;}
   .me-head .mn{font-size:17px;font-weight:800;}.me-head .ms{font-size:12px;color:var(--text3);}
   .me-head .mpos{margin-left:auto;text-align:right;}.me-head .mpos b{font-size:20px;color:var(--orange);}.me-head .mpos span{font-size:11px;color:var(--text3);display:block;}
-  .panel{text-align:center;padding:26px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--border);}
-  .panel.upnext{border-color:var(--orange);}
-  .panel .big{font-size:22px;font-weight:800;margin-bottom:6px;}
-  .panel .sub{font-size:14px;color:var(--text2);}
-  .imup{width:100%;padding:22px;font-size:24px;font-weight:900;letter-spacing:1px;background:var(--orange);border:none;border-radius:18px;color:#000;cursor:pointer;animation:glow 1.4s infinite alternate;}
-  @keyframes glow{from{box-shadow:0 0 0 rgba(245,166,35,.3);}to{box-shadow:0 0 26px rgba(245,166,35,.6);}}
-  .card-do{padding:22px;border-radius:18px;text-align:center;}
+  /* dice + roll */
+  .rollwrap{text-align:center;padding:8px 0 4px;}
+  .die{width:130px;height:130px;margin:0 auto 16px;border-radius:24px;background:#fafafa;color:#111;display:flex;align-items:center;justify-content:center;font-size:96px;line-height:1;box-shadow:0 8px 26px rgba(0,0,0,.5);}
+  .die.rolling{animation:shake .35s infinite;}
+  @keyframes shake{0%,100%{transform:rotate(-6deg) translateY(0);}50%{transform:rotate(6deg) translateY(-6px);}}
+  .rollbtn{width:100%;padding:20px;font-size:22px;font-weight:900;letter-spacing:1px;background:var(--orange);border:none;border-radius:18px;color:#000;cursor:pointer;}
+  .rollbtn:disabled{opacity:.5;}
+  .card-do{padding:22px;border-radius:18px;text-align:center;margin-bottom:6px;}
   .card-do.work{background:rgba(245,166,35,.12);border:2px solid var(--orange);}
   .card-do.ace{background:rgba(155,89,182,.14);border:2px solid var(--purple);}
   .card-do .tag{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;}
   .card-do.work .tag{color:var(--orange);}.card-do.ace .tag{color:var(--purple);}
   .card-do .reps{font-size:58px;font-weight:900;line-height:1;margin:6px 0;}
-  .card-do .move{font-size:22px;font-weight:700;margin-bottom:18px;}
+  .card-do .move{font-size:22px;font-weight:700;margin-bottom:6px;}
+  .card-do .cd{font-size:13px;color:var(--text3);margin-bottom:14px;font-variant-numeric:tabular-nums;}
+  .card-do .cd.urgent{color:var(--red);font-weight:700;}
   .donebtn{width:100%;padding:18px;font-size:20px;font-weight:900;background:var(--green);border:none;border-radius:16px;color:#000;cursor:pointer;}
-  .others{margin-top:18px;}
-  .orow{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;}
-  .orow .od{width:12px;height:12px;border-radius:50%;}.orow .on{font-size:13px;flex:1;}.orow .op{font-size:12px;color:var(--text3);}
-  .pill{display:inline-block;margin-top:18px;padding:8px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text2);}
-  .pill b{color:var(--orange);letter-spacing:3px;}
+  .stand{margin-top:22px;}
+  .stand .sh{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-weight:700;margin-bottom:8px;}
+  .srow{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;}
+  .srow.me{border-color:var(--orange);}
+  .srow .sd{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+  .srow .sn{font-size:14px;font-weight:600;flex:1;}
+  .srow .spos{font-size:12px;color:var(--text3);}
+  .srow .sdo{font-size:12px;color:var(--orange);font-weight:600;margin-left:8px;}
+  .srow .sdo.ace{color:var(--purple);}
   .winbox{text-align:center;padding:30px 16px;}.winbox img{width:130px;height:130px;object-fit:contain;}.winbox h2{font-size:26px;font-weight:900;margin-top:10px;}
+  .pill{display:inline-block;margin-top:14px;padding:8px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text2);}.pill b{color:var(--orange);letter-spacing:3px;}
   .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:16px;}
   .disc-overlay.show{display:flex;}
   .disc-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:20px 18px;max-width:360px;width:100%;max-height:90vh;overflow-y:auto;}
@@ -76,8 +83,8 @@
   <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
   <label>Room code</label>
   <input id="codeIn" maxlength="4" placeholder="ABCD" autocomplete="off" autocapitalize="characters">
-  <label>Your name</label>
-  <input id="nameIn" maxlength="16" placeholder="Your name" autocomplete="off">
+  <label>Team name</label>
+  <input id="nameIn" maxlength="16" placeholder="Your team name" autocomplete="off">
   <button class="bigbtn" id="toAvatars">NEXT: PICK CHARACTER →</button>
   <div class="err" id="joinErr"></div>
 </div>
@@ -97,6 +104,7 @@
     <div class="mpos"><b id="mePos">0</b><span>your space</span></div>
   </div>
   <div id="playBody"></div>
+  <div class="stand" id="standWrap" style="display:none;"><div class="sh">Standings</div><div id="standList"></div></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -104,10 +112,11 @@
 <script>
 const W=window.WODLY, sb=W.makeClient(), myId=W.clientId();
 const $=id=>document.getElementById(id);
-let room=null, me=null, chosen=null, takenIds=[], stateChan=null, lastActiveKey='';
+const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
+let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null;
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
-// disclaimer
 const DISC_KEY='wodly_disc_v1';
 $('discAccept').onclick=()=>{try{localStorage.setItem(DISC_KEY,'1');}catch(e){}$('discOverlay').classList.remove('show');};
 (function(){let s=false;try{s=localStorage.getItem(DISC_KEY)==='1';}catch(e){}if(!s)$('discOverlay').classList.add('show');})();
@@ -120,7 +129,7 @@ async function lookupRoom(code){const{data}=await sb.from('rooms').select('*').e
 $('toAvatars').onclick=async()=>{
   const code=$('codeIn').value.trim().toUpperCase(),name=$('nameIn').value.trim();$('joinErr').textContent='';
   if(code.length!==4){$('joinErr').textContent='Enter the 4-letter room code.';return;}
-  if(!name){$('joinErr').textContent='Enter your name.';return;}
+  if(!name){$('joinErr').textContent='Enter your team name.';return;}
   room=await lookupRoom(code);if(!room){$('joinErr').textContent="That room code wasn't found.";return;}
   const{data:existing}=await sb.from('players').select('*').eq('room_id',room.id).eq('client_id',myId).maybeSingle();
   const{data:roster}=await sb.from('players').select('avatar,client_id').eq('room_id',room.id);
@@ -148,34 +157,60 @@ function enterPlay(){
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:'id=eq.'+room.id},p=>{room=Object.assign(room,p.new);renderState(p.new.state||{});})
     .subscribe();
 }
-function sendIntent(type){return sb.from('intents').insert({room_id:room.id,player_id:me.id,type}).then(({error})=>{if(error)console.warn('intent failed:',error.message);});}
+function sendIntent(type,payload){return sb.from('intents').insert({room_id:room.id,player_id:me.id,type,payload:payload||{}}).then(({error})=>{if(error)console.warn('intent failed:',error.message);});}
+
+function myPlayer(state){return (state.players||[]).find(p=>p.id===me.id);}
 
 function renderState(state){
-  const body=$('playBody');const phase=state.phase;
-  if(state.positions&&state.positions[me.id]!=null)$('mePos').textContent=state.positions[me.id];
+  const body=$('playBody'), phase=state.phase;
+  const mp=myPlayer(state);
+  if(mp)$('mePos').textContent=mp.pos;
+  renderStandings(state);
   // finished
-  if(phase==='finished'&&state.winner){const av=W.AVATARS.find(a=>a.id===state.winner.avatar);
+  if(phase==='finished'&&state.winner){const av=W.AVATARS.find(a=>a.id===state.winner.avatar);clearCd();
     body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${state.winner.id===me.id?'You win! 🏆':esc(state.winner.name)+' wins!'}</h2><div class="pill">Room <b>${room.code}</b></div></div>`;return;}
-  // lobby / not started
-  if(phase!=='playing'){body.innerHTML=`<div class="panel"><div class="big">You're in!</div><div class="sub">Waiting for the game to start…</div><div class="pill">Room <b>${room.code}</b></div></div>`;lastActiveKey='';return;}
-  const active=state.active;
-  if(active&&active.playerId===me.id&&active.needsDone){
-    const isAce=active.kind==='ace';const k='do-'+active.playerId+'-'+active.kind+'-'+active.reps;
-    body.innerHTML=`<div class="card-do ${isAce?'ace':'work'}"><div class="tag">${isAce?'Ace penalty — your turn':'Your turn'}</div>
-      <div class="reps">${active.reps}</div><div class="move">${esc(active.move||'')}</div>
+  if(phase!=='playing'){clearCd();body.innerHTML=`<div class="rollwrap" style="padding:26px 0;"><div class="me-head" style="justify-content:center;border:none;background:none;"><div style="text-align:center"><div class="mn">You're in!</div><div class="ms">Waiting for the game to start…</div></div></div><div style="text-align:center"><span class="pill">Room <b>${room.code}</b></span></div></div>`;lastStatus='';return;}
+  if(!mp){body.innerHTML='<div class="rollwrap">Syncing…</div>';return;}
+  if(rolling){return;} // keep local dice animation until it sends
+  if(mp.status==='working'&&mp.card){
+    clearCd();const isAce=mp.card.kind==='ace';
+    body.innerHTML=`<div class="card-do ${isAce?'ace':'work'}"><div class="tag">${isAce?'Ace penalty':'Your card'}</div>
+      <div class="reps">${mp.card.reps}</div><div class="move">${esc(mp.card.move||'')}</div>
+      <div class="cd" id="cd"></div>
       <button class="donebtn" id="doneBtn">DONE ✓</button></div>`;
-    $('doneBtn').onclick=()=>{$('doneBtn').disabled=true;$('doneBtn').textContent='Saved!';sendIntent(isAce?'penalty_done':'done');};
-    lastActiveKey=k;return;}
-  if(active){ // someone else is up
-    const detail=active.status==='rolling'?'rolling the dice…':(active.kind==='ace'?('penalty — '+active.reps+' '+active.move):(active.reps+' '+(active.move||'')));
-    body.innerHTML=`<div class="panel"><div class="big">${esc(active.name)} is up</div><div class="sub">${esc(detail)}</div></div>`+othersHtml(state);lastActiveKey='';return;}
-  // idle — anyone can claim
-  body.innerHTML=`<button class="imup" id="imupBtn">I'M UP!</button><div class="sub" style="text-align:center;margin-top:12px;color:var(--text3)">Tap when you're ready to take your turn</div>`+othersHtml(state);
-  $('imupBtn').onclick=()=>{$('imupBtn').disabled=true;$('imupBtn').textContent='…';sendIntent('claim');};
-  lastActiveKey='';
+    $('doneBtn').onclick=()=>{$('doneBtn').disabled=true;$('doneBtn').textContent='Saved!';clearCd();sendIntent(isAce?'penalty_done':'done');};
+    startCd(state, isAce);
+    lastStatus='working';return;
+  }
+  // idle -> roll
+  clearCd();
+  body.innerHTML=`<div class="rollwrap"><div class="die" id="die">${mp.lastRoll?DICE_FACE[mp.lastRoll-1]:'⚄'}</div>
+    <button class="rollbtn" id="rollBtn">🎲 ROLL</button></div>`;
+  $('rollBtn').onclick=doRoll;
+  lastStatus='idle';
 }
-function othersHtml(state){return '';}
-function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function doRoll(){
+  if(rolling)return;rolling=true;
+  const die=$('die'), btn=$('rollBtn');btn.disabled=true;die.classList.add('rolling');
+  const dv=1+Math.floor(Math.random()*6);
+  let ticks=0;const iv=setInterval(()=>{die.textContent=DICE_FACE[Math.floor(Math.random()*6)];if(++ticks>10){clearInterval(iv);die.textContent=DICE_FACE[dv-1];die.classList.remove('rolling');
+    sendIntent('roll',{dv});setTimeout(()=>{rolling=false;renderState(room.state||{});},500);}},70);
+}
+
+function startCd(state,isAce){clearCd();if(!state.useTimer)return;let rem=isAce?(state.penSec||45):(state.turnSec||60);const el=$('cd');if(!el)return;
+  function tick(){if(!el)return;el.textContent=rem>0?('⏱ '+rem+'s'):'TIME!';el.className='cd'+(rem<=10?' urgent':'');if(rem<=0){clearCd();return;}rem--;}
+  tick();cdInt=setInterval(tick,1000);}
+function clearCd(){if(cdInt){clearInterval(cdInt);cdInt=null;}}
+
+function renderStandings(state){const list=$('standList'),wrap=$('standWrap');const ps=state.players||[];
+  if(!ps.length||state.phase!=='playing'){wrap.style.display='none';return;}
+  wrap.style.display='';const total=state.total||52;
+  const ranked=ps.slice().sort((a,b)=>b.pos-a.pos);list.innerHTML='';
+  ranked.forEach(p=>{const doing=p.status==='working'&&p.card?`<span class="sdo ${p.card.kind==='ace'?'ace':''}">${p.card.reps} ${esc(p.card.move||'')}</span>`:'';
+    const row=document.createElement('div');row.className='srow'+(p.id===me.id?' me':'');
+    row.innerHTML=`<span class="sd" style="background:${p.color}"></span><span class="sn">${esc(p.name)}</span><span class="spos">${p.pos}/${total-1}</span>${doing}`;
+    list.appendChild(row);});}
 </script>
 </body>
 </html>

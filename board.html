@@ -70,24 +70,28 @@
   .clock{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;}
   .clock .cl{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
   .clock .cv{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;}
-  .clock.turn{background:var(--orange);}.clock.turn .cl{color:rgba(0,0,0,.6);}.clock.turn .cv{color:#000;}
-  .clock.turn.idle{background:var(--surface);border:1px solid var(--border);}.clock.turn.idle .cl,.clock.turn.idle .cv{color:var(--text3);}
-  .clock.turn.warn{background:var(--red);}.clock.turn.warn .cl{color:rgba(255,255,255,.7);}.clock.turn.warn .cv{color:#fff;}
-  .clock .cv.urgent{color:var(--red);animation:pulse .5s infinite alternate;}@keyframes pulse{from{opacity:1;}to{opacity:.3;}}
-  #boardWrap{position:relative;margin-bottom:14px;line-height:0;}
+  .clock .room{font-size:24px;font-weight:900;color:var(--orange);letter-spacing:4px;}
+  #boardWrap{position:relative;margin-bottom:18px;line-height:0;}
   #boardCanvas{width:100%;border-radius:14px;display:block;}
-  #tokenCanvas,#cardOverlay{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:14px;pointer-events:none;}
-  .gbanner{padding:10px 16px;border-radius:10px;font-size:15px;font-weight:700;text-align:center;margin-bottom:14px;display:none;}
-  .gbanner.show{display:block;}
-  .gbanner.success{background:rgba(76,175,80,.18);color:var(--green);}.gbanner.danger{background:rgba(232,54,61,.18);color:var(--red);}
-  .gbanner.warning{background:rgba(245,166,35,.15);color:var(--orange);}.gbanner.info{background:rgba(33,150,243,.15);color:var(--blue);}
-  .gbanner.ace{background:rgba(155,89,182,.2);color:var(--purple);}
-  .gplist{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
-  .gprow{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;}
-  .gprow.active{background:rgba(245,166,35,.12);border-color:rgba(245,166,35,.5);}
-  .gdot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
-  .gprow .gn{font-size:14px;font-weight:600;flex:1;}.gprow .gp{font-size:12px;color:var(--text3);}
-  .gprow .gtag{font-size:11px;font-weight:700;color:var(--orange);}
+  #tokenCanvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:14px;pointer-events:none;}
+  /* standings */
+  table.stand{width:100%;border-collapse:collapse;}
+  table.stand th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-weight:700;padding:6px 10px;}
+  table.stand td{padding:10px;border-top:1px solid var(--border);vertical-align:middle;}
+  table.stand tr.row{background:var(--surface);}
+  table.stand tr.working td{background:rgba(245,166,35,.08);}
+  table.stand tr.ace td{background:rgba(155,89,182,.08);}
+  .team{display:flex;align-items:center;gap:10px;}
+  .team .dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+  .team img{width:38px;height:38px;object-fit:contain;}
+  .team .nm{font-size:16px;font-weight:700;}
+  .pos{font-size:15px;font-variant-numeric:tabular-nums;}
+  .pos .bar2{display:inline-block;width:120px;height:7px;background:var(--surface2);border-radius:4px;margin-left:8px;vertical-align:middle;overflow:hidden;}
+  .pos .bar2 i{display:block;height:100%;background:var(--orange);}
+  .die{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:#fafafa;color:#111;font-size:22px;font-weight:800;}
+  .doing{font-size:15px;font-weight:700;}
+  .doing.idle{color:var(--text3);font-weight:400;font-size:14px;}
+  .doing.work{color:var(--orange);}.doing.ace{color:var(--purple);}
   .winwrap{text-align:center;padding:40px 16px;}
   .winwrap img{width:160px;height:160px;object-fit:contain;}
   .winwrap h2{font-size:34px;font-weight:900;margin-top:10px;}
@@ -151,7 +155,7 @@
         <div class="sec">Timers</div>
         <div class="toggle-row">
           <label class="toggle"><input type="checkbox" id="turnTimerToggle"/><span class="slider"></span></label>
-          <div class="toggle-label">Movement timer (countdown per card)</div>
+          <div class="toggle-label">Movement timer (per-card countdown on phones)</div>
         </div>
         <div class="timer-settings" id="timerSettings">
           <div class="tbox"><label>Turn timer (sec)</label><input class="ti" id="turnTimerInput" type="number" value="60"/></div>
@@ -182,8 +186,8 @@
       </div>
       <div id="qr"></div>
     </div>
-    <div class="sec">Players <span id="pcount" style="color:var(--text2)"></span></div>
-    <div class="roster" id="roster"><div class="empty">Waiting for players to join…</div></div>
+    <div class="sec">Teams <span id="pcount" style="color:var(--text2)"></span></div>
+    <div class="roster" id="roster"><div class="empty">Waiting for teams to join…</div></div>
     <div class="bar">
       <button class="bigbtn inline" id="startBtn" disabled>START GAME</button>
       <button class="ghost" id="editBtn">Edit setup</button>
@@ -196,13 +200,12 @@
     <div class="gtop"><h2>WODLY</h2><button class="ghost" id="quitBtn">End game</button></div>
     <div class="clocks">
       <div class="clock"><div class="cl">Game clock</div><div class="cv" id="gameClock">0:00</div></div>
-      <div class="clock turn idle" id="turnBox" style="display:none;"><div class="cl" id="turnLbl">Turn timer</div><div class="cv" id="turnVal">—</div></div>
+      <div class="clock"><div class="cl">Room</div><div class="room" id="gameCode">····</div></div>
       <div class="clock" id="capBox" style="display:none;"><div class="cl">Time cap</div><div class="cv" id="capClock">—</div></div>
     </div>
-    <div id="boardWrap"><canvas id="boardCanvas"></canvas><canvas id="tokenCanvas"></canvas><canvas id="cardOverlay"></canvas></div>
-    <div class="gbanner" id="gbanner"></div>
-    <div class="sec">Players — tap “I’m up!” on your phone</div>
-    <div class="gplist" id="gplist"></div>
+    <div id="boardWrap"><canvas id="boardCanvas"></canvas><canvas id="tokenCanvas"></canvas></div>
+    <div class="sec">Standings — everyone rolls on their own phone</div>
+    <table class="stand"><thead><tr><th>Team</th><th>Position</th><th>Rolled</th><th>Now doing</th></tr></thead><tbody id="standBody"></tbody></table>
   </div>
 
   <!-- WIN -->
@@ -224,14 +227,15 @@
 const W=window.WODLY, sb=W.makeClient(), hostId=W.clientId();
 const $=id=>document.getElementById(id);
 let room=null, channel=null, players=[], game=null, vpos={};
-let gameClockInt=null, turnInt=null, capFired=false;
+let gameClockInt=null, capFired=false;
 const PLAY_URL=location.origin+'/play';
 const SYM=W.SYM, SCOL=W.SCOL, BRAND=W.BRAND;
+const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
 function setStatus(t,cls){const s=$('status');s.textContent=t;s.className='status'+(cls?' '+cls:'');}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
 function fmt(s){const m=Math.floor(s/60),sc=s%60;return m+':'+(sc<10?'0':'')+sc;}
+function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
-// ── Theme zones ──
 const ZONES=[
  {bg:'#1a1512',border:'#3a2e20',accent:'#8B6914',from:0,to:0.22},
  {bg:'#111820',border:'#1e3a5a',accent:'#2196F3',from:0.22,to:0.44},
@@ -285,39 +289,37 @@ function subscribe(){
 }
 async function refreshPlayers(){const{data}=await sb.from('players').select('*').eq('room_id',room.id).order('seat',{ascending:true});players=data||[];if(!game)renderRoster();}
 function renderRoster(){const r=$('roster');$('pcount').textContent=players.length?'('+players.length+')':'';
-  if(!players.length){r.innerHTML='<div class="empty">Waiting for players to join…</div>';$('startBtn').disabled=true;return;}
+  if(!players.length){r.innerHTML='<div class="empty">Waiting for teams to join…</div>';$('startBtn').disabled=true;return;}
   r.innerHTML='';players.forEach(p=>{const av=W.AVATARS.find(a=>a.id===p.avatar);const d=document.createElement('div');d.className='pcard';d.style.borderColor=p.color||'var(--border)';
     d.innerHTML=`<img src="${av?av.img:''}" alt=""><div class="pn">${esc(p.name)}</div><div class="pa">${av?av.name:'…'}</div>`;r.appendChild(d);});
   $('startBtn').disabled=players.length<1;}
-function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
 $('editBtn').onclick=async()=>{if(room){await sb.from('rooms').delete().eq('id',room.id);room=null;}show('setupScreen');setStatus('setup');};
 $('newRoomBtn').onclick=async()=>{if(room)await sb.from('rooms').delete().eq('id',room.id);room=null;$('openLobbyBtn').click();};
 $('quitBtn').onclick=async()=>{stopClocks();if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}game=null;show('lobbyScreen');};
 $('againBtn').onclick=async()=>{game=null;if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}await refreshPlayers();renderRoster();show('lobbyScreen');};
 
-// ── START GAME = build engine ──
+// ── START GAME ──
 $('startBtn').onclick=async()=>{
   if(!players.length)return;
   const s=room.settings||gatherSettings();
   const total=W.DECK_SPACES[s.deckSz]||52;
-  game={ players:players.map((p,i)=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0})),
+  game={ players:players.map((p,i)=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle'})),
     total, diff:s.diff||'easy', mv:s.mv, ace:{reps:s.aceReps,move:s.aceMove},
     useTimer:!!s.useTimer, turnSec:s.turnSec||60, penSec:s.penSec||45, timeCap:(s.cap?(s.capMin||20)*60:0),
-    deck:W.buildDeck(), landed:{}, active:null, busy:false, winner:null, startTime:Date.now() };
-  capFired=false;
+    deck:W.buildDeck(), landed:{}, winner:null, startTime:Date.now() };
+  capFired=false;vpos={};
   await sb.from('rooms').update({status:'playing'}).eq('id',room.id);
-  show('gameScreen');
-  $('turnBox').style.display=game.useTimer?'':'none';
+  show('gameScreen');$('gameCode').textContent=room.code;
   $('capBox').style.display=game.timeCap>0?'':'none';
   if(game.timeCap>0)$('capClock').textContent=fmt(game.timeCap);
-  sizeCanvas();drawBoard();drawTokens(null);renderGPlist();startGameClock();
+  sizeCanvas();drawBoard();drawTokens();renderStandings();startGameClock();
   await writeState();
 };
 
-// ── Canvas + board (ported) ──
+// ── Canvas + board ──
 function sizeCanvas(){const wrap=$('boardWrap');const w=wrap.clientWidth||800,h=Math.round(w*.5);
-  ['boardCanvas','tokenCanvas','cardOverlay'].forEach(id=>{const c=$(id);c.width=w*2;c.height=h*2;c.style.width=w+'px';c.style.height=h+'px';});}
+  ['boardCanvas','tokenCanvas'].forEach(id=>{const c=$(id);c.width=w*2;c.height=h*2;c.style.width=w+'px';c.style.height=h+'px';});}
 function layout(total,W2,H){const row0=Math.ceil(total/2),spW=Math.min(Math.floor((W2-40)/row0),96),spH=Math.round(spW*.82),startX=20,gap=10,rowY=[H/2-spH-gap,H/2+gap];return{spW,spH,startX,rowY,row0};}
 function spaceXY(i,total,W2,H){const{spW,spH,startX,rowY,row0}=layout(total,W2,H);let x,y;if(i<row0){x=startX+i*spW;y=rowY[0];}else{x=startX+(total-1-i)*spW;y=rowY[1];}return{x:x+(spW-3)/2,y:y+spH/2};}
 function drawBoard(){const cv=$('boardCanvas'),ctx=cv.getContext('2d'),W2=cv.width,H=cv.height,total=game.total;
@@ -339,30 +341,17 @@ function drawBoard(){const cv=$('boardCanvas'),ctx=cv.getContext('2d'),W2=cv.wid
       else{ctx.font='13px sans-serif';ctx.fillText(SYM[lc.suit],cx,cy-3);ctx.fillStyle='#fff';ctx.font='bold 13px sans-serif';ctx.fillText(lc.label,cx,cy+13);}}
     else{ctx.fillStyle='#0d2b1a';ctx.beginPath();ctx.roundRect(x+3,y+3,spW-9,spH-6,4);ctx.fill();ctx.strokeStyle='rgba(76,175,80,.4)';ctx.lineWidth=1;ctx.stroke();}
   }}
-function drawTokens(anim){const cv=$('tokenCanvas'),ctx=cv.getContext('2d'),W2=cv.width,H=cv.height;ctx.clearRect(0,0,W2,H);if(!game)return;
+function drawTokens(){const cv=$('tokenCanvas'),ctx=cv.getContext('2d'),W2=cv.width,H=cv.height;ctx.clearRect(0,0,W2,H);if(!game)return;
   const total=game.total,offs=[[-16,-6],[16,-6],[-16,14],[16,14],[0,-16],[0,16]];
-  game.players.forEach((p,pi)=>{const ap=(vpos[p.id]!=null)?vpos[p.id]:(anim?anim[pi]:p.pos),fp=Math.floor(ap),fr=ap-fp;let cx,cy;
+  game.players.forEach((p,pi)=>{const ap=(vpos[p.id]!=null)?vpos[p.id]:p.pos,fp=Math.floor(ap),fr=ap-fp;let cx,cy;
     if(fr>0&&fp<total-1){const a=spaceXY(fp,total,W2,H),b=spaceXY(fp+1,total,W2,H);cx=a.x+(b.x-a.x)*fr;cy=a.y+(b.y-a.y)*fr-Math.sin(fr*Math.PI)*20;}
     else{const sP=spaceXY(Math.min(fp,total-1),total,W2,H);cx=sP.x;cy=sP.y;}
     const[ox,oy]=offs[pi%6];cx+=ox;cy+=oy;
-    const isActive=game.active&&game.active.playerId===p.id;
-    ctx.save();ctx.shadowColor=p.color;ctx.shadowBlur=isActive?26:10;
+    ctx.save();ctx.shadowColor=p.color;ctx.shadowBlur=p.status==='working'?24:10;
     ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(cx,cy,15,0,Math.PI*2);ctx.fill();
     ctx.restore();ctx.strokeStyle='rgba(0,0,0,.5)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,15,0,Math.PI*2);ctx.stroke();
     ctx.fillStyle='#fff';ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((p.name||'?')[0].toUpperCase(),cx,cy+1);ctx.textBaseline='alphabetic';
   });}
-let rafId=null;
-function drawDie(ctx,cx,cy,S,val){ctx.save();
-  ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.roundRect(cx-S/2-7,cy-S/2-7,S+14,S+14,S*0.22);ctx.fill();
-  ctx.fillStyle='#fafafa';ctx.strokeStyle='#1a1a1a';ctx.lineWidth=S*0.04;ctx.beginPath();ctx.roundRect(cx-S/2,cy-S/2,S,S,S*0.18);ctx.fill();ctx.stroke();
-  ctx.fillStyle='#1a1a1a';const o=S*0.26,r=S*0.08;
-  const pips={1:[[0,0]],2:[[-o,-o],[o,o]],3:[[-o,-o],[0,0],[o,o]],4:[[-o,-o],[o,-o],[-o,o],[o,o]],5:[[-o,-o],[o,-o],[0,0],[-o,o],[o,o]],6:[[-o,-o],[o,-o],[-o,0],[o,0],[-o,o],[o,o]]};
-  (pips[val]||[]).forEach(([dx,dy])=>{ctx.beginPath();ctx.arc(cx+dx,cy+dy,r,0,Math.PI*2);ctx.fill();});ctx.restore();}
-function animDice(dv,cb){const cv=$('cardOverlay'),ctx=cv.getContext('2d'),W2=cv.width,H=cv.height,cx=W2/2,cy=H/2,S=Math.min(W2,H)*0.22;
-  const t0=performance.now(),DUR=750;
-  function frame(now){const el=now-t0;ctx.clearRect(0,0,W2,H);const face=el<DUR-130?(1+Math.floor(Math.random()*6)):dv;drawDie(ctx,cx,cy,S,face);
-    if(el<DUR)requestAnimationFrame(frame);else setTimeout(()=>{ctx.clearRect(0,0,W2,H);cb&&cb();},230);}
-  requestAnimationFrame(frame);}
 function walkToken(pid,from,to,cb){const steps=Math.abs(to-from),fwd=to>=from;if(!steps){cb&&cb();return;}
   let done=0,s=from;
   function step(){const t0=performance.now();
@@ -370,96 +359,74 @@ function walkToken(pid,from,to,cb){const steps=Math.abs(to-from),fwd=to>=from;if
       if(t<1)requestAnimationFrame(frame);else{s=fwd?s+1:s-1;vpos[pid]=s;done++;if(done<steps)step();else cb&&cb();}}
     requestAnimationFrame(frame);}
   step();}
-function flashCard(opts,cb){const cv=$('cardOverlay'),ctx=cv.getContext('2d'),W2=cv.width,H=cv.height,CW=120,CH=168,cx=W2/2,cy=H/2;
-  const t0=performance.now(),HOLD=opts.hold||1100,FADE=400,TOTAL=HOLD+FADE;
-  function frame(now){const el=Math.min(now-t0,TOTAL);let a=el>HOLD?1-(el-HOLD)/FADE:1;a=Math.max(0,a);ctx.clearRect(0,0,W2,H);ctx.save();ctx.globalAlpha=a;
-    ctx.fillStyle='#111';ctx.strokeStyle=opts.color||BRAND.orange;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(cx-CW/2,cy-CH/2,CW,CH,12);ctx.fill();ctx.stroke();ctx.textAlign='center';
-    if(opts.kind==='ace'){ctx.fillStyle='#9b59b6';ctx.font='bold 13px sans-serif';ctx.fillText('ACE PENALTY',cx,cy-CH/2+22);ctx.font='bold 54px sans-serif';ctx.fillText('A',cx,cy+8);ctx.font='bold 15px sans-serif';ctx.fillStyle='#fff';ctx.fillText(opts.reps+' '+opts.move,cx,cy+44);}
-    else if(opts.kind==='skip'){ctx.fillStyle=BRAND.green;ctx.font='bold 13px sans-serif';ctx.fillText('SKIP FORWARD',cx,cy-CH/2+22);ctx.font='bold 46px sans-serif';ctx.fillText('↑',cx,cy+4);ctx.font='bold 17px sans-serif';ctx.fillText('+2 spaces',cx,cy+38);}
-    else if(opts.kind==='back'){ctx.fillStyle=BRAND.red;ctx.font='bold 13px sans-serif';ctx.fillText('GO BACK',cx,cy-CH/2+22);ctx.font='bold 46px sans-serif';ctx.fillText('↓',cx,cy+4);ctx.font='bold 17px sans-serif';ctx.fillText('-'+opts.val+' spaces',cx,cy+38);}
-    else{ctx.font='40px sans-serif';ctx.fillStyle=opts.color;ctx.fillText(SYM[opts.suit],cx,cy-14);ctx.font='bold 34px sans-serif';ctx.fillStyle='#fff';ctx.fillText(opts.label,cx,cy+20);ctx.font='13px sans-serif';ctx.fillStyle='#aaa';ctx.fillText(opts.reps+' '+opts.move,cx,cy+44);}
-    ctx.restore();if(el<TOTAL)rafId=requestAnimationFrame(frame);else{ctx.clearRect(0,0,W2,H);if(cb)cb();}}
-  rafId=requestAnimationFrame(frame);}
 
 // ── Clocks ──
 function startGameClock(){game.startTime=Date.now();clearInterval(gameClockInt);
   gameClockInt=setInterval(()=>{if(!game)return;const el=Math.floor((Date.now()-game.startTime)/1000);$('gameClock').textContent=fmt(el);
-    if(game.timeCap>0){const rem=game.timeCap-el;if(rem<=0){$('capClock').textContent='0:00';if(!capFired&&!game.busy)triggerCap();}else $('capClock').textContent=fmt(rem);}},1000);}
-function stopClocks(){clearInterval(gameClockInt);clearInterval(turnInt);gameClockInt=null;turnInt=null;}
-function startTurnTimer(sec,label){if(!game.useTimer)return;clearInterval(turnInt);let rem=sec;const box=$('turnBox'),val=$('turnVal'),lbl=$('turnLbl');
-  box.className='clock turn';lbl.textContent=label||'Turn timer';val.textContent=fmt(rem);val.className='cv';
-  turnInt=setInterval(()=>{rem--;if(rem<0)rem=0;val.textContent=fmt(rem);if(rem<=10&&rem>0){box.className='clock turn warn';val.className='cv urgent';}else if(rem<=0){clearInterval(turnInt);val.textContent='TIME!';}},1000);}
-function stopTurnTimer(){clearInterval(turnInt);turnInt=null;const box=$('turnBox');box.className='clock turn idle';$('turnVal').textContent='—';$('turnVal').className='cv';}
+    if(game.timeCap>0){const rem=game.timeCap-el;if(rem<=0){$('capClock').textContent='0:00';if(!capFired)triggerCap();}else $('capClock').textContent=fmt(rem);}},1000);}
+function stopClocks(){clearInterval(gameClockInt);gameClockInt=null;}
 
-// ── Turn engine ──
-function banner(msg,type){const b=$('gbanner');b.textContent=msg;b.className='gbanner show '+(type||'info');}
+// ── Turn engine (concurrent, per-player) ──
 function onIntent(it){if(!game)return;
-  if(it.type==='claim')onClaim(it.player_id);
+  if(it.type==='roll')onRoll(it.player_id,(it.payload&&it.payload.dv)||0);
   else if(it.type==='done'||it.type==='penalty_done')onDone(it.player_id);}
-function onClaim(pid){if(!game||game.busy||game.active||game.winner)return;
-  const p=game.players.find(x=>x.id===pid);if(!p)return;
-  game.busy=true;stopTurnTimer();
-  const dv=Math.floor(Math.random()*6)+1, from=p.pos, total=game.total;
-  // Resolve synchronously, recording the walk segments + the card to flash at each landing.
-  let segs=[], pos=from, dest=Math.min(from+dv,total-1), res=null, guard=0;
+
+function onRoll(pid,dvRaw){
+  const p=game.players.find(x=>x.id===pid);if(!p||game.winner||p.status==='working')return;
+  let dv=parseInt(dvRaw);if(!(dv>=1&&dv<=6))dv=1+Math.floor(Math.random()*6);
+  const from=p.pos, total=game.total;
+  let pos=Math.min(from+dv,total-1), guard=0, res=null, segEnd=pos;
   while(guard++<60){
-    segs.push({from:pos,to:dest,flash:null});
-    pos=dest;
     if(pos>=total-1){res={win:true,pos:total-1};break;}
-    if(pos<=0){res={end:true,pos:0};break;}
+    if(pos<=0){res={none:true,pos:0};break;}
     let lc=game.landed[pos];
     if(!lc){if(!game.deck.length)game.deck=W.buildDeck();const c=game.deck.pop();const kind=W.cardType(c.val);
       lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
-    const L=segs[segs.length-1];
-    if(lc.kind==='skip'){L.flash={kind:'skip',color:BRAND.green};dest=Math.min(pos+2,total-1);continue;}
-    if(lc.kind==='back'){L.flash={kind:'back',val:lc.val,color:BRAND.red};dest=Math.max(pos-lc.val,0);continue;}
-    if(lc.kind==='ace'){L.flash={kind:'ace',suit:lc.suit,reps:game.ace.reps,move:game.ace.move,color:'#9b59b6'};res={kind:'ace',pos,reps:game.ace.reps,move:game.ace.move,suit:lc.suit};break;}
-    L.flash={kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,color:SCOL[lc.suit]};res={kind:'workout',pos,reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit};break;
+    if(lc.kind==='skip'){pos=Math.min(pos+2,total-1);continue;}
+    if(lc.kind==='back'){pos=Math.max(pos-lc.val,0);continue;}
+    if(lc.kind==='ace'){res={kind:'ace',pos,card:{kind:'ace',reps:game.ace.reps,move:game.ace.move,suit:lc.suit}};break;}
+    res={kind:'workout',pos,card:{kind:'workout',reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit}};break;
   }
-  p.pos=res.pos;
-  // Advance state immediately so phones get the card right away (independent of animation).
-  if(res.end){game.busy=false;banner('Tap “I’m up!” on your phone','info');}
-  else if(!res.win){game.active={playerId:p.id,name:p.name,avatar:p.avatar,color:p.color,status:res.kind,kind:res.kind,reps:res.reps,move:res.move,label:res.label||null,suit:res.suit||null,needsDone:true};
-    banner(p.name+' rolled '+dv,(res.kind==='ace'?'ace':'warning'));writeState();startTurnTimer(res.kind==='ace'?game.penSec:game.turnSec,res.reps+' '+res.move);}
-  if(res.end)writeState();
-  renderGPlist();
-  // Cosmetic animation: dice tumble -> step walk -> card flip at each landing (never gates state).
-  vpos[p.id]=from;drawBoard();drawTokens();
-  animDice(dv,()=>{
-    let i=0;
-    (function nextSeg(){
-      if(i>=segs.length){delete vpos[p.id];drawBoard();drawTokens();if(res.win)win(p);return;}
-      const seg=segs[i++];
-      walkToken(p.id,seg.from,seg.to,()=>{drawBoard();drawTokens();
-        if(seg.flash){try{flashCard(seg.flash,()=>nextSeg());}catch(e){nextSeg();}}else nextSeg();});
-    })();
-  });
+  p.lastRoll=dv;p.pos=res.pos;
+  if(res.win){p.card=null;p.status='idle';drawBoard();renderStandings();vpos[p.id]=from;walkToken(p.id,from,res.pos,()=>{delete vpos[p.id];drawBoard();drawTokens();win(p);});return;}
+  if(res.none){p.card=null;p.status='idle';}
+  else{p.card=res.card;p.status='working';}
+  drawBoard();renderStandings();writeState();
+  vpos[p.id]=from;drawTokens();
+  walkToken(p.id,from,res.pos,()=>{delete vpos[p.id];drawBoard();drawTokens();});
 }
-function onDone(pid){if(!game||!game.active||!game.active.needsDone||game.active.playerId!==pid)return;
-  const p=game.players.find(x=>x.id===pid);stopTurnTimer();finishTurn(p,p.pos);}
-function finishTurn(p,pos){p.pos=pos;drawTokens(null);
-  if(pos>=game.total-1){return win(p);}
-  game.active=null;game.busy=false;banner('Tap “I’m up!” on your phone when ready','info');renderGPlist();drawBoard();writeState();}
-function win(p){game.winner={id:p.id,name:p.name,avatar:p.avatar,timeSec:Math.floor((Date.now()-game.startTime)/1000)};game.active=null;game.busy=false;stopClocks();
+function onDone(pid){const p=game.players.find(x=>x.id===pid);if(!p||p.status!=='working')return;
+  p.card=null;p.status='idle';renderStandings();writeState();}
+function win(p){game.winner={id:p.id,name:p.name,avatar:p.avatar,timeSec:Math.floor((Date.now()-game.startTime)/1000)};stopClocks();
   const av=W.AVATARS.find(a=>a.id===p.avatar);$('winImg').src=av?av.img:'';$('winName').textContent=p.name+' wins!';$('winTime').textContent='Total time: '+fmt(game.winner.timeSec);
   show('winScreen');sb.from('rooms').update({status:'finished'}).eq('id',room.id).then(()=>{});writeState();}
-function triggerCap(){if(capFired||!game)return;capFired=true;let leader=game.players[0];game.players.forEach(p=>{if(p.pos>leader.pos)leader=p;});game.winner={id:leader.id,name:leader.name,avatar:leader.avatar,timeSec:Math.floor((Date.now()-game.startTime)/1000),cap:true};stopClocks();
-  const av=W.AVATARS.find(a=>a.id===leader.avatar);$('winImg').src=av?av.img:'';$('winName').textContent=leader.name+' wins!';$('winTime').textContent='Time cap — furthest along.';show('winScreen');sb.from('rooms').update({status:'finished'}).eq('id',room.id).then(()=>{});writeState();}
+function triggerCap(){if(capFired||!game||game.winner)return;capFired=true;let leader=game.players[0];game.players.forEach(p=>{if(p.pos>leader.pos)leader=p;});
+  game.winner={id:leader.id,name:leader.name,avatar:leader.avatar,timeSec:Math.floor((Date.now()-game.startTime)/1000),cap:true};stopClocks();
+  const av=W.AVATARS.find(a=>a.id===leader.avatar);$('winImg').src=av?av.img:'';$('winName').textContent=leader.name+' wins!';$('winTime').textContent='Time cap — furthest along.';
+  show('winScreen');sb.from('rooms').update({status:'finished'}).eq('id',room.id).then(()=>{});writeState();}
 
-function renderGPlist(){const l=$('gplist');if(!game)return;l.innerHTML='';
-  game.players.slice().sort((a,b)=>b.pos-a.pos).forEach(p=>{const act=game.active&&game.active.playerId===p.id;const row=document.createElement('div');row.className='gprow'+(act?' active':'');
-    row.innerHTML=`<div class="gdot" style="background:${p.color}"></div><div class="gn">${esc(p.name)}</div>`+
-      (act?`<div class="gtag">${game.active.status==='rolling'?'rolling…':(game.active.kind==='ace'?'penalty':(game.active.reps+' '+(game.active.move||'')))}</div>`:`<div class="gp">space ${p.pos}/${game.total-1}</div>`);
-    l.appendChild(row);});}
+function cardText(c){if(!c)return null;return c.reps+' '+c.move;}
+function renderStandings(){const b=$('standBody');if(!game)return;b.innerHTML='';
+  const ranked=game.players.map((p,i)=>({p,i})).sort((a,b)=>b.p.pos-a.p.pos);
+  ranked.forEach(({p})=>{const tr=document.createElement('tr');tr.className='row'+(p.status==='working'?(p.card&&p.card.kind==='ace'?' ace':' working'):'');
+    const av=W.AVATARS.find(a=>a.id===p.avatar);
+    const pct=Math.round(p.pos/(game.total-1)*100);
+    const doing=p.status==='working'&&p.card?`<span class="doing ${p.card.kind==='ace'?'ace':'work'}">${p.card.kind==='ace'?'Ace · ':''}${esc(cardText(p.card))}</span>`:'<span class="doing idle">—</span>';
+    tr.innerHTML=`<td><div class="team"><span class="dot" style="background:${p.color}"></span><img src="${av?av.img:''}" alt=""><span class="nm">${esc(p.name)}</span></div></td>
+      <td><span class="pos">${p.pos}/${game.total-1}<span class="bar2"><i style="width:${pct}%"></i></span></span></td>
+      <td>${p.lastRoll?`<span class="die">${DICE_FACE[p.lastRoll-1]}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td>${doing}</td>`;
+    b.appendChild(tr);});}
 
-// ── State sync to phones ──
+// ── State sync ──
 async function writeState(){if(!room||!game)return;
-  const positions={};game.players.forEach(p=>positions[p.id]=p.pos);
-  const active=game.active?{playerId:game.active.playerId,name:game.active.name,kind:game.active.kind,status:game.active.status,reps:game.active.reps||null,move:game.active.move||null,label:game.active.label||null,suit:game.active.suit||null,needsDone:!!game.active.needsDone}:null;
-  const state={phase:game.winner?'finished':'playing',total:game.total,positions,active,winner:game.winner?{id:game.winner.id,name:game.winner.name,avatar:game.winner.avatar,timeSec:game.winner.timeSec,cap:!!game.winner.cap}:null};
+  const state={phase:game.winner?'finished':'playing',total:game.total,
+    players:game.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,pos:p.pos,lastRoll:p.lastRoll,card:p.card,status:p.status})),
+    winner:game.winner?{id:game.winner.id,name:game.winner.name,avatar:game.winner.avatar,timeSec:game.winner.timeSec,cap:!!game.winner.cap}:null,
+    useTimer:game.useTimer,turnSec:game.turnSec,penSec:game.penSec};
   try{await sb.from('rooms').update({state}).eq('id',room.id);}catch(e){}}
 
-window.addEventListener('resize',()=>{if(game){sizeCanvas();drawBoard();drawTokens(null);}});
+window.addEventListener('resize',()=>{if(game){sizeCanvas();drawBoard();drawTokens();}});
 </script>
 </body>
 </html>
