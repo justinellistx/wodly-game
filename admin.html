@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WODLY — Sponsor Admin</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta name="robots" content="noindex">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;--border:#333;--text:#fff;--text2:#aaa;--text3:#666;}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:#fff;min-height:100vh;padding:24px;}
+  .wrap{max-width:880px;margin:0 auto;}
+  h1{font-size:26px;font-weight:900;letter-spacing:4px;}
+  .sub{color:var(--text3);font-size:12px;text-transform:uppercase;letter-spacing:2px;margin-bottom:22px;}
+  .screen{display:none;}.screen.active{display:block;}
+  label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;display:block;margin:14px 0 6px;}
+  input[type=text],input[type=url],input[type=password]{width:100%;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;}
+  .btn{padding:12px 22px;font-size:14px;font-weight:800;letter-spacing:.5px;background:var(--orange);border:none;border-radius:10px;color:#000;cursor:pointer;}
+  .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text2);}
+  .btn.danger{background:transparent;border:1px solid var(--red);color:var(--red);}
+  .err{color:var(--red);font-size:13px;margin-top:10px;min-height:16px;}
+  .ok{color:var(--green);}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:18px;}
+  .row{display:flex;gap:14px;flex-wrap:wrap;}
+  .row>div{flex:1;min-width:220px;}
+  .logo-drop{border:1px dashed #444;border-radius:10px;padding:14px;text-align:center;cursor:pointer;background:var(--surface2);}
+  .logo-prev{max-height:70px;max-width:200px;object-fit:contain;margin-top:8px;}
+  .slist{display:flex;flex-direction:column;gap:12px;}
+  .srow{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;}
+  .srow.off{opacity:.5;}
+  .srow .lg{width:90px;height:54px;background:#000;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+  .srow .lg img{max-width:100%;max-height:100%;object-fit:contain;}
+  .srow .meta{flex:1;}.srow .meta b{font-size:16px;}.srow .meta div{font-size:12px;color:var(--text3);word-break:break-all;}
+  .srow .acts{display:flex;gap:8px;flex-shrink:0;}
+  .pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+  .pill.on{background:rgba(76,175,80,.2);color:var(--green);}.pill.off{background:rgba(120,120,120,.2);color:var(--text3);}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- GATE -->
+  <div id="gate" class="screen active">
+    <h1>WODLY</h1><div class="sub">Sponsor admin</div>
+    <div class="card" style="max-width:380px;">
+      <label>Admin passcode</label>
+      <input type="password" id="pass" placeholder="Enter passcode" autocomplete="off">
+      <button class="btn" id="enterBtn" style="margin-top:16px;">Enter</button>
+      <div class="err" id="gateErr"></div>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div id="panel" class="screen">
+    <div class="topbar"><div><h1>WODLY</h1><div class="sub" style="margin-bottom:0;">Sponsor admin</div></div><button class="btn ghost" id="lockBtn">Lock</button></div>
+
+    <div class="card">
+      <div style="font-weight:800;font-size:15px;margin-bottom:6px;" id="formTitle">Add a sponsor</div>
+      <div class="row">
+        <div>
+          <label>Sponsor name</label>
+          <input type="text" id="f-name" placeholder="e.g. Rogue Fitness">
+          <label>Website URL</label>
+          <input type="url" id="f-web" placeholder="https://example.com">
+          <label>Socials URL (for the QR code)</label>
+          <input type="url" id="f-social" placeholder="https://instagram.com/example">
+          <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:14px;color:var(--text2);margin-top:14px;"><input type="checkbox" id="f-active" checked> Active (shown on boards)</label>
+        </div>
+        <div>
+          <label>Logo</label>
+          <div class="logo-drop" id="logoDrop">Click to choose a logo image<br><img class="logo-prev" id="logoPrev" style="display:none;"></div>
+          <input type="file" id="f-logo" accept="image/*" style="display:none;">
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;">
+        <button class="btn" id="saveBtn">Add sponsor</button>
+        <button class="btn ghost" id="cancelBtn" style="display:none;">Cancel edit</button>
+      </div>
+      <div class="err" id="formErr"></div>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:18px 0 10px;">Sponsors</div>
+    <div class="slist" id="slist"><div style="color:var(--text3)">Loading…</div></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL='https://ynznwosssctxbdiauekj.supabase.co';
+const PUB='sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq';
+const FN=SUPA_URL+'/functions/v1/sponsor-admin';
+const sb=supabase.createClient(SUPA_URL,PUB);
+const $=id=>document.getElementById(id);
+let passcode='', editId=null, logoData=null;
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+async function api(action,extra){
+  const res=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({passcode,action},extra))});
+  return res.json();
+}
+
+// ── Gate ──
+$('enterBtn').onclick=async()=>{
+  passcode=$('pass').value.trim();$('gateErr').textContent='';
+  const r=await api('verify');
+  if(r&&r.ok){show('panel');loadSponsors();}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
+};
+$('pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('enterBtn').click();});
+$('lockBtn').onclick=()=>{passcode='';$('pass').value='';show('gate');};
+
+// ── Logo upload (downscaled to keep it small) ──
+$('logoDrop').onclick=()=>$('f-logo').click();
+$('f-logo').onchange=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();
+  r.onload=()=>{const img=new Image();img.onload=()=>{
+    const max=340,scale=Math.min(1,max/img.width);const w=Math.round(img.width*scale),h=Math.round(img.height*scale);
+    const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+    logoData=c.toDataURL('image/png');$('logoPrev').src=logoData;$('logoPrev').style.display='inline-block';};img.src=r.result;};
+  r.readAsDataURL(file);};
+
+// ── Save ──
+$('saveBtn').onclick=async()=>{
+  $('formErr').textContent='';
+  const name=$('f-name').value.trim();
+  if(!name){$('formErr').textContent='Sponsor name is required.';return;}
+  const sponsor={name,website_url:$('f-web').value.trim()||null,social_url:$('f-social').value.trim()||null,active:$('f-active').checked};
+  if(logoData)sponsor.logo=logoData;
+  $('saveBtn').disabled=true;
+  const r=await api(editId?'update':'create',editId?{id:editId,sponsor}:{sponsor});
+  $('saveBtn').disabled=false;
+  if(r.error){$('formErr').textContent=r.error;return;}
+  resetForm();loadSponsors();
+};
+$('cancelBtn').onclick=resetForm;
+function resetForm(){editId=null;logoData=null;$('f-name').value='';$('f-web').value='';$('f-social').value='';$('f-active').checked=true;
+  $('logoPrev').style.display='none';$('logoPrev').src='';$('formTitle').textContent='Add a sponsor';$('saveBtn').textContent='Add sponsor';$('cancelBtn').style.display='none';$('formErr').textContent='';}
+
+// ── List ──
+async function loadSponsors(){
+  const{data}=await sb.from('sponsors').select('*').order('sort').order('created_at');
+  const l=$('slist');if(!data||!data.length){l.innerHTML='<div style="color:var(--text3)">No sponsors yet. Add one above.</div>';return;}
+  l.innerHTML='';
+  data.forEach(s=>{const d=document.createElement('div');d.className='srow'+(s.active?'':' off');
+    d.innerHTML=`<div class="lg">${s.logo?`<img src="${s.logo}">`:'<span style="color:#444;font-size:11px">no logo</span>'}</div>
+      <div class="meta"><b>${esc(s.name)}</b> <span class="pill ${s.active?'on':'off'}">${s.active?'Active':'Hidden'}</span>
+        <div>${s.website_url?esc(s.website_url):'—'}</div><div>QR → ${s.social_url?esc(s.social_url):'—'}</div></div>
+      <div class="acts"><button class="btn ghost" data-edit="${s.id}">Edit</button><button class="btn ghost" data-toggle="${s.id}">${s.active?'Hide':'Show'}</button><button class="btn danger" data-del="${s.id}">Delete</button></div>`;
+    l.appendChild(d);});
+  l.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>startEdit(data.find(x=>x.id===b.dataset.edit)));
+  l.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{const s=data.find(x=>x.id===b.dataset.toggle);await api('update',{id:s.id,sponsor:{active:!s.active}});loadSponsors();});
+  l.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this sponsor?'))return;await api('delete',{id:b.dataset.del});loadSponsors();});
+}
+function startEdit(s){editId=s.id;logoData=null;$('f-name').value=s.name||'';$('f-web').value=s.website_url||'';$('f-social').value=s.social_url||'';$('f-active').checked=!!s.active;
+  if(s.logo){$('logoPrev').src=s.logo;$('logoPrev').style.display='inline-block';}else{$('logoPrev').style.display='none';}
+  $('formTitle').textContent='Edit sponsor';$('saveBtn').textContent='Save changes';$('cancelBtn').style.display='inline-block';window.scrollTo(0,0);}
+</script>
+</body>
+</html>

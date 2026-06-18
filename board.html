@@ -71,9 +71,14 @@
   .clock .cl{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
   .clock .cv{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;}
   .clock .room{font-size:24px;font-weight:900;color:var(--orange);letter-spacing:4px;}
-  .sponsor{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px;}
+  .sponsor{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 22px;}
   .sp-lbl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);}
-  .sp-slot{font-size:12px;font-weight:700;letter-spacing:1px;color:var(--text2);border:1px dashed #444;border-radius:10px;padding:9px 26px;background:var(--surface);}
+  .sp-logo{max-height:48px;max-width:190px;object-fit:contain;}
+  .sp-name{font-size:17px;font-weight:800;}
+  .sp-web{font-size:11px;color:var(--text3);}
+  .sp-qrwrap{display:flex;align-items:center;gap:9px;margin-left:6px;border-left:1px solid var(--border);padding-left:18px;}
+  .sp-qr{background:#fff;padding:5px;border-radius:7px;width:64px;height:64px;display:flex;align-items:center;justify-content:center;}
+  .sp-scan{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;max-width:72px;line-height:1.3;}
   #boardWrap{position:relative;margin-bottom:18px;line-height:0;}
   #boardCanvas{width:100%;border-radius:14px;display:block;}
   #tokenCanvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:14px;pointer-events:none;}
@@ -214,7 +219,7 @@
       <div class="clock"><div class="cl">Room</div><div class="room" id="gameCode">····</div></div>
       <div class="clock" id="capBox" style="display:none;"><div class="cl">Time cap</div><div class="cv" id="capClock">—</div></div>
     </div>
-    <div class="sponsor"><span class="sp-lbl">Presented by</span><div class="sp-slot" id="sponsorSlot">YOUR GYM · SPONSOR LOGO</div></div>
+    <div class="sponsor" id="sponsor" style="display:none;"></div>
     <div id="boardWrap"><canvas id="boardCanvas"></canvas><canvas id="tokenCanvas"></canvas></div>
     <div class="sec">Last 5 cards</div>
     <div class="recent" id="recent"><div style="color:var(--text3);font-size:14px;">No cards played yet…</div></div>
@@ -468,6 +473,17 @@ async function writeState(){if(!room||!game)return;
     log:game.log.slice(-5),
     useTimer:game.useTimer,turnSec:game.turnSec,penSec:game.penSec};
   try{await sb.from('rooms').update({state}).eq('id',room.id);}catch(e){}}
+
+// ── Sponsors ──
+let sponsors=[], spIdx=0, spInt=null;
+async function loadSponsors(){try{const{data}=await sb.from('sponsors').select('*').eq('active',true).order('sort').order('created_at');sponsors=data||[];}catch(e){sponsors=[];}
+  clearInterval(spInt);spIdx=0;renderSponsor();
+  if(sponsors.length>1)spInt=setInterval(()=>{spIdx=(spIdx+1)%sponsors.length;renderSponsor();},12000);}
+function renderSponsor(){const el=$('sponsor');if(!el)return;if(!sponsors.length){el.style.display='none';return;}
+  if(spIdx>=sponsors.length)spIdx=0;const s=sponsors[spIdx];el.style.display='flex';
+  el.innerHTML=`<span class="sp-lbl">Presented by</span>${s.logo?`<img class="sp-logo" src="${s.logo}" alt="${esc(s.name)}">`:''}<span class="sp-name">${esc(s.name)}</span>${s.website_url?`<span class="sp-web">${esc(s.website_url.replace(/^https?:\/\//,''))}</span>`:''}${s.social_url?`<div class="sp-qrwrap"><div class="sp-qr" id="spQr"></div><span class="sp-scan">Scan for socials</span></div>`:''}`;
+  if(s.social_url){const q=$('spQr');q.innerHTML='';try{new QRCode(q,{text:s.social_url,width:54,height:54,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}}}
+loadSponsors();
 
 window.addEventListener('resize',()=>{if(game){sizeCanvas();drawBoard();drawTokens();}});
 </script>
