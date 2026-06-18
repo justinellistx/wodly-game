@@ -388,24 +388,32 @@ function onIntent(it){if(!game)return;
   else if(it.type==='done'||it.type==='penalty_done')onDone(it.player_id);}
 function onClaim(pid){if(!game||game.busy||game.active||game.winner)return;
   const p=game.players.find(x=>x.id===pid);if(!p)return;
-  game.busy=true;stopTurnTimer();game.active={playerId:p.id,name:p.name,avatar:p.avatar,color:p.color,status:'rolling'};renderGPlist();writeState();
-  const dv=Math.floor(Math.random()*6)+1;banner(p.name+' rolls…','info');
-  animDice(dv,()=>{banner(p.name+' moves '+dv,'info');const from=p.pos,to=Math.min(from+dv,game.total-1);
-    animToken(p,from,to,()=>{p.pos=to;resolveLanding(p,to);});});}
-function resolveLanding(p,pos){
-  if(pos>=game.total-1){finishTurn(p,game.total-1);return;}
-  if(pos<=0){finishTurn(p,0);return;}
-  let lc=game.landed[pos];
-  if(!lc){const c=game.deck.pop()||(game.deck=W.buildDeck(),game.deck.pop());const kind=W.cardType(c.val);
-    lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;drawBoard();}
-  const k=lc.kind;
-  if(k==='skip'){banner((p.name)+' — skip forward 2!','success');flashCard({kind:'skip',color:BRAND.green},()=>{const np=Math.min(pos+2,game.total-1);animToken(p,pos,np,()=>{p.pos=np;resolveLanding(p,np);});});}
-  else if(k==='back'){banner(p.name+' — back '+lc.val+'!','danger');flashCard({kind:'back',val:lc.val,color:BRAND.red},()=>{const np=Math.max(pos-lc.val,0);animToken(p,pos,np,()=>{p.pos=np;resolveLanding(p,np);});});}
-  else if(k==='ace'){banner('ACE! '+game.ace.reps+' '+game.ace.move,'ace');game.active={playerId:p.id,name:p.name,avatar:p.avatar,color:p.color,status:'penalty',kind:'ace',reps:game.ace.reps,move:game.ace.move,needsDone:true};
-    flashCard({kind:'ace',suit:lc.suit,reps:game.ace.reps,move:game.ace.move,color:'#9b59b6'},()=>{renderGPlist();writeState();startTurnTimer(game.penSec,game.ace.reps+' '+game.ace.move);});}
-  else{const reps=lc.num,wkt=lc.wkt;banner(p.name+': '+reps+' '+wkt+' ('+lc.label+SYM[lc.suit]+')','warning');
-    game.active={playerId:p.id,name:p.name,avatar:p.avatar,color:p.color,status:'workout',kind:'workout',reps,move:wkt,label:lc.label,suit:lc.suit,needsDone:true};
-    flashCard({kind:'workout',suit:lc.suit,label:lc.label,reps,move:wkt,color:SCOL[lc.suit]},()=>{renderGPlist();writeState();startTurnTimer(game.turnSec,reps+' '+wkt);});}
+  game.busy=true;stopTurnTimer();
+  const dv=Math.floor(Math.random()*6)+1;
+  const from=p.pos;
+  // Resolve the whole turn synchronously (state never depends on animation).
+  let pos=Math.min(p.pos+dv,game.total-1), guard=0, res=null;
+  while(guard++<60){
+    if(pos>=game.total-1){res={win:true,pos:game.total-1};break;}
+    if(pos<=0){res={end:true,pos:0};break;}
+    let lc=game.landed[pos];
+    if(!lc){if(!game.deck.length)game.deck=W.buildDeck();const c=game.deck.pop();const kind=W.cardType(c.val);
+      lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
+    if(lc.kind==='skip'){pos=Math.min(pos+2,game.total-1);continue;}
+    if(lc.kind==='back'){pos=Math.max(pos-lc.val,0);continue;}
+    if(lc.kind==='ace'){res={kind:'ace',pos,reps:game.ace.reps,move:game.ace.move,suit:lc.suit};break;}
+    res={kind:'workout',pos,reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit};break;
+  }
+  p.pos=res.pos;
+  if(res.win){drawBoard();drawTokens(null);renderGPlist();return win(p);}
+  if(res.end){game.busy=false;drawBoard();drawTokens(null);banner('Tap “I’m up!” on your phone','info');renderGPlist();writeState();return;}
+  game.active={playerId:p.id,name:p.name,avatar:p.avatar,color:p.color,status:res.kind,kind:res.kind,reps:res.reps,move:res.move,label:res.label||null,suit:res.suit||null,needsDone:true};
+  drawBoard();drawTokens(null);renderGPlist();
+  banner(p.name+' moved '+dv+' — '+res.reps+' '+res.move,(res.kind==='ace'?'ace':'warning'));
+  writeState();
+  startTurnTimer(res.kind==='ace'?game.penSec:game.turnSec, res.reps+' '+res.move);
+  // cosmetic only (safe if throttled in a background tab)
+  try{flashCard(res.kind==='ace'?{kind:'ace',suit:res.suit,reps:res.reps,move:res.move,color:'#9b59b6'}:{kind:'workout',suit:res.suit,label:res.label,reps:res.reps,move:res.move,color:SCOL[res.suit]},()=>{});}catch(e){}
 }
 function onDone(pid){if(!game||!game.active||!game.active.needsDone||game.active.playerId!==pid)return;
   const p=game.players.find(x=>x.id===pid);stopTurnTimer();finishTurn(p,p.pos);}
