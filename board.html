@@ -5,22 +5,62 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WODLY — Board</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta name="theme-color" content="#0d0d0d">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;--border:#333;--text:#fff;--text2:#aaa;--text3:#666;}
   body{font-family:system-ui,sans-serif;background:var(--bg);color:#fff;min-height:100vh;padding:24px;}
   .wrap{max-width:1100px;margin:0 auto;}
+  .screen{display:none;}.screen.active{display:block;}
   h1{font-size:40px;font-weight:900;letter-spacing:8px;text-align:center;}
   .tagline{text-align:center;font-size:13px;font-weight:700;letter-spacing:3px;margin-bottom:24px;}
   .tagline .t1{color:var(--green);}.tagline .t2{color:var(--orange);}.tagline .t3{color:var(--red);}
+  .sec{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:18px 0 10px;}
+  /* setup */
+  .setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  .suit-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .sc{border-radius:12px;padding:12px;border:2px solid transparent;}
+  .sc.hearts{background:#2a0a0b;border-color:var(--red);}
+  .sc.diamonds{background:#2a1a00;border-color:var(--orange);}
+  .sc.clubs{background:#0a2a0a;border-color:var(--green);}
+  .sc.spades{background:#0a1428;border-color:var(--blue);}
+  .sc .si{font-size:22px;margin-bottom:4px;}
+  .sc label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px;font-weight:600;}
+  .sc input{width:100%;font-size:14px;padding:8px;background:rgba(0,0,0,.4);border:1px solid #444;border-radius:7px;color:#fff;}
+  .ace-card-setup{background:#1a0a1a;border:2px solid #9b59b6;border-radius:12px;padding:14px;margin-top:12px;}
+  .ace-card-setup .lbl{font-size:11px;color:#9b59b6;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+  .ace-fields{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:end;}
+  .ace-fields label{font-size:11px;color:var(--text2);display:block;margin-bottom:3px;font-weight:600;}
+  .ace-fields input{width:100%;font-size:14px;padding:8px;background:rgba(0,0,0,.4);border:1px solid #444;border-radius:7px;color:#fff;}
+  .opt-row{display:flex;gap:8px;margin-bottom:14px;}
+  .ob{flex:1;padding:10px 4px;font-size:12px;border:2px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text3);cursor:pointer;text-align:center;line-height:1.5;}
+  .ob b{display:block;font-size:13px;color:var(--text2);}
+  .ob small{font-size:10px;}
+  #deckRow .ob.sel{background:var(--green);border-color:var(--green);color:#000;} #deckRow .ob.sel b{color:#000;}
+  #diffRow .ob[data-v="easy"].sel{background:var(--blue);border-color:var(--blue);color:#000;} #diffRow .ob[data-v="easy"].sel b{color:#000;}
+  #diffRow .ob[data-v="medium"].sel{background:var(--orange);border-color:var(--orange);color:#000;} #diffRow .ob[data-v="medium"].sel b{color:#000;}
+  #diffRow .ob[data-v="hard"].sel{background:var(--red);border-color:var(--red);color:#fff;} #diffRow .ob[data-v="hard"].sel b{color:#fff;}
+  .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .toggle{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;}
+  .toggle input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:#333;border-radius:22px;cursor:pointer;transition:.3s;}
+  .slider:before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;}
+  input:checked+.slider{background:var(--orange);} input:checked+.slider:before{transform:translateX(18px);}
+  .toggle-label{font-size:13px;color:var(--text2);flex:1;}
+  .timer-settings{display:none;gap:10px;}
+  .timer-settings.show{display:flex;}
+  .tbox{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px;}
+  .tbox label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px;font-weight:600;}
+  .ti{width:100%;font-size:14px;padding:7px;background:rgba(0,0,0,.4);border:1px solid #444;border-radius:7px;color:#fff;}
+  .bigbtn{width:100%;padding:16px;font-size:17px;font-weight:800;letter-spacing:1px;background:var(--orange);border:none;border-radius:14px;color:#000;cursor:pointer;margin-top:18px;}
+  .bigbtn:disabled{opacity:.4;cursor:not-allowed;}
+  /* lobby */
   .join-card{display:flex;align-items:center;justify-content:center;gap:40px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;margin-bottom:24px;flex-wrap:wrap;}
   .join-text{text-align:left;}
   .join-text .lbl{font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;}
-  .join-url{font-size:22px;color:var(--text2);margin-bottom:14px;}
-  .join-url b{color:#fff;}
+  .join-url{font-size:22px;color:var(--text2);margin-bottom:14px;}.join-url b{color:#fff;}
   .code{font-size:64px;font-weight:900;letter-spacing:10px;color:var(--orange);line-height:1;}
   #qr{background:#fff;padding:12px;border-radius:12px;width:180px;height:180px;display:flex;align-items:center;justify-content:center;}
-  .sec{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:18px 0 10px;}
   .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
   .pcard{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:14px;text-align:center;animation:pop .3s ease;}
   @keyframes pop{from{transform:scale(.8);opacity:0;}to{transform:scale(1);opacity:1;}}
@@ -29,115 +69,203 @@
   .pcard .pa{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
   .empty{color:var(--text3);font-size:15px;text-align:center;padding:30px;}
   .bar{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:28px;flex-wrap:wrap;}
-  .bigbtn{padding:15px 40px;font-size:17px;font-weight:800;letter-spacing:1px;background:var(--orange);border:none;border-radius:14px;color:#000;cursor:pointer;}
-  .bigbtn:disabled{opacity:.4;cursor:not-allowed;}
   .ghost{padding:13px 22px;font-size:14px;background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--text2);cursor:pointer;}
+  .bigbtn.inline{width:auto;padding:15px 40px;margin-top:0;}
   .status{position:fixed;bottom:12px;left:12px;font-size:11px;color:var(--text3);}
   .status.ok{color:var(--green);}.status.err{color:var(--red);}
+  .foot{text-align:center;margin-top:20px;}
+  .foot button{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit;}
+  /* disclaimer */
+  .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000;align-items:center;justify-content:center;padding:18px;}
+  .disc-overlay.show{display:flex;}
+  .disc-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:22px 20px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto;}
+  .disc-box h2{font-size:20px;font-weight:900;letter-spacing:2px;text-align:center;margin-bottom:4px;}
+  .disc-box .disc-sub{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--orange);text-align:center;margin-bottom:14px;}
+  .disc-box p{font-size:13px;line-height:1.6;color:var(--text2);margin-bottom:11px;}.disc-box p strong{color:#fff;}
+  .disc-accept{width:100%;padding:13px;font-size:14px;font-weight:700;background:var(--orange);border:none;border-radius:12px;color:#000;cursor:pointer;margin-top:6px;}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>WODLY</h1>
-  <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
-
-  <div class="join-card">
-    <div class="join-text">
-      <div class="lbl">Join on your phone</div>
-      <div class="join-url"><b id="joinHost">wodly-game.vercel.app/play</b></div>
-      <div class="lbl">Room code</div>
-      <div class="code" id="code">····</div>
-    </div>
-    <div id="qr"></div>
-  </div>
-
-  <div class="sec">Players <span id="pcount" style="color:var(--text2)"></span></div>
-  <div class="roster" id="roster"><div class="empty">Waiting for players to join…</div></div>
-
-  <div class="bar">
-    <button class="bigbtn" id="startBtn" disabled>START GAME</button>
-    <button class="ghost" id="newRoomBtn">New room</button>
+<div class="disc-overlay" id="discOverlay">
+  <div class="disc-box">
+    <h2>WODLY</h2><div class="disc-sub">Before you play</div>
+    <p>WODLY is a fitness game that prompts physical exercise. <strong>Exercise carries risk of injury.</strong></p>
+    <p>Consult a physician before starting any exercise program, especially if you have a medical condition, are pregnant, or have been inactive. Stop immediately if you feel pain, dizziness, or discomfort.</p>
+    <p>You play at your own risk. By continuing, you agree that <strong>you are responsible for exercising safely</strong> within your own ability, and that the creators of WODLY are not liable for any injury, loss, or damage.</p>
+    <button class="disc-accept" id="discAccept">I understand — let's go</button>
   </div>
 </div>
-<div class="status" id="status">connecting…</div>
+
+<div class="wrap">
+  <!-- SETUP -->
+  <div id="setupScreen" class="screen active">
+    <h1>WODLY</h1>
+    <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
+    <div class="setup-grid">
+      <div>
+        <div class="sec">Movements per suit</div>
+        <div class="suit-grid">
+          <div class="sc hearts"><div class="si">♥</div><label style="color:#E8363D">Hearts</label><input id="mv-hearts" placeholder="Push-ups"/></div>
+          <div class="sc diamonds"><div class="si">♦</div><label style="color:#F5A623">Diamonds</label><input id="mv-diamonds" placeholder="Air Squats"/></div>
+          <div class="sc clubs"><div class="si">♣</div><label style="color:#4CAF50">Clubs</label><input id="mv-clubs" placeholder="Burpees"/></div>
+          <div class="sc spades"><div class="si">♠</div><label style="color:#2196F3">Spades</label><input id="mv-spades" placeholder="Sit-ups"/></div>
+        </div>
+        <div class="ace-card-setup">
+          <div class="lbl">Ace = penalty</div>
+          <div class="ace-fields">
+            <div><label>Reps</label><input id="ace-reps" type="number" min="1" max="200" value="10"/></div>
+            <div><label>Movement</label><input id="ace-move" placeholder="Burpees" value="Burpees"/></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="sec">Deck size</div>
+        <div class="opt-row" id="deckRow">
+          <button class="ob" data-v="quick"><b>Quick</b><small>25</small></button>
+          <button class="ob sel" data-v="standard"><b>Standard</b><small>52</small></button>
+          <button class="ob" data-v="large"><b>Large</b><small>65</small></button>
+        </div>
+        <div class="sec">Difficulty</div>
+        <div class="opt-row" id="diffRow">
+          <button class="ob sel" data-v="easy"><b>Beginner</b><small>low</small></button>
+          <button class="ob" data-v="medium"><b>Rx</b><small>standard</small></button>
+          <button class="ob" data-v="hard"><b>Beast</b><small>max</small></button>
+        </div>
+        <div class="sec">Timers</div>
+        <div class="toggle-row">
+          <label class="toggle"><input type="checkbox" id="turnTimerToggle"/><span class="slider"></span></label>
+          <div class="toggle-label">Movement timer (countdown per card)</div>
+        </div>
+        <div class="timer-settings" id="timerSettings">
+          <div class="tbox"><label>Turn timer (sec)</label><input class="ti" id="turnTimerInput" type="number" value="60"/></div>
+          <div class="tbox"><label>Penalty timer (sec)</label><input class="ti" id="penTimerInput" type="number" value="45"/></div>
+        </div>
+        <div class="toggle-row" style="margin-top:10px;">
+          <label class="toggle"><input type="checkbox" id="capToggle"/><span class="slider"></span></label>
+          <div class="toggle-label">Time cap — closest to finish wins</div>
+          <input class="ti" id="capInput" type="number" value="20" style="width:64px;"/>
+          <span style="font-size:13px;color:var(--text2);">min</span>
+        </div>
+      </div>
+    </div>
+    <button class="bigbtn" id="openLobbyBtn">OPEN LOBBY →</button>
+    <div class="foot"><button id="discLink">Health &amp; safety disclaimer</button></div>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="lobbyScreen" class="screen">
+    <h1>WODLY</h1>
+    <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
+    <div class="join-card">
+      <div class="join-text">
+        <div class="lbl">Join on your phone</div>
+        <div class="join-url"><b id="joinHost">wodly-game.vercel.app/play</b></div>
+        <div class="lbl">Room code</div>
+        <div class="code" id="code">····</div>
+      </div>
+      <div id="qr"></div>
+    </div>
+    <div class="sec">Players <span id="pcount" style="color:var(--text2)"></span></div>
+    <div class="roster" id="roster"><div class="empty">Waiting for players to join…</div></div>
+    <div class="bar">
+      <button class="bigbtn inline" id="startBtn" disabled>START GAME</button>
+      <button class="ghost" id="editBtn">Edit setup</button>
+      <button class="ghost" id="newRoomBtn">New room</button>
+    </div>
+  </div>
+</div>
+<div class="status" id="status">setup</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="wodly-core.js"></script>
 <script>
-const W = window.WODLY;
-const sb = W.makeClient();
-const hostId = W.clientId();
-let room = null, channel = null, players = [];
-
+const W = window.WODLY, sb = W.makeClient(), hostId = W.clientId();
 const $ = id => document.getElementById(id);
-function setStatus(t, cls){ const s=$('status'); s.textContent=t; s.className='status'+(cls?' '+cls:''); }
-
+let room=null, channel=null, players=[];
 const PLAY_URL = location.origin + '/play';
+function setStatus(t,cls){ const s=$('status'); s.textContent=t; s.className='status'+(cls?' '+cls:''); }
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
 
-async function createRoom(){
-  $('roster').innerHTML = '<div class="empty">Waiting for players to join…</div>';
-  $('startBtn').disabled = true;
-  // generate a unique code (retry on collision)
+// ── Disclaimer ──
+const DISC_KEY='wodly_disc_v1';
+$('discAccept').onclick=()=>{try{localStorage.setItem(DISC_KEY,'1');}catch(e){}$('discOverlay').classList.remove('show');};
+$('discLink').onclick=()=>$('discOverlay').classList.add('show');
+(function(){let s=false;try{s=localStorage.getItem(DISC_KEY)==='1';}catch(e){}if(!s)$('discOverlay').classList.add('show');})();
+
+// ── Setup option rows + timer toggle ──
+function mkOptRow(id){ $(id).addEventListener('click',e=>{const b=e.target.closest('.ob'); if(!b||!b.dataset.v)return;
+  document.querySelectorAll('#'+id+' .ob').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); }); }
+mkOptRow('deckRow'); mkOptRow('diffRow');
+$('turnTimerToggle').addEventListener('change',function(){ $('timerSettings').classList.toggle('show',this.checked); });
+function selVal(id){ const e=document.querySelector('#'+id+' .ob.sel'); return e?e.dataset.v:null; }
+function _v(id){ const e=$(id); return e?e.value:''; }
+function _set(id,v){ if(v==null||v==='')return; const e=$(id); if(e)e.value=v; }
+
+// ── Settings persistence (shared key with solo) ──
+const SET_KEY='wodly_settings_v1';
+function gatherSettings(){
+  return { mv:{hearts:_v('mv-hearts')||'Push-ups',diamonds:_v('mv-diamonds')||'Air Squats',clubs:_v('mv-clubs')||'Burpees',spades:_v('mv-spades')||'Sit-ups'},
+    aceReps:Math.max(1,parseInt(_v('ace-reps'))||10), aceMove:(_v('ace-move').trim()||'Burpees'),
+    deckSz:selVal('deckRow')||'standard', diff:selVal('diffRow')||'easy',
+    useTimer:$('turnTimerToggle').checked, turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60), penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),
+    cap:$('capToggle').checked, capMin:Math.max(1,parseInt(_v('capInput'))||20) };
+}
+function loadSettings(){
+  let s; try{ s=JSON.parse(localStorage.getItem(SET_KEY)||'null'); }catch(e){}
+  if(!s)return;
+  if(s.mv){_set('mv-hearts',s.mv.hearts);_set('mv-diamonds',s.mv.diamonds);_set('mv-clubs',s.mv.clubs);_set('mv-spades',s.mv.spades);}
+  _set('ace-reps',s.aceReps);_set('ace-move',s.aceMove);
+  if(s.deckSz){document.querySelectorAll('#deckRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.deckSz));}
+  if(s.diff){document.querySelectorAll('#diffRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.diff));}
+  if(typeof s.useTimer==='boolean'){$('turnTimerToggle').checked=s.useTimer;$('timerSettings').classList.toggle('show',s.useTimer);}
+  _set('turnTimerInput',s.turnSec);_set('penTimerInput',s.penSec);
+  if(typeof s.cap==='boolean')$('capToggle').checked=s.cap; _set('capInput',s.capMin);
+}
+loadSettings();
+
+// ── Open lobby = create room with settings ──
+$('openLobbyBtn').onclick = async () => {
+  const settings = gatherSettings();
+  try{ localStorage.setItem(SET_KEY, JSON.stringify(settings)); }catch(e){}
+  setStatus('creating room…');
   for(let attempt=0; attempt<6; attempt++){
     const code = W.genCode();
-    const { data, error } = await sb.from('rooms')
-      .insert({ code, status:'lobby', host_id:hostId, settings:{} })
-      .select().single();
+    const { data, error } = await sb.from('rooms').insert({ code, status:'lobby', host_id:hostId, settings }).select().single();
     if(!error){ room = data; break; }
     if(error && !/duplicate|unique/i.test(error.message)){ setStatus('create failed: '+error.message,'err'); return; }
   }
   if(!room){ setStatus('could not create room','err'); return; }
   $('code').textContent = room.code;
-  $('qr').innerHTML = '';
-  new QRCode($('qr'), { text: PLAY_URL + '?room=' + room.code, width:156, height:156,
-    colorDark:'#0d0d0d', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
-  subscribe();
-  await refreshPlayers();
-  setStatus('room '+room.code+' live','ok');
-}
+  $('qr').innerHTML=''; new QRCode($('qr'), { text: PLAY_URL+'?room='+room.code, width:156, height:156, colorDark:'#0d0d0d', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  subscribe(); await refreshPlayers(); show('lobbyScreen'); setStatus('room '+room.code+' live','ok');
+};
 
 function subscribe(){
   if(channel) sb.removeChannel(channel);
   channel = sb.channel('room-'+room.id)
-    .on('postgres_changes', { event:'*', schema:'public', table:'players', filter:'room_id=eq.'+room.id },
-        () => refreshPlayers())
+    .on('postgres_changes', { event:'*', schema:'public', table:'players', filter:'room_id=eq.'+room.id }, () => refreshPlayers())
     .subscribe(s => { if(s==='SUBSCRIBED') setStatus('room '+room.code+' live','ok'); });
 }
-
 async function refreshPlayers(){
   const { data } = await sb.from('players').select('*').eq('room_id', room.id).order('seat',{ascending:true});
-  players = data || [];
-  renderRoster();
+  players = data || []; renderRoster();
 }
-
 function renderRoster(){
-  const r = $('roster');
-  $('pcount').textContent = players.length ? '('+players.length+')' : '';
-  if(!players.length){ r.innerHTML = '<div class="empty">Waiting for players to join…</div>'; $('startBtn').disabled = true; return; }
-  r.innerHTML = '';
-  players.forEach(p => {
-    const av = W.AVATARS.find(a => a.id === p.avatar);
-    const d = document.createElement('div');
-    d.className = 'pcard';
-    d.style.borderColor = p.color || 'var(--border)';
-    d.innerHTML = `<img src="${av?av.img:''}" alt="${p.avatar||''}">
-      <div class="pn">${escapeHtml(p.name)}</div>
-      <div class="pa">${av?av.name:'…'}</div>`;
-    r.appendChild(d);
-  });
+  const r=$('roster'); $('pcount').textContent = players.length?'('+players.length+')':'';
+  if(!players.length){ r.innerHTML='<div class="empty">Waiting for players to join…</div>'; $('startBtn').disabled=true; return; }
+  r.innerHTML='';
+  players.forEach(p=>{ const av=W.AVATARS.find(a=>a.id===p.avatar); const d=document.createElement('div');
+    d.className='pcard'; d.style.borderColor=p.color||'var(--border)';
+    d.innerHTML=`<img src="${av?av.img:''}" alt=""><div class="pn">${esc(p.name)}</div><div class="pa">${av?av.name:'…'}</div>`;
+    r.appendChild(d); });
   $('startBtn').disabled = players.length < 1;
 }
-function escapeHtml(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-$('startBtn').onclick = async () => {
-  // Gameplay engine is wired in the next milestone. For now flip status to 'playing'.
-  await sb.from('rooms').update({ status:'playing' }).eq('id', room.id);
-  setStatus('game started (gameplay UI coming next)','ok');
-};
-$('newRoomBtn').onclick = async () => { if(room) await sb.from('rooms').delete().eq('id', room.id); room=null; createRoom(); };
-
-createRoom();
+$('startBtn').onclick = async () => { await sb.from('rooms').update({ status:'playing' }).eq('id', room.id); setStatus('game started — gameplay UI is the next build','ok'); };
+$('editBtn').onclick = async () => { if(room){ await sb.from('rooms').delete().eq('id', room.id); room=null; } show('setupScreen'); setStatus('setup'); };
+$('newRoomBtn').onclick = async () => { if(room) await sb.from('rooms').delete().eq('id', room.id); room=null; $('openLobbyBtn').click(); };
 </script>
 </body>
 </html>

@@ -33,9 +33,26 @@
   .waitwrap .sub{color:var(--text2);font-size:14px;margin-top:8px;}
   .pill{display:inline-block;margin-top:18px;padding:8px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text2);}
   .pill b{color:var(--orange);letter-spacing:3px;}
+  .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:16px;}
+  .disc-overlay.show{display:flex;}
+  .disc-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:20px 18px;max-width:360px;width:100%;max-height:90vh;overflow-y:auto;}
+  .disc-box h2{font-size:19px;font-weight:900;letter-spacing:2px;text-align:center;margin-bottom:4px;}
+  .disc-box .disc-sub{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--orange);text-align:center;margin-bottom:12px;}
+  .disc-box p{font-size:12.5px;line-height:1.55;color:var(--text2);margin-bottom:10px;}.disc-box p strong{color:#fff;}
+  .disc-accept{width:100%;padding:13px;font-size:14px;font-weight:700;background:var(--orange);border:none;border-radius:12px;color:#000;cursor:pointer;margin-top:4px;}
 </style>
 </head>
 <body>
+
+<div class="disc-overlay" id="discOverlay">
+  <div class="disc-box">
+    <h2>WODLY</h2><div class="disc-sub">Before you play</div>
+    <p>WODLY is a fitness game that prompts physical exercise. <strong>Exercise carries risk of injury.</strong></p>
+    <p>Consult a physician before starting any exercise program, especially if you have a medical condition, are pregnant, or have been inactive. Stop if you feel pain, dizziness, or discomfort.</p>
+    <p>You play at your own risk. By continuing, you agree that <strong>you are responsible for exercising safely</strong> within your own ability, and that the creators of WODLY are not liable for any injury, loss, or damage.</p>
+    <button class="disc-accept" id="discAccept">I understand — let's go</button>
+  </div>
+</div>
 
 <div id="joinScreen" class="screen active">
   <h1>WODLY</h1>
@@ -75,6 +92,11 @@ const $ = id => document.getElementById(id);
 let room = null, me = null, chosen = null, takenIds = [];
 
 function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
+
+// ── Disclaimer ──
+const DISC_KEY='wodly_disc_v1';
+$('discAccept').onclick=()=>{try{localStorage.setItem(DISC_KEY,'1');}catch(e){}$('discOverlay').classList.remove('show');};
+(function(){let s=false;try{s=localStorage.getItem(DISC_KEY)==='1';}catch(e){}if(!s)$('discOverlay').classList.add('show');})();
 
 // Prefill code from ?room=
 const params = new URLSearchParams(location.search);
