@@ -385,7 +385,7 @@ function onRoll(pid,dvRaw){
   const p=game.players.find(x=>x.id===pid);if(!p||game.winner||p.status==='working')return;
   let dv=parseInt(dvRaw);if(!(dv>=1&&dv<=6))dv=1+Math.floor(Math.random()*6);
   const from=p.pos, total=game.total;
-  let pos=Math.min(from+dv,total-1), guard=0, res=null, hops=[];
+  let pos=Math.min(from+dv,total-1), guard=0, res=null, hops=[], backHit=null;
   const gnow=()=>Math.floor((Date.now()-game.startTime)/1000);
   while(guard++<60){
     hops.push(pos);                       // record each landing so the token visibly visits it
@@ -395,11 +395,12 @@ function onRoll(pid,dvRaw){
     if(!lc){if(!game.deck.length)game.deck=W.buildDeck();const c=game.deck.pop();const kind=W.cardType(c.val);
       lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
     if(lc.kind==='skip'){logPush(p,{kind:'skip',suit:lc.suit,label:lc.label,gs:gnow()});pos=Math.min(pos+2,total-1);continue;}
-    if(lc.kind==='back'){logPush(p,{kind:'back',suit:lc.suit,label:lc.label,val:lc.val,gs:gnow()});pos=Math.max(pos-lc.val,0);continue;}
+    if(lc.kind==='back'){logPush(p,{kind:'back',suit:lc.suit,label:lc.label,val:lc.val,gs:gnow()});backHit={val:lc.val,suit:lc.suit};pos=Math.max(pos-lc.val,0);continue;}
     if(lc.kind==='ace'){logPush(p,{kind:'ace',suit:lc.suit,label:'A',reps:game.ace.reps,move:game.ace.move,gs:gnow()});res={kind:'ace',pos,card:{kind:'ace',reps:game.ace.reps,move:game.ace.move,suit:lc.suit}};break;}
     logPush(p,{kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,gs:gnow()});res={kind:'workout',pos,card:{kind:'workout',reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit}};break;
   }
   p.lastRoll=dv;p.pos=res.pos;
+  p.event=backHit?{type:'back',val:backHit.val,suit:backHit.suit,eid:(game.eid=(game.eid||0)+1)}:null;
   if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
   drawBoard();renderStandings();renderRecent();writeState();
   // cosmetic: walk through each landing in order — forward to a back/skip card, pause, then move.
@@ -447,7 +448,7 @@ function renderRecent(){const el=$('recent');if(!el||!game)return;const lg=game.
 // ── State sync ──
 async function writeState(){if(!room||!game)return;
   const state={phase:game.winner?'finished':'playing',total:game.total,
-    players:game.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,pos:p.pos,lastRoll:p.lastRoll,card:p.card,status:p.status})),
+    players:game.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,pos:p.pos,lastRoll:p.lastRoll,card:p.card,status:p.status,event:p.event||null})),
     winner:game.winner?{id:game.winner.id,name:game.winner.name,avatar:game.winner.avatar,timeSec:game.winner.timeSec,cap:!!game.winner.cap}:null,
     log:game.log.slice(-5),
     useTimer:game.useTimer,turnSec:game.turnSec,penSec:game.penSec};

@@ -60,6 +60,18 @@
   .wc-move{font-size:22px;font-weight:700;margin-top:2px;color:#fff;}
   .wc-foot{margin-top:14px;font-size:14px;letter-spacing:1px;}
   .wc-foot b{color:#fff;letter-spacing:3px;margin-left:6px;}
+  /* OH NO! back-card moment */
+  .ohno{display:none;position:fixed;inset:0;z-index:1100;align-items:center;justify-content:center;background:rgba(110,0,0,.5);padding:18px;}
+  .ohno.show{display:flex;animation:ohnoIn .2s ease;}
+  @keyframes ohnoIn{from{opacity:0;}to{opacity:1;}}
+  .ohno-card{background:linear-gradient(160deg,#2a0c0c,#140505);border:3px solid var(--red);border-radius:22px;padding:28px 24px;text-align:center;box-shadow:0 0 55px rgba(232,54,61,.65);max-width:330px;width:100%;animation:ohnoShake .5s;}
+  @keyframes ohnoShake{0%,100%{transform:translateX(0) rotate(0);}20%{transform:translateX(-11px) rotate(-2deg);}40%{transform:translateX(11px) rotate(2deg);}60%{transform:translateX(-7px) rotate(-1deg);}80%{transform:translateX(7px) rotate(1deg);}}
+  .ohno-big{font-size:48px;font-weight:900;color:var(--red);letter-spacing:2px;line-height:1;text-shadow:0 0 22px rgba(232,54,61,.7);}
+  .ohno-arrow{font-size:84px;font-weight:900;color:var(--red);line-height:.9;margin:4px 0;animation:ohnoBob .6s infinite alternate;}
+  @keyframes ohnoBob{from{transform:translateY(-5px);}to{transform:translateY(7px);}}
+  .ohno-txt{font-size:30px;font-weight:900;color:#fff;}
+  .ohno-sub{font-size:16px;color:var(--text2);margin-top:6px;}
+  .ohno-tap{font-size:12px;color:var(--text3);margin-top:16px;}
   .stand{margin-top:22px;}
   .stand .sh{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-weight:700;margin-bottom:8px;}
   .srow{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;}
@@ -97,6 +109,8 @@
   </div>
 </div>
 
+<div class="ohno" id="ohno"></div>
+
 <div id="joinScreen" class="screen active">
   <h1>WODLY</h1>
   <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
@@ -133,7 +147,10 @@
 const W=window.WODLY, sb=W.makeClient(), myId=W.clientId();
 const $=id=>document.getElementById(id);
 const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
-let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null;
+let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null;
+function showOhNo(ev){const el=$('ohno');el.innerHTML=`<div class="ohno-card"><div class="ohno-big">OH NO!</div><div class="ohno-arrow">↓</div><div class="ohno-txt">Go back ${ev.val}</div><div class="ohno-sub">${W.SYM[ev.suit]||''} — back ${ev.val} space${ev.val>1?'s':''}</div><div class="ohno-tap">tap to dismiss</div></div>`;
+  el.classList.add('show');el.onclick=()=>el.classList.remove('show');
+  clearTimeout(ohnoT);ohnoT=setTimeout(()=>el.classList.remove('show'),2800);}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
 function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function cardHTML(c){const ace=c.kind==='ace';const col=ace?'#9b59b6':(W.SCOL[c.suit]||'#F5A623');const sym=W.SYM[c.suit]||'';const label=ace?'A':(c.label||'');
@@ -195,6 +212,7 @@ function renderState(state){
   const body=$('playBody'), phase=state.phase;
   const mp=myPlayer(state);
   if(mp)$('mePos').textContent=mp.pos;
+  if(mp&&mp.event&&mp.event.type==='back'&&mp.event.eid!==seenEid){seenEid=mp.event.eid;showOhNo(mp.event);}
   renderStandings(state);renderRecentLog(state);
   // finished
   if(phase==='finished'&&state.winner){const av=W.AVATARS.find(a=>a.id===state.winner.avatar);clearCd();
