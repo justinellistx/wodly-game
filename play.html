@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0d0d0d">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
-  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;--border:#333;--text:#fff;--text2:#aaa;--text3:#666;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--purple:#9b59b6;--bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;--border:#333;--text:#fff;--text2:#aaa;--text3:#666;}
   body{font-family:system-ui,sans-serif;background:var(--bg);color:#fff;min-height:100vh;padding:18px;}
   .screen{display:none;}.screen.active{display:block;}
   h1{font-size:30px;font-weight:900;letter-spacing:6px;text-align:center;margin-top:8px;}
@@ -25,14 +25,32 @@
   .av-card.sel{border-color:var(--orange);background:rgba(245,166,35,.12);}
   .av-card.taken{opacity:.3;pointer-events:none;}
   .av-card img{width:84px;height:84px;object-fit:contain;}
-  .av-card .nm{font-size:12px;color:var(--text2);margin-top:4px;font-weight:600;}
-  .av-card.sel .nm{color:var(--orange);}
-  .waitwrap{text-align:center;padding-top:30px;}
-  .waitwrap img{width:140px;height:140px;object-fit:contain;}
-  .waitwrap h2{font-size:22px;font-weight:800;margin-top:10px;}
-  .waitwrap .sub{color:var(--text2);font-size:14px;margin-top:8px;}
+  .av-card .nm{font-size:12px;color:var(--text2);margin-top:4px;font-weight:600;}.av-card.sel .nm{color:var(--orange);}
+  /* play screen */
+  .me-head{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;}
+  .me-head img{width:54px;height:54px;object-fit:contain;}
+  .me-head .mn{font-size:17px;font-weight:800;}.me-head .ms{font-size:12px;color:var(--text3);}
+  .me-head .mpos{margin-left:auto;text-align:right;}.me-head .mpos b{font-size:20px;color:var(--orange);}.me-head .mpos span{font-size:11px;color:var(--text3);display:block;}
+  .panel{text-align:center;padding:26px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--border);}
+  .panel.upnext{border-color:var(--orange);}
+  .panel .big{font-size:22px;font-weight:800;margin-bottom:6px;}
+  .panel .sub{font-size:14px;color:var(--text2);}
+  .imup{width:100%;padding:22px;font-size:24px;font-weight:900;letter-spacing:1px;background:var(--orange);border:none;border-radius:18px;color:#000;cursor:pointer;animation:glow 1.4s infinite alternate;}
+  @keyframes glow{from{box-shadow:0 0 0 rgba(245,166,35,.3);}to{box-shadow:0 0 26px rgba(245,166,35,.6);}}
+  .card-do{padding:22px;border-radius:18px;text-align:center;}
+  .card-do.work{background:rgba(245,166,35,.12);border:2px solid var(--orange);}
+  .card-do.ace{background:rgba(155,89,182,.14);border:2px solid var(--purple);}
+  .card-do .tag{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;}
+  .card-do.work .tag{color:var(--orange);}.card-do.ace .tag{color:var(--purple);}
+  .card-do .reps{font-size:58px;font-weight:900;line-height:1;margin:6px 0;}
+  .card-do .move{font-size:22px;font-weight:700;margin-bottom:18px;}
+  .donebtn{width:100%;padding:18px;font-size:20px;font-weight:900;background:var(--green);border:none;border-radius:16px;color:#000;cursor:pointer;}
+  .others{margin-top:18px;}
+  .orow{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;}
+  .orow .od{width:12px;height:12px;border-radius:50%;}.orow .on{font-size:13px;flex:1;}.orow .op{font-size:12px;color:var(--text3);}
   .pill{display:inline-block;margin-top:18px;padding:8px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text2);}
   .pill b{color:var(--orange);letter-spacing:3px;}
+  .winbox{text-align:center;padding:30px 16px;}.winbox img{width:130px;height:130px;object-fit:contain;}.winbox h2{font-size:26px;font-weight:900;margin-top:10px;}
   .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:16px;}
   .disc-overlay.show{display:flex;}
   .disc-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:20px 18px;max-width:360px;width:100%;max-height:90vh;overflow-y:auto;}
@@ -43,7 +61,6 @@
 </style>
 </head>
 <body>
-
 <div class="disc-overlay" id="discOverlay">
   <div class="disc-box">
     <h2>WODLY</h2><div class="disc-sub">Before you play</div>
@@ -73,97 +90,92 @@
   <div class="err" id="avErr"></div>
 </div>
 
-<div id="waitScreen" class="screen">
-  <div class="waitwrap">
-    <img id="waitImg" alt="">
-    <h2 id="waitName">You're in!</h2>
-    <div class="sub" id="waitSub">Waiting for the game to start…</div>
-    <div class="pill">Room <b id="waitCode">····</b></div>
+<div id="playScreen" class="screen">
+  <div class="me-head">
+    <img id="meImg" alt="">
+    <div><div class="mn" id="meName">You</div><div class="ms" id="meRoom">Room ····</div></div>
+    <div class="mpos"><b id="mePos">0</b><span>your space</span></div>
   </div>
+  <div id="playBody"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="wodly-core.js"></script>
 <script>
-const W = window.WODLY;
-const sb = W.makeClient();
-const myId = W.clientId();
-const $ = id => document.getElementById(id);
-let room = null, me = null, chosen = null, takenIds = [];
+const W=window.WODLY, sb=W.makeClient(), myId=W.clientId();
+const $=id=>document.getElementById(id);
+let room=null, me=null, chosen=null, takenIds=[], stateChan=null, lastActiveKey='';
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
 
-function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
-
-// ── Disclaimer ──
+// disclaimer
 const DISC_KEY='wodly_disc_v1';
 $('discAccept').onclick=()=>{try{localStorage.setItem(DISC_KEY,'1');}catch(e){}$('discOverlay').classList.remove('show');};
 (function(){let s=false;try{s=localStorage.getItem(DISC_KEY)==='1';}catch(e){}if(!s)$('discOverlay').classList.add('show');})();
 
-// Prefill code from ?room=
-const params = new URLSearchParams(location.search);
-const pre = (params.get('room')||'').toUpperCase().slice(0,4);
-if(pre) $('codeIn').value = pre;
+const params=new URLSearchParams(location.search);
+const pre=(params.get('room')||'').toUpperCase().slice(0,4);if(pre)$('codeIn').value=pre;
 
-async function lookupRoom(code){
-  const { data } = await sb.from('rooms').select('*').eq('code', code).maybeSingle();
-  return data;
-}
+async function lookupRoom(code){const{data}=await sb.from('rooms').select('*').eq('code',code).maybeSingle();return data;}
 
-$('toAvatars').onclick = async () => {
-  const code = $('codeIn').value.trim().toUpperCase();
-  const name = $('nameIn').value.trim();
-  $('joinErr').textContent = '';
-  if(code.length !== 4){ $('joinErr').textContent = 'Enter the 4-letter room code.'; return; }
-  if(!name){ $('joinErr').textContent = 'Enter your name.'; return; }
-  room = await lookupRoom(code);
-  if(!room){ $('joinErr').textContent = "That room code wasn't found."; return; }
-  // existing player for this device? (reconnect)
-  const { data: existing } = await sb.from('players').select('*').eq('room_id', room.id).eq('client_id', myId).maybeSingle();
-  const { data: roster } = await sb.from('players').select('avatar,client_id').eq('room_id', room.id);
-  takenIds = (roster||[]).filter(p=>p.client_id!==myId).map(p=>p.avatar);
-  if(existing){ me = existing; chosen = existing.avatar; }
-  renderAvatars();
-  show('avatarScreen');
+$('toAvatars').onclick=async()=>{
+  const code=$('codeIn').value.trim().toUpperCase(),name=$('nameIn').value.trim();$('joinErr').textContent='';
+  if(code.length!==4){$('joinErr').textContent='Enter the 4-letter room code.';return;}
+  if(!name){$('joinErr').textContent='Enter your name.';return;}
+  room=await lookupRoom(code);if(!room){$('joinErr').textContent="That room code wasn't found.";return;}
+  const{data:existing}=await sb.from('players').select('*').eq('room_id',room.id).eq('client_id',myId).maybeSingle();
+  const{data:roster}=await sb.from('players').select('avatar,client_id').eq('room_id',room.id);
+  takenIds=(roster||[]).filter(p=>p.client_id!==myId).map(p=>p.avatar);
+  if(existing){me=existing;chosen=existing.avatar;}
+  renderAvatars();show('avatarScreen');
 };
+function renderAvatars(){const g=$('avGrid');g.innerHTML='';
+  W.AVATARS.forEach(a=>{const taken=takenIds.includes(a.id);const d=document.createElement('div');d.className='av-card'+(chosen===a.id?' sel':'')+(taken?' taken':'');
+    d.innerHTML=`<img src="${a.img}" alt="${a.name}"><div class="nm">${a.name}</div>`;
+    if(!taken)d.onclick=()=>{chosen=a.id;renderAvatars();$('joinBtn').disabled=false;};g.appendChild(d);});
+  $('joinBtn').disabled=!chosen;}
+$('joinBtn').onclick=async()=>{if(!chosen)return;$('avErr').textContent='';const name=$('nameIn').value.trim();const av=W.AVATARS.find(a=>a.id===chosen);
+  const{count}=await sb.from('players').select('*',{count:'exact',head:true}).eq('room_id',room.id);
+  const row={room_id:room.id,client_id:myId,name,avatar:chosen,color:av.color,connected:true,last_seen:new Date().toISOString()};if(!me)row.seat=count||0;
+  const{data,error}=await sb.from('players').upsert(row,{onConflict:'room_id,client_id'}).select().single();
+  if(error){$('avErr').textContent='Join failed: '+error.message;return;}me=data;enterPlay();};
 
-function renderAvatars(){
-  const g = $('avGrid'); g.innerHTML = '';
-  W.AVATARS.forEach(a => {
-    const taken = takenIds.includes(a.id);
-    const d = document.createElement('div');
-    d.className = 'av-card' + (chosen===a.id?' sel':'') + (taken?' taken':'');
-    d.innerHTML = `<img src="${a.img}" alt="${a.name}"><div class="nm">${a.name}</div>`;
-    if(!taken) d.onclick = () => { chosen = a.id; renderAvatars(); $('joinBtn').disabled = false; };
-    g.appendChild(d);
-  });
-  $('joinBtn').disabled = !chosen;
-}
-
-$('joinBtn').onclick = async () => {
-  if(!chosen) return;
-  $('avErr').textContent = '';
-  const name = $('nameIn').value.trim();
-  const av = W.AVATARS.find(a=>a.id===chosen);
-  const { count } = await sb.from('players').select('*',{count:'exact',head:true}).eq('room_id', room.id);
-  const row = { room_id:room.id, client_id:myId, name, avatar:chosen, color:av.color, connected:true, last_seen:new Date().toISOString() };
-  if(!me) row.seat = count || 0;
-  const { data, error } = await sb.from('players')
-    .upsert(row, { onConflict:'room_id,client_id' }).select().single();
-  if(error){ $('avErr').textContent = 'Join failed: '+error.message; return; }
-  me = data;
-  enterWaiting();
-};
-
-function enterWaiting(){
-  const av = W.AVATARS.find(a=>a.id===me.avatar);
-  $('waitImg').src = av ? av.img : '';
-  $('waitName').textContent = me.name + ", you're in!";
-  $('waitCode').textContent = room.code;
-  show('waitScreen');
-  sb.channel('pl-'+room.id)
-    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'rooms', filter:'id=eq.'+room.id },
-        p => { if(p.new.status==='playing'){ $('waitSub').textContent='Game starting…'; } })
+function enterPlay(){
+  const av=W.AVATARS.find(a=>a.id===me.avatar);
+  $('meImg').src=av?av.img:'';$('meName').textContent=me.name;$('meRoom').textContent='Room '+room.code;
+  show('playScreen');renderState(room.state||{});
+  if(stateChan)sb.removeChannel(stateChan);
+  stateChan=sb.channel('state-'+room.id)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:'id=eq.'+room.id},p=>{room=Object.assign(room,p.new);renderState(p.new.state||{});})
     .subscribe();
 }
+function sendIntent(type){sb.from('intents').insert({room_id:room.id,player_id:me.id,type});}
+
+function renderState(state){
+  const body=$('playBody');const phase=state.phase;
+  if(state.positions&&state.positions[me.id]!=null)$('mePos').textContent=state.positions[me.id];
+  // finished
+  if(phase==='finished'&&state.winner){const av=W.AVATARS.find(a=>a.id===state.winner.avatar);
+    body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${state.winner.id===me.id?'You win! 🏆':esc(state.winner.name)+' wins!'}</h2><div class="pill">Room <b>${room.code}</b></div></div>`;return;}
+  // lobby / not started
+  if(phase!=='playing'){body.innerHTML=`<div class="panel"><div class="big">You're in!</div><div class="sub">Waiting for the game to start…</div><div class="pill">Room <b>${room.code}</b></div></div>`;lastActiveKey='';return;}
+  const active=state.active;
+  if(active&&active.playerId===me.id&&active.needsDone){
+    const isAce=active.kind==='ace';const k='do-'+active.playerId+'-'+active.kind+'-'+active.reps;
+    body.innerHTML=`<div class="card-do ${isAce?'ace':'work'}"><div class="tag">${isAce?'Ace penalty — your turn':'Your turn'}</div>
+      <div class="reps">${active.reps}</div><div class="move">${esc(active.move||'')}</div>
+      <button class="donebtn" id="doneBtn">DONE ✓</button></div>`;
+    $('doneBtn').onclick=()=>{$('doneBtn').disabled=true;$('doneBtn').textContent='Saved!';sendIntent(isAce?'penalty_done':'done');};
+    lastActiveKey=k;return;}
+  if(active){ // someone else is up
+    const detail=active.status==='rolling'?'rolling the dice…':(active.kind==='ace'?('penalty — '+active.reps+' '+active.move):(active.reps+' '+(active.move||'')));
+    body.innerHTML=`<div class="panel"><div class="big">${esc(active.name)} is up</div><div class="sub">${esc(detail)}</div></div>`+othersHtml(state);lastActiveKey='';return;}
+  // idle — anyone can claim
+  body.innerHTML=`<button class="imup" id="imupBtn">I'M UP!</button><div class="sub" style="text-align:center;margin-top:12px;color:var(--text3)">Tap when you're ready to take your turn</div>`+othersHtml(state);
+  $('imupBtn').onclick=()=>{$('imupBtn').disabled=true;$('imupBtn').textContent='…';sendIntent('claim');};
+  lastActiveKey='';
+}
+function othersHtml(state){return '';}
+function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 </script>
 </body>
 </html>
