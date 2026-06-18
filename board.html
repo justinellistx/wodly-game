@@ -223,7 +223,7 @@
 <script>
 const W=window.WODLY, sb=W.makeClient(), hostId=W.clientId();
 const $=id=>document.getElementById(id);
-let room=null, channel=null, players=[], game=null;
+let room=null, channel=null, players=[], game=null, vpos={};
 let gameClockInt=null, turnInt=null, capFired=false;
 const PLAY_URL=location.origin+'/play';
 const SYM=W.SYM, SCOL=W.SCOL, BRAND=W.BRAND;
@@ -341,7 +341,7 @@ function drawBoard(){const cv=$('boardCanvas'),ctx=cv.getContext('2d'),W2=cv.wid
   }}
 function drawTokens(anim){const cv=$('tokenCanvas'),ctx=cv.getContext('2d'),W2=cv.width,H=cv.height;ctx.clearRect(0,0,W2,H);if(!game)return;
   const total=game.total,offs=[[-16,-6],[16,-6],[-16,14],[16,14],[0,-16],[0,16]];
-  game.players.forEach((p,pi)=>{const ap=anim?anim[pi]:p.pos,fp=Math.floor(ap),fr=ap-fp;let cx,cy;
+  game.players.forEach((p,pi)=>{const ap=(vpos[p.id]!=null)?vpos[p.id]:(anim?anim[pi]:p.pos),fp=Math.floor(ap),fr=ap-fp;let cx,cy;
     if(fr>0&&fp<total-1){const a=spaceXY(fp,total,W2,H),b=spaceXY(fp+1,total,W2,H);cx=a.x+(b.x-a.x)*fr;cy=a.y+(b.y-a.y)*fr-Math.sin(fr*Math.PI)*20;}
     else{const sP=spaceXY(Math.min(fp,total-1),total,W2,H);cx=sP.x;cy=sP.y;}
     const[ox,oy]=offs[pi%6];cx+=ox;cy+=oy;
@@ -352,14 +352,24 @@ function drawTokens(anim){const cv=$('tokenCanvas'),ctx=cv.getContext('2d'),W2=c
     ctx.fillStyle='#fff';ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((p.name||'?')[0].toUpperCase(),cx,cy+1);ctx.textBaseline='alphabetic';
   });}
 let rafId=null;
-function animDice(final,cb){let t=0;const start=performance.now();
-  function frame(now){t=now-start;drawTokens(null);if(t>=700){cb();return;}requestAnimationFrame(frame);}requestAnimationFrame(frame);}
-function animToken(p,from,to,cb){const pi=game.players.indexOf(p),steps=Math.abs(to-from),fwd=to>=from;if(steps===0){cb();return;}
-  const states=game.players.map(x=>x.pos);states[pi]=from;let done=0;
-  function step(){const s=states[pi],t0=performance.now();
-    function frame(now){const t=Math.min((now-t0)/200,1),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;states[pi]=fwd?s+e:s-e;drawTokens(states);
-      if(t<1)requestAnimationFrame(frame);else{states[pi]=fwd?s+1:s-1;done++;if(done<steps)step();else{p.pos=to;drawTokens(null);cb();}}}
-    requestAnimationFrame(frame);}step();}
+function drawDie(ctx,cx,cy,S,val){ctx.save();
+  ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.roundRect(cx-S/2-7,cy-S/2-7,S+14,S+14,S*0.22);ctx.fill();
+  ctx.fillStyle='#fafafa';ctx.strokeStyle='#1a1a1a';ctx.lineWidth=S*0.04;ctx.beginPath();ctx.roundRect(cx-S/2,cy-S/2,S,S,S*0.18);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#1a1a1a';const o=S*0.26,r=S*0.08;
+  const pips={1:[[0,0]],2:[[-o,-o],[o,o]],3:[[-o,-o],[0,0],[o,o]],4:[[-o,-o],[o,-o],[-o,o],[o,o]],5:[[-o,-o],[o,-o],[0,0],[-o,o],[o,o]],6:[[-o,-o],[o,-o],[-o,0],[o,0],[-o,o],[o,o]]};
+  (pips[val]||[]).forEach(([dx,dy])=>{ctx.beginPath();ctx.arc(cx+dx,cy+dy,r,0,Math.PI*2);ctx.fill();});ctx.restore();}
+function animDice(dv,cb){const cv=$('cardOverlay'),ctx=cv.getContext('2d'),W2=cv.width,H=cv.height,cx=W2/2,cy=H/2,S=Math.min(W2,H)*0.22;
+  const t0=performance.now(),DUR=750;
+  function frame(now){const el=now-t0;ctx.clearRect(0,0,W2,H);const face=el<DUR-130?(1+Math.floor(Math.random()*6)):dv;drawDie(ctx,cx,cy,S,face);
+    if(el<DUR)requestAnimationFrame(frame);else setTimeout(()=>{ctx.clearRect(0,0,W2,H);cb&&cb();},230);}
+  requestAnimationFrame(frame);}
+function walkToken(pid,from,to,cb){const steps=Math.abs(to-from),fwd=to>=from;if(!steps){cb&&cb();return;}
+  let done=0,s=from;
+  function step(){const t0=performance.now();
+    function frame(now){const t=Math.min((now-t0)/170,1),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;vpos[pid]=fwd?s+e:s-e;drawTokens();
+      if(t<1)requestAnimationFrame(frame);else{s=fwd?s+1:s-1;vpos[pid]=s;done++;if(done<steps)step();else cb&&cb();}}
+    requestAnimationFrame(frame);}
+  step();}
 function flashCard(opts,cb){const cv=$('cardOverlay'),ctx=cv.getContext('2d'),W2=cv.width,H=cv.height,CW=120,CH=168,cx=W2/2,cy=H/2;
   const t0=performance.now(),HOLD=opts.hold||1100,FADE=400,TOTAL=HOLD+FADE;
   function frame(now){const el=Math.min(now-t0,TOTAL);let a=el>HOLD?1-(el-HOLD)/FADE:1;a=Math.max(0,a);ctx.clearRect(0,0,W2,H);ctx.save();ctx.globalAlpha=a;
@@ -389,31 +399,41 @@ function onIntent(it){if(!game)return;
 function onClaim(pid){if(!game||game.busy||game.active||game.winner)return;
   const p=game.players.find(x=>x.id===pid);if(!p)return;
   game.busy=true;stopTurnTimer();
-  const dv=Math.floor(Math.random()*6)+1;
-  const from=p.pos;
-  // Resolve the whole turn synchronously (state never depends on animation).
-  let pos=Math.min(p.pos+dv,game.total-1), guard=0, res=null;
+  const dv=Math.floor(Math.random()*6)+1, from=p.pos, total=game.total;
+  // Resolve synchronously, recording the walk segments + the card to flash at each landing.
+  let segs=[], pos=from, dest=Math.min(from+dv,total-1), res=null, guard=0;
   while(guard++<60){
-    if(pos>=game.total-1){res={win:true,pos:game.total-1};break;}
+    segs.push({from:pos,to:dest,flash:null});
+    pos=dest;
+    if(pos>=total-1){res={win:true,pos:total-1};break;}
     if(pos<=0){res={end:true,pos:0};break;}
     let lc=game.landed[pos];
     if(!lc){if(!game.deck.length)game.deck=W.buildDeck();const c=game.deck.pop();const kind=W.cardType(c.val);
       lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
-    if(lc.kind==='skip'){pos=Math.min(pos+2,game.total-1);continue;}
-    if(lc.kind==='back'){pos=Math.max(pos-lc.val,0);continue;}
-    if(lc.kind==='ace'){res={kind:'ace',pos,reps:game.ace.reps,move:game.ace.move,suit:lc.suit};break;}
-    res={kind:'workout',pos,reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit};break;
+    const L=segs[segs.length-1];
+    if(lc.kind==='skip'){L.flash={kind:'skip',color:BRAND.green};dest=Math.min(pos+2,total-1);continue;}
+    if(lc.kind==='back'){L.flash={kind:'back',val:lc.val,color:BRAND.red};dest=Math.max(pos-lc.val,0);continue;}
+    if(lc.kind==='ace'){L.flash={kind:'ace',suit:lc.suit,reps:game.ace.reps,move:game.ace.move,color:'#9b59b6'};res={kind:'ace',pos,reps:game.ace.reps,move:game.ace.move,suit:lc.suit};break;}
+    L.flash={kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,color:SCOL[lc.suit]};res={kind:'workout',pos,reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit};break;
   }
   p.pos=res.pos;
-  if(res.win){drawBoard();drawTokens(null);renderGPlist();return win(p);}
-  if(res.end){game.busy=false;drawBoard();drawTokens(null);banner('Tap “I’m up!” on your phone','info');renderGPlist();writeState();return;}
-  game.active={playerId:p.id,name:p.name,avatar:p.avatar,color:p.color,status:res.kind,kind:res.kind,reps:res.reps,move:res.move,label:res.label||null,suit:res.suit||null,needsDone:true};
-  drawBoard();drawTokens(null);renderGPlist();
-  banner(p.name+' moved '+dv+' — '+res.reps+' '+res.move,(res.kind==='ace'?'ace':'warning'));
-  writeState();
-  startTurnTimer(res.kind==='ace'?game.penSec:game.turnSec, res.reps+' '+res.move);
-  // cosmetic only (safe if throttled in a background tab)
-  try{flashCard(res.kind==='ace'?{kind:'ace',suit:res.suit,reps:res.reps,move:res.move,color:'#9b59b6'}:{kind:'workout',suit:res.suit,label:res.label,reps:res.reps,move:res.move,color:SCOL[res.suit]},()=>{});}catch(e){}
+  // Advance state immediately so phones get the card right away (independent of animation).
+  if(res.end){game.busy=false;banner('Tap “I’m up!” on your phone','info');}
+  else if(!res.win){game.active={playerId:p.id,name:p.name,avatar:p.avatar,color:p.color,status:res.kind,kind:res.kind,reps:res.reps,move:res.move,label:res.label||null,suit:res.suit||null,needsDone:true};
+    banner(p.name+' rolled '+dv,(res.kind==='ace'?'ace':'warning'));writeState();startTurnTimer(res.kind==='ace'?game.penSec:game.turnSec,res.reps+' '+res.move);}
+  if(res.end)writeState();
+  renderGPlist();
+  // Cosmetic animation: dice tumble -> step walk -> card flip at each landing (never gates state).
+  vpos[p.id]=from;drawBoard();drawTokens();
+  animDice(dv,()=>{
+    let i=0;
+    (function nextSeg(){
+      if(i>=segs.length){delete vpos[p.id];drawBoard();drawTokens();if(res.win)win(p);return;}
+      const seg=segs[i++];
+      walkToken(p.id,seg.from,seg.to,()=>{drawBoard();drawTokens();
+        if(seg.flash){try{flashCard(seg.flash,()=>nextSeg());}catch(e){nextSeg();}}else nextSeg();});
+    })();
+  });
 }
 function onDone(pid){if(!game||!game.active||!game.active.needsDone||game.active.playerId!==pid)return;
   const p=game.players.find(x=>x.id===pid);stopTurnTimer();finishTurn(p,p.pos);}
