@@ -10,7 +10,7 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--purple:#9b59b6;--bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;--border:#333;--text:#fff;--text2:#aaa;--text3:#666;}
   body{font-family:system-ui,sans-serif;background:var(--bg);color:#fff;min-height:100vh;padding:24px;}
-  .wrap{max-width:1100px;margin:0 auto;}
+  .wrap{max-width:1440px;margin:0 auto;}
   .screen{display:none;}.screen.active{display:block;}
   h1{font-size:40px;font-weight:900;letter-spacing:8px;text-align:center;}
   .tagline{text-align:center;font-size:13px;font-weight:700;letter-spacing:3px;margin-bottom:24px;}
@@ -82,6 +82,33 @@
   #boardWrap{position:relative;margin:0 auto 18px;line-height:0;}
   #boardCanvas{width:100%;border-radius:14px;display:block;}
   #tokenCanvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:14px;pointer-events:none;}
+  /* game dashboard layout */
+  #setupScreen,#winScreen{max-width:1080px;margin:0 auto;}
+  .gamegrid{display:grid;grid-template-columns:minmax(320px,360px) 1fr minmax(190px,230px);gap:16px;align-items:start;}
+  .gcol{display:flex;flex-direction:column;gap:10px;min-width:0;}
+  .gcol .sec{margin-top:4px;}
+  #gboard{display:flex;flex-direction:column;align-items:center;min-width:0;}
+  .boardhint{font-size:11px;color:var(--text3);margin-top:8px;text-align:center;}
+  .gleft table.stand th{padding:4px 6px;font-size:10px;}
+  .gleft table.stand td{padding:7px 6px;}
+  .gleft .team{gap:7px;}
+  .gleft .team img{width:26px;height:26px;}
+  .gleft .team .nm{font-size:13px;}
+  .gleft .team .dot{width:10px;height:10px;}
+  .gleft .pos{font-size:12px;}
+  .gleft .pos .bar2{width:44px;margin-left:5px;}
+  .gleft .die{width:26px;height:26px;font-size:14px;}
+  .gleft .doing{font-size:12px;}
+  .gleft .recent{gap:8px;}
+  .gleft .mini{width:84px;padding:8px 5px 6px;}
+  .gleft .mini .mp{font-size:22px;}
+  .gleft .mini .mr{font-size:15px;}
+  /* focus / enlarge mode */
+  #gameScreen.focus .gtop,#gameScreen.focus .sponsor,#gameScreen.focus .gleft,#gameScreen.focus .gright{display:none;}
+  #gameScreen.focus .gamegrid{display:block;}
+  #gameScreen.focus #gboard{position:fixed;inset:0;z-index:600;background:rgba(4,4,5,.985);justify-content:center;}
+  #gameScreen.focus .boardhint{position:fixed;left:0;right:0;bottom:14px;z-index:601;color:var(--text2);}
+  @media(max-width:920px){.gamegrid{grid-template-columns:1fr;}}
   /* standings */
   table.stand{width:100%;border-collapse:collapse;}
   table.stand th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-weight:700;padding:6px 10px;}
@@ -214,17 +241,24 @@
   <!-- GAME -->
   <div id="gameScreen" class="screen">
     <div class="gtop"><h2>WODLY</h2><button class="ghost" id="quitBtn">End game</button></div>
-    <div class="clocks">
-      <div class="clock"><div class="cl">Game clock</div><div class="cv" id="gameClock">0:00</div></div>
-      <div class="clock"><div class="cl">Room</div><div class="room" id="gameCode">····</div></div>
-      <div class="clock" id="capBox" style="display:none;"><div class="cl">Time cap</div><div class="cv" id="capClock">—</div></div>
-    </div>
     <div class="sponsor" id="sponsor" style="display:none;"></div>
-    <div id="boardWrap"><canvas id="boardCanvas"></canvas><canvas id="tokenCanvas"></canvas></div>
-    <div class="sec">Last 5 cards</div>
-    <div class="recent" id="recent"><div style="color:var(--text3);font-size:14px;">No cards played yet…</div></div>
-    <div class="sec">Standings — everyone rolls on their own phone</div>
-    <table class="stand"><thead><tr><th>Team</th><th>Position</th><th>Rolled</th><th>Now doing</th></tr></thead><tbody id="standBody"></tbody></table>
+    <div class="gamegrid">
+      <aside class="gcol gleft">
+        <div class="sec">Standings</div>
+        <table class="stand"><thead><tr><th>Team</th><th>Pos</th><th>Roll</th><th>Doing</th></tr></thead><tbody id="standBody"></tbody></table>
+        <div class="sec">Last 5 cards</div>
+        <div class="recent" id="recent"><div style="color:var(--text3);font-size:13px;">No cards played yet…</div></div>
+      </aside>
+      <div id="gboard">
+        <div id="boardWrap"><canvas id="boardCanvas"></canvas><canvas id="tokenCanvas"></canvas></div>
+        <div class="boardhint">⤢ Double-click the board to enlarge or exit</div>
+      </div>
+      <aside class="gcol gright">
+        <div class="clock"><div class="cl">Game clock</div><div class="cv" id="gameClock">0:00</div></div>
+        <div class="clock" id="capBox" style="display:none;"><div class="cl">Time cap</div><div class="cv" id="capClock">—</div></div>
+        <div class="clock"><div class="cl">Room</div><div class="room" id="gameCode">····</div></div>
+      </aside>
+    </div>
   </div>
 
   <!-- WIN -->
@@ -340,10 +374,12 @@ $('startBtn').onclick=async()=>{
 };
 
 // ── Canvas + winding board ──
-function sizeCanvas(){const wrap=$('boardWrap');
-  const pw=(wrap.parentElement&&wrap.parentElement.clientWidth)||wrap.clientWidth||900;
-  const maxH=Math.max(360,(window.innerHeight||820)-230);
-  const side=Math.max(340,Math.min(pw,maxH));
+function sizeCanvas(){const wrap=$('boardWrap'),gs=$('gameScreen'),focus=gs&&gs.classList.contains('focus');
+  let side;
+  if(focus){side=Math.max(360,Math.min(window.innerWidth,window.innerHeight)-24);}
+  else{const gb=$('gboard'),pw=(gb&&gb.clientWidth)||(wrap.parentElement&&wrap.parentElement.clientWidth)||700;
+    const maxH=Math.max(360,(window.innerHeight||820)-180);
+    side=Math.max(320,Math.min(pw,maxH));}
   wrap.style.width=side+'px';wrap.style.height=side+'px';
   ['boardCanvas','tokenCanvas'].forEach(id=>{const c=$(id);c.width=side*2;c.height=side*2;c.style.width='100%';c.style.height='100%';});
   if(game){const cv=$('boardCanvas');game.path=genPath(game.total,cv.width,cv.height);}}
@@ -375,7 +411,7 @@ function drawBoard(){const cv=$('boardCanvas'),ctx=cv.getContext('2d'),W2=cv.wid
   ctx.strokeStyle='rgba(245,166,35,.4)';ctx.lineWidth=2.5;ctx.setLineDash([5,10]);trail();ctx.setLineDash([]);ctx.restore();
   // nodes
   ctx.textAlign='center';
-  for(let i=0;i<total;i++){const px=P[i].x,py=P[i].y,zone=getZone(i,total),lc=game.landed[i],s=ns,hx=px-s/2,hy=py-s/2;
+  for(let i=0;i<total;i++){const px=P[i].x,py=P[i].y,zone=getZone(i,total),lc=(game.hidden&&game.hidden.has(i))?null:game.landed[i],s=ns,hx=px-s/2,hy=py-s/2;
     const rr=(r)=>{ctx.beginPath();ctx.roundRect(hx,hy,s,s,r);};
     if(i===0){ctx.save();ctx.shadowColor=BRAND.green;ctx.shadowBlur=18;ctx.fillStyle='#0d1f12';rr(11);ctx.fill();ctx.restore();ctx.strokeStyle=BRAND.green;ctx.lineWidth=3;rr(11);ctx.stroke();ctx.fillStyle=BRAND.green;ctx.font='bold '+Math.round(s*0.3)+'px system-ui';ctx.fillText('GO',px,py+s*0.1);}
     else if(i===total-1){ctx.save();ctx.shadowColor=BRAND.orange;ctx.shadowBlur=24;ctx.fillStyle='#241a00';rr(11);ctx.fill();ctx.restore();ctx.strokeStyle=BRAND.orange;ctx.lineWidth=3.5;rr(11);ctx.stroke();ctx.fillStyle=BRAND.orange;ctx.font='bold '+Math.round(s*0.42)+'px system-ui';ctx.fillText('★',px,py-s*0.02);ctx.font='bold '+Math.round(s*0.2)+'px system-ui';ctx.fillText('WIN',px,py+s*0.32);}
@@ -445,21 +481,24 @@ function onRoll(pid,dvRaw){
     hops.push(pos);                       // record each landing so the token visibly visits it
     if(pos>=total-1){res={win:true,pos:total-1};break;}
     if(pos<=0){res={none:true,pos:0};break;}
-    let lc=game.landed[pos];
+    let lc=game.landed[pos];const wasEmpty=!lc;
     if(!lc){if(!game.deck.length)game.deck=W.buildDeck();const c=game.deck.pop();const kind=W.cardType(c.val);
       lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
     if(lc.kind==='skip'){logPush(p,{kind:'skip',suit:lc.suit,label:lc.label,gs:gnow()});skipHit={suit:lc.suit};pos=Math.min(pos+2,total-1);continue;}
     if(lc.kind==='back'){logPush(p,{kind:'back',suit:lc.suit,label:lc.label,val:lc.val,gs:gnow()});backHit={val:lc.val,suit:lc.suit};pos=Math.max(pos-lc.val,0);continue;}
-    if(lc.kind==='ace'){logPush(p,{kind:'ace',suit:lc.suit,label:'A',reps:game.ace.reps,move:game.ace.move,gs:gnow()});res={kind:'ace',pos,card:{kind:'ace',reps:game.ace.reps,move:game.ace.move,suit:lc.suit}};break;}
-    logPush(p,{kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,gs:gnow()});res={kind:'workout',pos,card:{kind:'workout',reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit}};break;
+    if(lc.kind==='ace'){logPush(p,{kind:'ace',suit:lc.suit,label:'A',reps:game.ace.reps,move:game.ace.move,gs:gnow()});res={kind:'ace',pos,fresh:wasEmpty,card:{kind:'ace',reps:game.ace.reps,move:game.ace.move,suit:lc.suit}};break;}
+    logPush(p,{kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,gs:gnow()});res={kind:'workout',pos,fresh:wasEmpty,card:{kind:'workout',reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit}};break;
   }
   p.lastRoll=dv;p.pos=res.pos;
   p.event=backHit?{type:'back',val:backHit.val,suit:backHit.suit,eid:(game.eid=(game.eid||0)+1)}:skipHit?{type:'skip',suit:skipHit.suit,eid:(game.eid=(game.eid||0)+1)}:null;
   if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
+  // keep the freshly-revealed destination card face-down until the token actually lands on it
+  if(!game.hidden)game.hidden=new Set();
+  if((res.kind==='workout'||res.kind==='ace')&&res.fresh)game.hidden.add(res.pos);
   drawBoard();renderStandings();renderRecent();writeState();
   // cosmetic: walk through each landing in order — forward to a back/skip card, pause, then move.
   vpos[p.id]=from;drawTokens();
-  animateHops(p.id,from,hops,()=>{if(res.win)win(p);});
+  animateHops(p.id,from,hops,()=>{if(game.hidden)game.hidden.delete(res.pos);drawBoard();drawTokens();if(res.win)win(p);});
 }
 function animateHops(pid,from,hops,done){let prev=from,i=0;
   (function next(){if(i>=hops.length){delete vpos[pid];drawBoard();drawTokens();if(done)done();return;}
@@ -519,6 +558,9 @@ function renderSponsor(){const el=$('sponsor');if(!el)return;if(!sponsors.length
   if(s.social_url){const q=$('spQr');q.innerHTML='';try{new QRCode(q,{text:s.social_url,width:54,height:54,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}}}
 loadSponsors();
 
+function setFocus(on){const gs=$('gameScreen');if(!gs)return;gs.classList.toggle('focus',!!on);sizeCanvas();if(game){drawBoard();drawTokens();}}
+(function(){const bw=$('boardWrap');if(bw)bw.addEventListener('dblclick',()=>{const gs=$('gameScreen');setFocus(!(gs&&gs.classList.contains('focus')));});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){const gs=$('gameScreen');if(gs&&gs.classList.contains('focus'))setFocus(false);}});})();
 window.addEventListener('resize',()=>{if(game){sizeCanvas();drawBoard();drawTokens();}});
 </script>
 </body>
