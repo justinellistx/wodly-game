@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>WODLY — The Fitness Adventure Board Game</title>
 <meta name="description" content="WODLY turns your workout into a board game. Start a game on the big screen, join from your phone. Train. Play. Compete.">
-<meta name="theme-color" content="#0d0d0d">
+<meta name="theme-color" content="#0a0a0b">
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="WODLY">
@@ -22,26 +22,43 @@
 <meta name="twitter:image" content="https://wodly-game.vercel.app/assets/og-image.png">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
-  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;--border:#333;--text:#fff;--text2:#aaa;--text3:#666;}
-  body{font-family:system-ui,sans-serif;background:var(--bg);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px;}
-  .wrap{width:100%;max-width:440px;text-align:center;}
-  .suits{font-size:26px;letter-spacing:6px;margin-bottom:10px;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--gold:#F5A623;--bg:#0a0a0b;--surface:#161616;--border:#333;--text:#fff;--text2:#aaa;--text3:#777;}
+  body{font-family:system-ui,sans-serif;background:radial-gradient(circle at 50% -8%,#1d1d22,#0a0a0b 62%);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px 20px;position:relative;overflow-x:hidden;}
+  /* gold frame accents echoing the board */
+  body::before,body::after{content:'';position:fixed;left:0;right:0;height:3px;z-index:5;
+    background:linear-gradient(90deg,transparent,rgba(245,166,35,.7) 22%,rgba(245,166,35,.95) 50%,rgba(245,166,35,.7) 78%,transparent);
+    box-shadow:0 0 18px rgba(245,166,35,.45);}
+  body::before{top:0;} body::after{bottom:0;}
+  .wrap{width:100%;max-width:470px;text-align:center;position:relative;z-index:2;}
+  .suits{font-size:23px;letter-spacing:7px;margin-bottom:6px;}
   .suits .h{color:var(--red);}.suits .d{color:var(--orange);}.suits .c{color:var(--green);}.suits .s{color:var(--blue);}
-  h1{font-size:46px;font-weight:900;letter-spacing:9px;}
-  .tagline{font-size:13px;font-weight:700;letter-spacing:3px;margin:6px 0 34px;}
+  h1{font-size:54px;font-weight:900;letter-spacing:11px;text-shadow:0 2px 0 #000,0 0 28px rgba(245,166,35,.35);}
+  .tagline{font-size:12px;font-weight:800;letter-spacing:3px;margin:8px 0 16px;}
   .tagline .t1{color:var(--green);}.tagline .t2{color:var(--orange);}.tagline .t3{color:var(--red);}
-  .choice{display:block;width:100%;text-decoration:none;border-radius:16px;padding:20px;margin-bottom:14px;cursor:pointer;border:none;text-align:left;transition:.15s;}
-  .choice:active{transform:scale(.99);}
-  .choice .ttl{font-size:19px;font-weight:800;display:flex;align-items:center;gap:10px;}
-  .choice .sub{font-size:13px;margin-top:4px;opacity:.85;}
-  .start{background:var(--orange);color:#000;}
-  .join{background:var(--surface);color:#fff;border:2px solid var(--border);}
-  .join .sub{color:var(--text2);}
-  .solo-link{display:inline-block;margin-top:10px;font-size:13px;color:var(--text3);text-decoration:underline;background:none;border:none;cursor:pointer;font-family:inherit;}
-  .foot{margin-top:26px;}
+  .heroes{display:flex;justify-content:center;align-items:flex-end;gap:1px;margin:2px 0 24px;}
+  .heroes img{width:clamp(38px,12.5vw,56px);height:clamp(38px,12.5vw,56px);object-fit:contain;filter:drop-shadow(0 5px 7px rgba(0,0,0,.6));}
+  .heroes img:nth-child(even){transform:translateY(-5px);}
+  .choice{display:block;width:100%;text-decoration:none;border-radius:18px;padding:18px 20px;margin-bottom:14px;cursor:pointer;text-align:left;position:relative;overflow:hidden;transition:transform .12s;}
+  .choice:active{transform:scale(.985);}
+  .choice .tag{position:absolute;top:13px;right:14px;font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:3px 9px;border-radius:20px;z-index:2;}
+  .choice .ttl{font-size:21px;font-weight:900;letter-spacing:.5px;display:flex;align-items:center;gap:10px;position:relative;z-index:2;}
+  .choice .sub{font-size:12.5px;margin-top:5px;line-height:1.45;max-width:90%;position:relative;z-index:2;}
+  /* START = the big-screen board */
+  .start{background:linear-gradient(150deg,#241a06,#120d04);border:2px solid var(--gold);box-shadow:0 0 26px rgba(245,166,35,.22),inset 0 0 32px rgba(245,166,35,.05);}
+  .start::before{content:'';position:absolute;inset:0;opacity:.5;pointer-events:none;
+    background:repeating-linear-gradient(90deg,rgba(245,166,35,.06) 0 1px,transparent 1px 24px),repeating-linear-gradient(0deg,rgba(245,166,35,.06) 0 1px,transparent 1px 24px);}
+  .start .ttl{color:var(--gold);}.start .sub{color:#e8d3a8;}
+  .start .tag{background:rgba(245,166,35,.16);color:var(--gold);border:1px solid rgba(245,166,35,.4);}
+  /* JOIN = the phone card */
+  .join{background:linear-gradient(150deg,#15171c,#0c0d10);border:2px solid var(--blue);box-shadow:0 0 22px rgba(33,150,243,.16);}
+  .join .ttl{color:#fff;}.join .sub{color:var(--text2);}
+  .join .tag{background:rgba(33,150,243,.16);color:#8cc6ff;border:1px solid rgba(33,150,243,.4);}
+  .join .pips{position:absolute;bottom:11px;right:15px;font-size:15px;letter-spacing:3px;opacity:.55;z-index:2;}
+  .join .pips .h{color:var(--red);}.join .pips .d{color:var(--orange);}.join .pips .c{color:var(--green);}.join .pips .s{color:var(--blue);}
+  .foot{margin-top:16px;}
   .foot button{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit;}
   /* disclaimer */
-  .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000;align-items:center;justify-content:center;padding:18px;}
+  .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:18px;}
   .disc-overlay.show{display:flex;}
   .disc-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:22px 20px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto;text-align:left;}
   .disc-box h2{font-size:20px;font-weight:900;letter-spacing:2px;text-align:center;margin-bottom:4px;}
@@ -70,13 +87,26 @@
   <h1>WODLY</h1>
   <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
 
+  <div class="heroes">
+    <img src="assets/characters/ninja.png" alt="">
+    <img src="assets/characters/lifter.png" alt="">
+    <img src="assets/characters/runner.png" alt="">
+    <img src="assets/characters/dragon.png" alt="">
+    <img src="assets/characters/gymnast.png" alt="">
+    <img src="assets/characters/champ.png" alt="">
+    <img src="assets/characters/coach.png" alt="">
+  </div>
+
   <a class="choice start" href="board">
+    <span class="tag">Big screen</span>
     <div class="ttl">▶ Start a game</div>
-    <div class="sub">This screen becomes the board. Join from your phone — one player or a whole class.</div>
+    <div class="sub">This screen becomes the board. Players join from their phones — one player or a whole class.</div>
   </a>
   <a class="choice join" href="play">
+    <span class="tag">Your phone</span>
     <div class="ttl">📲 Join a game</div>
-    <div class="sub">On your phone — enter the room code shown on the board.</div>
+    <div class="sub">Enter the room code shown on the board.</div>
+    <span class="pips"><span class="h">♥</span><span class="d">♦</span><span class="c">♣</span><span class="s">♠</span></span>
   </a>
 
   <div class="foot"><button id="discLink">Health &amp; safety disclaimer</button></div>

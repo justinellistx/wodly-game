@@ -94,6 +94,9 @@
   .lrow .lk{font-size:14px;font-weight:800;margin-left:8px;}
   .winbox{text-align:center;padding:30px 16px;}.winbox img{width:130px;height:130px;object-fit:contain;}.winbox h2{font-size:26px;font-weight:900;margin-top:10px;}
   .pill{display:inline-block;margin-top:14px;padding:8px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text2);}.pill b{color:var(--orange);letter-spacing:3px;}
+  .conn{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;padding:4px 12px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--text3);z-index:50;}
+  .conn.live{color:var(--green);border-color:rgba(76,175,80,.45);}
+  .conn.warn{color:var(--orange);border-color:rgba(245,166,35,.45);}
   .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:16px;}
   .disc-overlay.show{display:flex;}
   .disc-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:20px 18px;max-width:360px;width:100%;max-height:90vh;overflow-y:auto;}
@@ -145,6 +148,7 @@
   <div class="stand" id="standWrap" style="display:none;"><div class="sh">Standings</div><div id="standList"></div></div>
   <div class="stand" id="logWrap" style="display:none;"><div class="sh">Last 5 cards</div><div id="logList"></div></div>
 </div>
+<div id="connPill" class="conn" style="display:none;"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="wodly-core.js"></script>
@@ -154,7 +158,7 @@ const $=id=>document.getElementById(id);
 const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,3,6,2,5,8]};
 function renderDie(n){const on=PIPS[n]||[];let h='';for(let i=0;i<9;i++)h+=`<span class="pip${on.indexOf(i)>=0?' on':''}"></span>`;return h;}
-let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null;
+let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='';
 function showEvent(ev){const el=$('ohno');const skip=ev.type==='skip';
   el.innerHTML=`<div class="ohno-card${skip?' boost':''}"><div class="ohno-big${skip?' boost':''}">${skip?'BOOST!':'OH NO!'}</div><div class="ohno-arrow${skip?' boost':''}">${skip?'↑':'↓'}</div><div class="ohno-txt">${skip?'Skip +2':('Go back '+ev.val)}</div><div class="ohno-sub">${W.SYM[ev.suit]||''} — ${skip?'forward 2 spaces':('back '+ev.val+' space'+(ev.val>1?'s':''))}</div><div class="ohno-tap">tap to dismiss</div></div>`;
   el.classList.add('show');el.onclick=()=>el.classList.remove('show');
@@ -203,14 +207,22 @@ $('joinBtn').onclick=async()=>{if(!chosen)return;$('avErr').textContent='';const
   const{data,error}=await sb.from('players').upsert(row,{onConflict:'room_id,client_id'}).select().single();
   if(error){$('avErr').textContent='Join failed: '+error.message;return;}me=data;enterPlay();};
 
+function setConn(t,cls){const el=$('connPill');if(!el)return;el.style.display='';el.textContent=t;el.className='conn'+(cls?' '+cls:'');}
+function connect(){if(stateChan)sb.removeChannel(stateChan);setConn('Connecting…','warn');
+  stateChan=sb.channel('state-'+room.id)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:'id=eq.'+room.id},p=>{room=Object.assign(room,p.new);renderState(p.new.state||{});})
+    .subscribe(status=>{
+      if(status==='SUBSCRIBED')setConn('● Live','live');
+      else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){setConn('Reconnecting…','warn');clearTimeout(reconnT);reconnT=setTimeout(()=>{if(room)connect();},2500);}
+    });}
+async function pollOnce(){if(!room)return;try{const{data}=await sb.from('rooms').select('state').eq('id',room.id).maybeSingle();if(data){room.state=data.state;renderState(data.state||{});}}catch(e){}}
+function startPolling(){clearInterval(pollInt);pollInt=setInterval(pollOnce,4000);}
 function enterPlay(){
   const av=W.AVATARS.find(a=>a.id===me.avatar);
   $('meImg').src=av?av.img:'';$('meName').textContent=me.name;$('meRoom').textContent='Room '+room.code;
-  show('playScreen');renderState(room.state||{});
-  if(stateChan)sb.removeChannel(stateChan);
-  stateChan=sb.channel('state-'+room.id)
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:'id=eq.'+room.id},p=>{room=Object.assign(room,p.new);renderState(p.new.state||{});})
-    .subscribe();
+  show('playScreen');bodySig='';renderState(room.state||{});
+  connect();startPolling();
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollOnce();});
 }
 function sendIntent(type,payload){return sb.from('intents').insert({room_id:room.id,player_id:me.id,type,payload:payload||{}}).then(({error})=>{if(error)console.warn('intent failed:',error.message);});}
 
@@ -222,6 +234,10 @@ function renderState(state){
   if(mp)$('mePos').textContent=mp.pos;
   if(mp&&mp.event&&(mp.event.type==='back'||mp.event.type==='skip')&&mp.event.eid!==seenEid){seenEid=mp.event.eid;showEvent(mp.event);}
   renderStandings(state);renderRecentLog(state);
+  const sig=phase+'|'+(mp?(mp.status+'|'+mp.pos+'|'+(mp.card?(mp.card.kind+mp.card.reps+(mp.card.move||'')):'no')):'nomp')+'|'+(state.winner?state.winner.id:'');
+  if(sig===bodySig&&!rolling)return; // body unchanged — don't disturb countdown/animations on poll
+  if(rolling)return;
+  bodySig=sig;
   // finished
   if(phase==='finished'&&state.winner){const av=W.AVATARS.find(a=>a.id===state.winner.avatar);clearCd();
     body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${state.winner.id===me.id?'You win! 🏆':esc(state.winner.name)+' wins!'}</h2><div class="pill">Room <b>${room.code}</b></div></div>`;return;}
