@@ -366,7 +366,7 @@ $('startBtn').onclick=async()=>{
     seed:(Math.floor(Math.random()*2e9))>>>0, path:null, nodeSize:44 };
   capFired=false;vpos={};
   await sb.from('rooms').update({status:'playing'}).eq('id',room.id);
-  show('gameScreen');$('gameCode').textContent=room.code;
+  show('gameScreen');$('gameCode').textContent=room.code;loadSponsors().then(pickSponsor);
   $('capBox').style.display=game.timeCap>0?'':'none';
   if(game.timeCap>0)$('capClock').textContent=fmt(game.timeCap);
   sizeCanvas();drawBoard();drawTokens();renderStandings();renderRecent();startGameClock();
@@ -548,12 +548,26 @@ async function writeState(){if(!room||!game)return;
   try{await sb.from('rooms').update({state}).eq('id',room.id);}catch(e){}}
 
 // ── Sponsors ──
-let sponsors=[], spIdx=0, spInt=null;
-async function loadSponsors(){try{const{data}=await sb.from('sponsors').select('*').eq('active',true).order('sort').order('created_at');sponsors=data||[];}catch(e){sponsors=[];}
-  clearInterval(spInt);spIdx=0;renderSponsor();
-  if(sponsors.length>1)spInt=setInterval(()=>{spIdx=(spIdx+1)%sponsors.length;renderSponsor();},12000);}
-function renderSponsor(){const el=$('sponsor');if(!el)return;if(!sponsors.length){el.style.display='none';return;}
-  if(spIdx>=sponsors.length)spIdx=0;const s=sponsors[spIdx];el.style.display='flex';
+let sponsors=[], chosenSponsor=null;
+function spShuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+async function loadSponsors(){try{const{data}=await sb.from('sponsors').select('*').eq('active',true).order('sort').order('created_at');sponsors=data||[];}catch(e){sponsors=[];}}
+// Even-but-random: each new game features ONE sponsor. A shuffle "bag" (saved on this
+// board device) guarantees every sponsor shows once per cycle, in random order.
+function pickSponsor(){
+  if(!sponsors.length){chosenSponsor=null;renderSponsor();return;}
+  if(sponsors.length===1){chosenSponsor=sponsors[0];renderSponsor();return;}
+  const key=sponsors.map(s=>s.id).slice().sort().join(',');
+  let bag=[];
+  try{const raw=JSON.parse(localStorage.getItem('wodly_sponsor_bag')||'null');if(raw&&raw.key===key&&Array.isArray(raw.bag))bag=raw.bag;}catch(e){}
+  bag=bag.filter(id=>sponsors.some(s=>s.id===id));
+  if(!bag.length)bag=spShuffle(sponsors.map(s=>s.id));
+  const nextId=bag.shift();
+  chosenSponsor=sponsors.find(s=>s.id===nextId)||sponsors[0];
+  try{localStorage.setItem('wodly_sponsor_bag',JSON.stringify({key,bag}));}catch(e){}
+  renderSponsor();
+}
+function renderSponsor(){const el=$('sponsor');if(!el)return;const s=chosenSponsor;if(!s){el.style.display='none';return;}
+  el.style.display='flex';
   el.innerHTML=`<span class="sp-lbl">Presented by</span>${s.logo?`<img class="sp-logo" src="${s.logo}" alt="${esc(s.name)}">`:''}<span class="sp-name">${esc(s.name)}</span>${s.website_url?`<span class="sp-web">${esc(s.website_url.replace(/^https?:\/\//,''))}</span>`:''}${s.social_url?`<div class="sp-qrwrap"><div class="sp-qr" id="spQr"></div><span class="sp-scan">Scan for socials</span></div>`:''}`;
   if(s.social_url){const q=$('spQr');q.innerHTML='';try{new QRCode(q,{text:s.social_url,width:54,height:54,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}}}
 loadSponsors();
