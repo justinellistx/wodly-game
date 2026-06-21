@@ -18,7 +18,7 @@
   const SYM = { hearts:'♥', diamonds:'♦', clubs:'♣', spades:'♠' };
   const SCOL = { hearts:BRAND.hearts, diamonds:BRAND.diamonds, clubs:BRAND.clubs, spades:BRAND.spades };
   const FACE_LABELS = { 11:'J', 12:'Q', 13:'K' };
-  const DECK_SPACES = { quick:25, standard:52, large:65 };
+  const DECK_SPACES = { quick:52, standard:104, large:130 };
   const DIFF_MULT = { easy:0.6, medium:1.0, hard:1.4 };
   const PCOLS = ['#F5A623','#E8363D','#4CAF50','#2196F3','#9b59b6','#00BCD4'];
 
