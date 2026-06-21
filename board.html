@@ -476,19 +476,21 @@ function onRoll(pid,dvRaw){
   let dv=parseInt(dvRaw);if(!(dv>=1&&dv<=6))dv=1+Math.floor(Math.random()*6);
   const from=p.pos, total=game.total;
   let pos=Math.min(from+dv,total-1), guard=0, res=null, hops=[], backHit=null, skipHit=null;
+  const seen=new Set();
   const gnow=()=>Math.floor((Date.now()-game.startTime)/1000);
-  while(guard++<60){
+  while(guard++<120){
     hops.push(pos);                       // record each landing so the token visibly visits it
     if(pos>=total-1){res={win:true,pos:total-1};break;}
     if(pos<=0){res={none:true,pos:0};break;}
     let lc=game.landed[pos];const wasEmpty=!lc;
     if(!lc){if(!game.deck.length)game.deck=W.buildDeck();const c=game.deck.pop();const kind=W.cardType(c.val);
       lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
-    if(lc.kind==='skip'){logPush(p,{kind:'skip',suit:lc.suit,label:lc.label,gs:gnow()});skipHit={suit:lc.suit};pos=Math.min(pos+2,total-1);continue;}
-    if(lc.kind==='back'){logPush(p,{kind:'back',suit:lc.suit,label:lc.label,val:lc.val,gs:gnow()});backHit={val:lc.val,suit:lc.suit};pos=Math.max(pos-lc.val,0);continue;}
+    if(lc.kind==='skip'){if(seen.has(pos)){res={none:true,pos};break;}seen.add(pos);logPush(p,{kind:'skip',suit:lc.suit,label:lc.label,gs:gnow()});skipHit={suit:lc.suit};pos=Math.min(pos+2,total-1);continue;}
+    if(lc.kind==='back'){if(seen.has(pos)){res={none:true,pos};break;}seen.add(pos);logPush(p,{kind:'back',suit:lc.suit,label:lc.label,val:lc.val,gs:gnow()});backHit={val:lc.val,suit:lc.suit};pos=Math.max(pos-lc.val,0);continue;}
     if(lc.kind==='ace'){logPush(p,{kind:'ace',suit:lc.suit,label:'A',reps:game.ace.reps,move:game.ace.move,gs:gnow()});res={kind:'ace',pos,fresh:wasEmpty,card:{kind:'ace',reps:game.ace.reps,move:game.ace.move,suit:lc.suit}};break;}
     logPush(p,{kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,gs:gnow()});res={kind:'workout',pos,fresh:wasEmpty,card:{kind:'workout',reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit}};break;
   }
+  if(!res)res={none:true,pos:Math.max(0,Math.min(pos,total-1))};
   p.lastRoll=dv;p.pos=res.pos;
   p.event=backHit?{type:'back',val:backHit.val,suit:backHit.suit,eid:(game.eid=(game.eid||0)+1)}:skipHit?{type:'skip',suit:skipHit.suit,eid:(game.eid=(game.eid||0)+1)}:null;
   if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
