@@ -39,6 +39,10 @@
   @keyframes shake{0%,100%{transform:rotate(-6deg) translateY(0);}50%{transform:rotate(6deg) translateY(-6px);}}
   .rollbtn{width:100%;padding:20px;font-size:22px;font-weight:900;letter-spacing:1px;background:var(--orange);border:none;border-radius:18px;color:#000;cursor:pointer;}
   .rollbtn:disabled{opacity:.5;}
+  .dblbtn{width:100%;margin-top:12px;padding:14px;font-size:14px;font-weight:800;letter-spacing:.5px;background:transparent;border:2px solid var(--orange);border-radius:14px;color:var(--orange);cursor:pointer;}
+  .dblbtn:disabled{opacity:.5;}
+  .dblspent{margin-top:12px;font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+  .dvsum{grid-column:1/4;grid-row:1/4;display:flex;align-items:center;justify-content:center;font-size:56px;font-weight:900;color:var(--orange);}
   .card-do{padding:22px;border-radius:18px;text-align:center;margin-bottom:6px;}
   .card-do.work{background:rgba(245,166,35,.12);border:2px solid var(--orange);}
   .card-do.ace{background:rgba(155,89,182,.14);border:2px solid var(--purple);}
@@ -158,7 +162,7 @@ const $=id=>document.getElementById(id);
 const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,3,6,2,5,8]};
 function renderDie(n){const on=PIPS[n]||[];let h='';for(let i=0;i<9;i++)h+=`<span class="pip${on.indexOf(i)>=0?' on':''}"></span>`;return h;}
-let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='';
+let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='', dblUsed=false;
 function showEvent(ev){const el=$('ohno');const skip=ev.type==='skip';
   el.innerHTML=`<div class="ohno-card${skip?' boost':''}"><div class="ohno-big${skip?' boost':''}">${skip?'BOOST!':'OH NO!'}</div><div class="ohno-arrow${skip?' boost':''}">${skip?'↑':'↓'}</div><div class="ohno-txt">${skip?'Skip +2':('Go back '+ev.val)}</div><div class="ohno-sub">${W.SYM[ev.suit]||''} — ${skip?'forward 2 spaces':('back '+ev.val+' space'+(ev.val>1?'s':''))}</div><div class="ohno-tap">tap to dismiss</div></div>`;
   el.classList.add('show');el.onclick=()=>el.classList.remove('show');
@@ -220,6 +224,7 @@ function startPolling(){clearInterval(pollInt);pollInt=setInterval(pollOnce,4000
 function enterPlay(){
   const av=W.AVATARS.find(a=>a.id===me.avatar);
   $('meImg').src=av?av.img:'';$('meName').textContent=me.name;$('meRoom').textContent='Room '+room.code;
+  try{dblUsed=localStorage.getItem('wodly_dbl_'+room.id+'_'+me.id)==='1';}catch(e){}
   show('playScreen');bodySig='';renderState(room.state||{});
   connect();startPolling();
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollOnce();});
@@ -255,17 +260,22 @@ function renderState(state){
   // idle -> roll
   clearCd();
   body.innerHTML=`<div class="rollwrap"><div class="die" id="die">${renderDie(mp.lastRoll||5)}</div>
-    <button class="rollbtn" id="rollBtn">🎲 ROLL</button></div>`;
-  $('rollBtn').onclick=doRoll;
+    <button class="rollbtn" id="rollBtn">🎲 ROLL</button>
+    ${dblUsed?'<div class="dblspent">Double dice used</div>':'<button class="dblbtn" id="dblBtn">🎲🎲 DOUBLE DICE · once per game</button>'}</div>`;
+  $('rollBtn').onclick=()=>doRoll(false);
+  if(!dblUsed&&$('dblBtn'))$('dblBtn').onclick=()=>doRoll(true);
   lastStatus='idle';
 }
 
-function doRoll(){
+function doRoll(dbl){
   if(rolling)return;rolling=true;
-  const die=$('die'), btn=$('rollBtn');btn.disabled=true;die.classList.add('rolling');
-  const dv=1+Math.floor(Math.random()*6);
-  let ticks=0;const iv=setInterval(()=>{die.innerHTML=renderDie(1+Math.floor(Math.random()*6));if(++ticks>10){clearInterval(iv);die.innerHTML=renderDie(dv);die.classList.remove('rolling');
-    sendIntent('roll',{dv});setTimeout(()=>{rolling=false;renderState(room.state||{});},500);}},70);
+  const die=$('die'), btn=$('rollBtn'), db=$('dblBtn');btn.disabled=true;if(db)db.disabled=true;die.classList.add('rolling');
+  const dv = dbl ? (1+Math.floor(Math.random()*6))+(1+Math.floor(Math.random()*6)) : (1+Math.floor(Math.random()*6));
+  if(dbl){dblUsed=true;try{localStorage.setItem('wodly_dbl_'+room.id+'_'+me.id,'1');}catch(e){}}
+  let ticks=0;const iv=setInterval(()=>{die.innerHTML=renderDie(1+Math.floor(Math.random()*6));if(++ticks>10){clearInterval(iv);
+    die.innerHTML = dbl ? ('<div class="dvsum">'+dv+'</div>') : renderDie(dv);
+    die.classList.remove('rolling');
+    sendIntent('roll',{dv});setTimeout(()=>{rolling=false;renderState(room.state||{});},700);}},70);
 }
 
 function startCd(state,isAce){clearCd();if(!state.useTimer)return;let rem=isAce?(state.penSec||45):(state.turnSec||60);const el=$('cd');if(!el)return;
