@@ -59,9 +59,22 @@
       <div><label>Deck size</label><select id="f-deck"><option value="quick">Fast · 1 deck</option><option value="standard" selected>Standard · 2 decks</option><option value="large">Beast · 2½ decks</option></select></div>
       <div><label>Difficulty</label><select id="f-diff"><option value="easy">Beginner</option><option value="medium" selected>Rx</option><option value="hard">Elite</option></select></div>
     </div>
-    <button class="btn" id="createBtn">Create & host this match →</button>
+    <label>Movements per suit (leave blank for defaults)</label>
+    <div class="row">
+      <div><input id="m-hearts" maxlength="22" placeholder="♥ Push-ups"></div>
+      <div><input id="m-diamonds" maxlength="22" placeholder="♦ Air Squats"></div>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <div><input id="m-clubs" maxlength="22" placeholder="♣ Burpees"></div>
+      <div><input id="m-spades" maxlength="22" placeholder="♠ Sit-ups"></div>
+    </div>
+    <div class="row">
+      <div><label>Ace penalty reps</label><input id="m-acereps" type="number" min="1" max="200" value="10"></div>
+      <div><label>Ace penalty movement</label><input id="m-acemove" maxlength="22" placeholder="Burpees"></div>
+    </div>
+    <button class="btn" id="createBtn">Create match →</button>
     <div class="err" id="createErr"></div>
-    <div class="note">You'll become the host — keep that tab open to run the match. Players join from anywhere and see the board on their own device.</div>
+    <div class="note">Your match runs automatically at the scheduled time — no host needs to stay online. You'll join as a player, and everyone sees the live board on their own device.</div>
   </div>
 
   <div class="sec">Upcoming &amp; live matches</div>
@@ -86,9 +99,9 @@ $('createBtn').onclick=async()=>{
   const title=$('f-title').value.trim(), host=$('f-host').value.trim(), when=$('f-when').value;
   if(!title){$('createErr').textContent='Give your match a title.';return;}
   if(!when){$('createErr').textContent='Pick a date & time.';return;}
-  const settings={mv:{hearts:'Push-ups',diamonds:'Air Squats',clubs:'Burpees',spades:'Sit-ups'},
-    aceReps:10,aceMove:'Burpees',deckSz:$('f-deck').value,diff:$('f-diff').value,
-    useTimer:false,turnSec:60,penSec:45,cap:false,capMin:20};
+  const mv={hearts:($('m-hearts').value.trim()||'Push-ups'),diamonds:($('m-diamonds').value.trim()||'Air Squats'),clubs:($('m-clubs').value.trim()||'Burpees'),spades:($('m-spades').value.trim()||'Sit-ups')};
+  const settings={mv,aceReps:Math.max(1,parseInt($('m-acereps').value)||10),aceMove:($('m-acemove').value.trim()||'Burpees'),
+    deckSz:$('f-deck').value,diff:$('f-diff').value,useTimer:false,turnSec:60,penSec:45,cap:false,capMin:20};
   $('createBtn').disabled=true;
   let room=null;
   for(let a=0;a<6;a++){const code=W.genCode();
@@ -96,7 +109,7 @@ $('createBtn').onclick=async()=>{
       is_public:true,scheduled_at:new Date(when).toISOString(),title,host_name:host||'Host'}).select().single();
     if(!error){room=data;break;} if(error&&!/duplicate|unique/i.test(error.message)){$('createErr').textContent=error.message;$('createBtn').disabled=false;return;}}
   if(!room){$('createErr').textContent='Could not create match.';$('createBtn').disabled=false;return;}
-  location.href='board?room='+room.code;
+  location.href='play?room='+room.code;
 };
 
 function fmtCountdown(ms){if(ms<=0)return 'now';const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sec=s%60;

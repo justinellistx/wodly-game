@@ -172,7 +172,10 @@ const $=id=>document.getElementById(id);
 const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,3,6,2,5,8]};
 function renderDie(n){const on=PIPS[n]||[];let h='';for(let i=0;i<9;i++)h+=`<span class="pip${on.indexOf(i)>=0?' on':''}"></span>`;return h;}
-let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='', dblUsed=false, lastState=null, schedInt=null;
+let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='', dblUsed=false, lastState=null, schedInt=null, lastStartTry=0;
+const MATCH_FN=W.SUPA_URL+'/functions/v1/match';
+function isOnline(){return !!(room&&room.is_public);}
+function callMatch(action,extra){return fetch(MATCH_FN,{method:'POST',headers:{'apikey':W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,room_id:room&&room.id,player_id:me&&me.id},extra||{}))}).then(r=>r.json()).catch(e=>({error:String(e)}));}
 const BOARDBG=new Image();BOARDBG.onload=()=>drawMini();BOARDBG.src='assets/board-bg.png';
 const TOKIMG={};(W.AVATARS||[]).forEach(a=>{const im=new Image();im.onload=()=>drawMini();im.src=a.img;TOKIMG[a.id]=im;});
 function sizeMini(){const c=$('miniBoard');if(!c)return;const wrap=$('miniWrap'),focus=wrap.classList.contains('focus');
@@ -276,7 +279,9 @@ function renderState(state){
       <div class="mn" style="font-size:20px;">You're in!${title?' · '+title:''}</div>
       ${sched?`<div class="cdlabel" style="margin-top:16px;">Match starts in</div><div class="countdown" id="cdown">…</div><div class="ms">${new Date(room.scheduled_at).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}</div>`:'<div class="ms" style="margin-top:8px;">Waiting for the host to start…</div>'}
       <div style="margin-top:16px;"><span class="pill">Room <b>${room.code}</b></span></div></div>`;
-    if(sched){const tick=()=>{const el=$('cdown');if(!el)return;el.textContent=fmtCountdown(sched-Date.now());};tick();schedInt=setInterval(tick,1000);}
+    const tryStart=()=>{if(isOnline()&&Date.now()-lastStartTry>3000){lastStartTry=Date.now();callMatch('start').then(()=>pollOnce());}};
+    if(sched){const tick=()=>{const el=$('cdown');if(el)el.textContent=fmtCountdown(sched-Date.now());if(sched-Date.now()<=0)tryStart();};tick();schedInt=setInterval(tick,1000);}
+    else if(isOnline()){tryStart();schedInt=setInterval(tryStart,3000);}
     lastStatus='';return;}
   if(!mp){body.innerHTML='<div class="rollwrap">Syncing…</div>';return;}
   if(rolling){return;} // keep local dice animation until it sends
@@ -284,7 +289,7 @@ function renderState(state){
     clearCd();const isAce=mp.card.kind==='ace';
     body.innerHTML=`<div class="cardpop">${cardHTML(mp.card)}<div class="cd" id="cd"></div>
       <button class="donebtn" id="doneBtn">DONE ✓</button></div>`;
-    $('doneBtn').onclick=()=>{$('doneBtn').disabled=true;$('doneBtn').textContent='Saved!';clearCd();sendIntent(isAce?'penalty_done':'done');};
+    $('doneBtn').onclick=()=>{$('doneBtn').disabled=true;$('doneBtn').textContent='Saved!';clearCd();isOnline()?callMatch('done'):sendIntent(isAce?'penalty_done':'done');};
     startCd(state, isAce);
     lastStatus='working';return;
   }
@@ -306,7 +311,7 @@ function doRoll(dbl){
   let ticks=0;const iv=setInterval(()=>{die.innerHTML=renderDie(1+Math.floor(Math.random()*6));if(++ticks>10){clearInterval(iv);
     die.innerHTML = dbl ? ('<div class="dvsum">'+dv+'</div>') : renderDie(dv);
     die.classList.remove('rolling');
-    sendIntent('roll',{dv});setTimeout(()=>{rolling=false;renderState(room.state||{});},700);}},70);
+    (isOnline()?callMatch('roll',{dv}):sendIntent('roll',{dv}));setTimeout(()=>{rolling=false;renderState(room.state||{});},700);}},70);
 }
 
 function startCd(state,isAce){clearCd();if(!state.useTimer)return;let rem=isAce?(state.penSec||45):(state.turnSec||60);const el=$('cd');if(!el)return;
