@@ -330,10 +330,23 @@ $('openLobbyBtn').onclick=async()=>{
   for(let a=0;a<6;a++){const code=W.genCode();const{data,error}=await sb.from('rooms').insert({code,status:'lobby',host_id:hostId,settings}).select().single();
     if(!error){room=data;break;} if(error&&!/duplicate|unique/i.test(error.message)){setStatus('create failed: '+error.message,'err');return;}}
   if(!room){setStatus('could not create room','err');return;}
+  await enterLobby();
+};
+async function enterLobby(){
   $('code').textContent=room.code;$('qr').innerHTML='';
   new QRCode($('qr'),{text:PLAY_URL+'?room='+room.code,width:156,height:156,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
   subscribe();await refreshPlayers();show('lobbyScreen');setStatus('room '+room.code+' live','ok');
-};
+}
+// Host an existing public match created from /lobby: /board?room=CODE
+(async function adoptExisting(){
+  const code=(new URLSearchParams(location.search).get('room')||'').toUpperCase().slice(0,4);
+  if(!code)return;
+  setStatus('loading match…');
+  try{const{data}=await sb.from('rooms').select('*').eq('code',code).maybeSingle();
+    if(!data){setStatus('match '+code+' not found','err');return;}
+    room=data;await enterLobby();
+  }catch(e){setStatus('load failed','err');}
+})();
 
 function subscribe(){
   if(channel)sb.removeChannel(channel);
@@ -526,7 +539,7 @@ function renderStandings(){const b=$('standBody');if(!game)return;b.innerHTML=''
     const doing=p.status==='working'&&p.card?`<span class="doing ${p.card.kind==='ace'?'ace':'work'}">${p.card.kind==='ace'?'Ace · ':''}${esc(cardText(p.card))}</span>`:'<span class="doing idle">—</span>';
     tr.innerHTML=`<td><div class="team"><span class="dot" style="background:${p.color}"></span><img src="${av?av.img:''}" alt=""><span class="nm">${esc(p.name)}</span></div></td>
       <td><span class="pos">${p.pos}/${game.total-1}<span class="bar2"><i style="width:${pct}%"></i></span></span></td>
-      <td>${p.lastRoll?`<span class="die">${DICE_FACE[p.lastRoll-1]}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td>${p.lastRoll?`<span class="die">${p.lastRoll<=6?DICE_FACE[p.lastRoll-1]:p.lastRoll}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
       <td>${doing}</td>`;
     b.appendChild(tr);});}
 function logPush(p,e){game.log.push(Object.assign({name:p.name,color:p.color},e));if(game.log.length>12)game.log.shift();}
@@ -543,7 +556,7 @@ function renderRecent(){const el=$('recent');if(!el||!game)return;const lg=game.
 
 // ── State sync ──
 async function writeState(){if(!room||!game)return;
-  const state={phase:game.winner?'finished':'playing',total:game.total,
+  const state={phase:game.winner?'finished':'playing',total:game.total,seed:game.seed,landed:game.landed,
     players:game.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,pos:p.pos,lastRoll:p.lastRoll,card:p.card,status:p.status,event:p.event||null})),
     winner:game.winner?{id:game.winner.id,name:game.winner.name,avatar:game.winner.avatar,timeSec:game.winner.timeSec,cap:!!game.winner.cap}:null,
     log:game.log.slice(-5),

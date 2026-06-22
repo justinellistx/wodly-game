@@ -55,6 +55,9 @@
   .join .tag{background:rgba(33,150,243,.16);color:#8cc6ff;border:1px solid rgba(33,150,243,.4);}
   .join .pips{position:absolute;bottom:11px;right:15px;font-size:15px;letter-spacing:3px;opacity:.55;z-index:2;}
   .join .pips .h{color:var(--red);}.join .pips .d{color:var(--orange);}.join .pips .c{color:var(--green);}.join .pips .s{color:var(--blue);}
+  .online{background:linear-gradient(150deg,#0c1a12,#0a0f0c);border:2px solid var(--green);box-shadow:0 0 20px rgba(76,175,80,.15);}
+  .online .ttl{color:#fff;}.online .sub{color:var(--text2);}
+  .online .tag{background:rgba(76,175,80,.16);color:#9be0a0;border:1px solid rgba(76,175,80,.4);}
   .foot{margin-top:16px;}
   .foot button{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit;}
   /* disclaimer */
@@ -107,6 +110,11 @@
     <div class="ttl">📲 Join a game</div>
     <div class="sub">Enter the room code shown on the board.</div>
     <span class="pips"><span class="h">♥</span><span class="d">♦</span><span class="c">♣</span><span class="s">♠</span></span>
+  </a>
+  <a class="choice online" href="lobby">
+    <span class="tag">Worldwide</span>
+    <div class="ttl">🌐 Play online</div>
+    <div class="sub">Public lobby — schedule a match or join one with players anywhere.</div>
   </a>
 
   <div class="foot"><button id="discLink">Health &amp; safety disclaimer</button></div>

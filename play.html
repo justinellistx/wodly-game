@@ -101,6 +101,14 @@
   .conn{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;padding:4px 12px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--text3);z-index:50;}
   .conn.live{color:var(--green);border-color:rgba(76,175,80,.45);}
   .conn.warn{color:var(--orange);border-color:rgba(245,166,35,.45);}
+  #miniWrap{position:relative;margin:6px 0 14px;}
+  #miniBoard{width:100%;border-radius:14px;display:block;background:#0a0a0b;cursor:pointer;}
+  .minihint{position:absolute;bottom:7px;right:10px;font-size:10px;color:var(--text2);background:rgba(0,0,0,.45);padding:2px 8px;border-radius:10px;pointer-events:none;}
+  #miniWrap.focus{position:fixed;inset:0;z-index:900;margin:0;background:rgba(4,4,5,.985);display:flex;align-items:center;justify-content:center;}
+  #miniWrap.focus #miniBoard{border-radius:0;}
+  #miniWrap.focus .minihint{bottom:14px;left:0;right:0;text-align:center;background:none;}
+  .cdlabel{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+  .countdown{font-size:32px;font-weight:900;color:var(--orange);font-variant-numeric:tabular-nums;margin:6px 0;}
   .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:16px;}
   .disc-overlay.show{display:flex;}
   .disc-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:20px 18px;max-width:360px;width:100%;max-height:90vh;overflow-y:auto;}
@@ -148,6 +156,7 @@
     <div><div class="mn" id="meName">You</div><div class="ms" id="meRoom">Room ····</div></div>
     <div class="mpos"><b id="mePos">0</b><span>your space</span></div>
   </div>
+  <div id="miniWrap" style="display:none;"><canvas id="miniBoard"></canvas><div class="minihint">tap to expand</div></div>
   <div id="playBody"></div>
   <div class="stand" id="standWrap" style="display:none;"><div class="sh">Standings</div><div id="standList"></div></div>
   <div class="stand" id="logWrap" style="display:none;"><div class="sh">Last 5 cards</div><div id="logList"></div></div>
@@ -156,13 +165,22 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="wodly-core.js"></script>
+<script src="wodly-board.js"></script>
 <script>
 const W=window.WODLY, sb=W.makeClient(), myId=W.clientId();
 const $=id=>document.getElementById(id);
 const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,3,6,2,5,8]};
 function renderDie(n){const on=PIPS[n]||[];let h='';for(let i=0;i<9;i++)h+=`<span class="pip${on.indexOf(i)>=0?' on':''}"></span>`;return h;}
-let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='', dblUsed=false;
+let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='', dblUsed=false, lastState=null, schedInt=null;
+const BOARDBG=new Image();BOARDBG.onload=()=>drawMini();BOARDBG.src='assets/board-bg.png';
+const TOKIMG={};(W.AVATARS||[]).forEach(a=>{const im=new Image();im.onload=()=>drawMini();im.src=a.img;TOKIMG[a.id]=im;});
+function sizeMini(){const c=$('miniBoard');if(!c)return;const wrap=$('miniWrap'),focus=wrap.classList.contains('focus');
+  const side=focus?Math.round(Math.min(window.innerWidth,window.innerHeight)*0.96):((wrap.clientWidth)||340);
+  c.width=side*2;c.height=side*2;c.style.width=focus?side+'px':'100%';c.style.height=focus?side+'px':'auto';drawMini();}
+function drawMini(){const c=$('miniBoard');if(!c||!window.WODLYBoard||!lastState||!lastState.total)return;WODLYBoard.render(c,lastState,{boardImg:BOARDBG,tokenImgs:TOKIMG});}
+(function(){const c=$('miniBoard');if(c)c.addEventListener('click',()=>{$('miniWrap').classList.toggle('focus');sizeMini();});
+  window.addEventListener('resize',sizeMini);})();
 function showEvent(ev){const el=$('ohno');const skip=ev.type==='skip';
   el.innerHTML=`<div class="ohno-card${skip?' boost':''}"><div class="ohno-big${skip?' boost':''}">${skip?'BOOST!':'OH NO!'}</div><div class="ohno-arrow${skip?' boost':''}">${skip?'↑':'↓'}</div><div class="ohno-txt">${skip?'Skip +2':('Go back '+ev.val)}</div><div class="ohno-sub">${W.SYM[ev.suit]||''} — ${skip?'forward 2 spaces':('back '+ev.val+' space'+(ev.val>1?'s':''))}</div><div class="ohno-tap">tap to dismiss</div></div>`;
   el.classList.add('show');el.onclick=()=>el.classList.remove('show');
@@ -233,20 +251,33 @@ function sendIntent(type,payload){return sb.from('intents').insert({room_id:room
 
 function myPlayer(state){return (state.players||[]).find(p=>p.id===me.id);}
 
+function fmtCountdown(ms){if(ms<=0)return 'Starting any moment…';const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sec=s%60;
+  if(d>0)return d+'d '+h+'h '+m+'m';if(h>0)return h+'h '+m+'m '+sec+'s';return m+'m '+sec+'s';}
 function renderState(state){
   const body=$('playBody'), phase=state.phase;
   const mp=myPlayer(state);
+  lastState=state;
+  const _hasBoard=!!(phase==='playing'&&state.total),mw=$('miniWrap');
+  if(_hasBoard){mw.style.display='';const c=$('miniBoard'),want=((mw.clientWidth||340)*2);if(!mw.classList.contains('focus')&&Math.abs(c.width-want)>4)sizeMini();else drawMini();}else if(!mw.classList.contains('focus')){mw.style.display='none';}
   if(mp)$('mePos').textContent=mp.pos;
   if(mp&&mp.event&&(mp.event.type==='back'||mp.event.type==='skip')&&mp.event.eid!==seenEid){seenEid=mp.event.eid;showEvent(mp.event);}
   renderStandings(state);renderRecentLog(state);
   const sig=phase+'|'+(mp?(mp.status+'|'+mp.pos+'|'+(mp.card?(mp.card.kind+mp.card.reps+(mp.card.move||'')):'no')):'nomp')+'|'+(state.winner?state.winner.id:'');
   if(sig===bodySig&&!rolling)return; // body unchanged — don't disturb countdown/animations on poll
   if(rolling)return;
-  bodySig=sig;
+  bodySig=sig;clearInterval(schedInt);schedInt=null;
   // finished
   if(phase==='finished'&&state.winner){const av=W.AVATARS.find(a=>a.id===state.winner.avatar);clearCd();
     body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${state.winner.id===me.id?'You win! 🏆':esc(state.winner.name)+' wins!'}</h2><div class="pill">Room <b>${room.code}</b></div></div>`;return;}
-  if(phase!=='playing'){clearCd();body.innerHTML=`<div class="rollwrap" style="padding:26px 0;"><div class="me-head" style="justify-content:center;border:none;background:none;"><div style="text-align:center"><div class="mn">You're in!</div><div class="ms">Waiting for the game to start…</div></div></div><div style="text-align:center"><span class="pill">Room <b>${room.code}</b></span></div></div>`;lastStatus='';return;}
+  if(phase!=='playing'){clearCd();
+    const sched=(room&&room.scheduled_at)?new Date(room.scheduled_at).getTime():0;
+    const title=(room&&room.title)?esc(room.title):'';
+    body.innerHTML=`<div class="rollwrap" style="padding:22px 0;text-align:center;">
+      <div class="mn" style="font-size:20px;">You're in!${title?' · '+title:''}</div>
+      ${sched?`<div class="cdlabel" style="margin-top:16px;">Match starts in</div><div class="countdown" id="cdown">…</div><div class="ms">${new Date(room.scheduled_at).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}</div>`:'<div class="ms" style="margin-top:8px;">Waiting for the host to start…</div>'}
+      <div style="margin-top:16px;"><span class="pill">Room <b>${room.code}</b></span></div></div>`;
+    if(sched){const tick=()=>{const el=$('cdown');if(!el)return;el.textContent=fmtCountdown(sched-Date.now());};tick();schedInt=setInterval(tick,1000);}
+    lastStatus='';return;}
   if(!mp){body.innerHTML='<div class="rollwrap">Syncing…</div>';return;}
   if(rolling){return;} // keep local dice animation until it sends
   if(mp.status==='working'&&mp.card){
