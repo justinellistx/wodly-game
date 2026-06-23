@@ -82,6 +82,13 @@
 
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:18px 0 10px;">Sponsors</div>
     <div class="slist" id="slist"><div style="color:var(--text3)">Loading…</div></div>
+
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:28px 0 10px;">Email subscribers <span id="subsCount" style="color:var(--text2);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <button class="btn ghost" id="loadSubs">Load subscribers</button>
+      <button class="btn" id="dlSubs" style="display:none;">Download CSV</button>
+    </div>
+    <div id="subsList" style="font-size:13px;color:var(--text3);"></div>
   </div>
 </div>
 
@@ -154,6 +161,26 @@ async function loadSponsors(){
 function startEdit(s){editId=s.id;logoData=null;$('f-name').value=s.name||'';$('f-web').value=s.website_url||'';$('f-social').value=s.social_url||'';$('f-active').checked=!!s.active;
   if(s.logo){$('logoPrev').src=s.logo;$('logoPrev').style.display='inline-block';}else{$('logoPrev').style.display='none';}
   $('formTitle').textContent='Edit sponsor';$('saveBtn').textContent='Save changes';$('cancelBtn').style.display='inline-block';window.scrollTo(0,0);}
+// ── Subscribers ──
+let subsData=[];
+$('loadSubs').onclick=async()=>{$('subsList').innerHTML='Loading…';const r=await api('subs_list');
+  if(r.error){$('subsList').textContent=r.error;return;}
+  subsData=r.data||[];const active=subsData.filter(s=>!s.unsubscribed).length;
+  $('subsCount').textContent='· '+active+' active / '+subsData.length+' total';
+  $('dlSubs').style.display=subsData.length?'inline-block':'none';
+  if(!subsData.length){$('subsList').textContent='No subscribers yet.';return;}
+  $('subsList').innerHTML='<div style="max-height:340px;overflow:auto;border:1px solid var(--border);border-radius:10px;">'+
+    subsData.map(s=>`<div style="display:flex;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--border);${s.unsubscribed?'opacity:.45;':''}">
+      <span style="flex:1;color:#fff;word-break:break-all;">${esc(s.email)}${s.unsubscribed?' <span style="color:var(--red);font-size:11px;">unsub</span>':''}</span>
+      <span style="color:var(--text3);">${esc(s.source||'')}</span>
+      <span style="color:var(--text3);white-space:nowrap;">${new Date(s.created_at).toLocaleDateString()}</span>
+    </div>`).join('')+'</div>';
+};
+$('dlSubs').onclick=()=>{const rows=[['email','name','source','consent','unsubscribed','unsub_token','created_at']];
+  subsData.forEach(s=>rows.push([s.email,s.name||'',s.source||'',s.consent,s.unsubscribed,s.unsub_token,s.created_at]));
+  const csv=rows.map(row=>row.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='wodly-subscribers.csv';a.click();
+};
 </script>
 </body>
 </html>

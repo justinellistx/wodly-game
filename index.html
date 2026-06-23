@@ -60,6 +60,14 @@
   .online .tag{background:rgba(76,175,80,.16);color:#9be0a0;border:1px solid rgba(76,175,80,.4);}
   .foot{margin-top:16px;}
   .foot button{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit;}
+  .updates{margin-top:16px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:left;}
+  .up-ttl{font-size:13px;font-weight:800;margin-bottom:8px;}
+  .up-row{display:flex;gap:8px;}
+  .up-row input{flex:1;min-width:0;font-size:14px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;}
+  .up-row button{padding:10px 14px;font-size:13px;font-weight:800;background:var(--orange);border:none;border-radius:10px;color:#000;cursor:pointer;white-space:nowrap;}
+  .up-row button:disabled{opacity:.5;}
+  .up-msg{font-size:11px;margin-top:6px;min-height:13px;}.up-msg.ok{color:var(--green);}.up-msg.err{color:var(--red);}
+  .up-consent{display:flex;align-items:flex-start;gap:6px;font-size:10px;color:var(--text3);margin-top:8px;}.up-consent a{color:var(--text2);}
   /* disclaimer */
   .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:18px;}
   .disc-overlay.show{display:flex;}
@@ -117,6 +125,13 @@
     <div class="sub">Public lobby — schedule a match or join one with players anywhere.</div>
   </a>
 
+  <div class="updates">
+    <div class="up-ttl">🔔 Get updates</div>
+    <div class="up-row"><input id="upEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email"><button id="upBtn">Notify me</button></div>
+    <div class="up-msg" id="upMsg"></div>
+    <label class="up-consent"><input type="checkbox" id="upConsent" checked> Email me about new boards &amp; worldwide matches. <a href="/privacy">Privacy</a></label>
+  </div>
+
   <div class="foot"><button id="discLink">Health &amp; safety disclaimer</button></div>
 </div>
 
@@ -126,6 +141,19 @@
   document.getElementById('discAccept').onclick=()=>{try{localStorage.setItem(DISC_KEY,'1');}catch(e){}ov.classList.remove('show');};
   document.getElementById('discLink').onclick=()=>ov.classList.add('show');
   (function(){let seen=false;try{seen=localStorage.getItem(DISC_KEY)==='1';}catch(e){}if(!seen)ov.classList.add('show');})();
+
+  const SUPA_URL='https://ynznwosssctxbdiauekj.supabase.co',SUPA_KEY='sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq';
+  const $$=id=>document.getElementById(id);
+  $$('upBtn').onclick=async()=>{const em=($$('upEmail').value||'').trim(),msg=$$('upMsg');
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='Enter a valid email.';msg.className='up-msg err';return;}
+    if(!$$('upConsent').checked){msg.textContent='Please tick the consent box.';msg.className='up-msg err';return;}
+    $$('upBtn').disabled=true;msg.textContent='…';msg.className='up-msg';
+    try{const r=await fetch(SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({email:em,source:'home',consent:true})});
+      if(r.status<300){msg.textContent="You're on the list ✓";msg.className='up-msg ok';}
+      else if(r.status===409){msg.textContent="You're already subscribed ✓";msg.className='up-msg ok';}
+      else{msg.textContent='Could not subscribe — try again later.';msg.className='up-msg err';$$('upBtn').disabled=false;}
+    }catch(e){msg.textContent='Network error.';msg.className='up-msg err';$$('upBtn').disabled=false;}
+  };
 </script>
 </body>
 </html>

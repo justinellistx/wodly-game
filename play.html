@@ -97,6 +97,15 @@
   .lrow .lc{font-size:14px;font-weight:700;}
   .lrow .lk{font-size:14px;font-weight:800;margin-left:8px;}
   .winbox{text-align:center;padding:30px 16px;}.winbox img{width:130px;height:130px;object-fit:contain;}.winbox h2{font-size:26px;font-weight:900;margin-top:10px;}
+  .subwrap{max-width:340px;margin:18px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:left;}
+  .subttl{font-size:15px;font-weight:800;}
+  .subsub{font-size:12px;color:var(--text3);margin:4px 0 12px;line-height:1.45;}
+  .subwrap input[type=email]{width:100%;font-size:15px;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:#fff;}
+  .subbtn{width:100%;margin-top:10px;padding:12px;font-size:14px;font-weight:800;background:var(--orange);border:none;border-radius:11px;color:#000;cursor:pointer;}
+  .subbtn:disabled{opacity:.5;}
+  .submsg{font-size:12px;margin-top:8px;min-height:15px;}.submsg.ok{color:var(--green);}.submsg.err{color:var(--red);}
+  .subconsent{display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--text3);margin-top:10px;line-height:1.4;}
+  .subconsent a{color:var(--text2);}
   .pill{display:inline-block;margin-top:14px;padding:8px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text2);}.pill b{color:var(--orange);letter-spacing:3px;}
   .conn{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;padding:4px 12px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--text3);z-index:50;}
   .conn.live{color:var(--green);border-color:rgba(76,175,80,.45);}
@@ -263,6 +272,25 @@ function myPlayer(state){return (state.players||[]).find(p=>p.id===me.id);}
 
 function fmtCountdown(ms){if(ms<=0)return 'Starting any moment…';const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sec=s%60;
   if(d>0)return d+'d '+h+'h '+m+'m';if(h>0)return h+'h '+m+'m '+sec+'s';return m+'m '+sec+'s';}
+function subHTML(){return `<div class="subwrap">
+  <div class="subttl">🔔 New boards & worldwide matches</div>
+  <div class="subsub">Get an email when we release new workouts and schedule global matches. No spam.</div>
+  <input id="subEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
+  <button class="subbtn" id="subBtn">Notify me</button>
+  <div class="submsg" id="subMsg"></div>
+  <label class="subconsent"><input type="checkbox" id="subConsent" checked> I agree to receive occasional WODLY emails. <a href="/privacy" target="_blank">Privacy</a></label>
+</div>`;}
+function wireSub(source){const b=$('subBtn');if(b)b.onclick=()=>doSubscribe(source);}
+async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim(),msg=$('subMsg');if(!msg)return;
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='Enter a valid email.';msg.className='submsg err';return;}
+  if(!$('subConsent').checked){msg.textContent='Please tick the box to consent.';msg.className='submsg err';return;}
+  $('subBtn').disabled=true;msg.textContent='…';msg.className='submsg';
+  try{const r=await fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,source,consent:true})});
+    if(r.status===201||r.status===204||r.status===200){msg.textContent="You're on the list ✓";msg.className='submsg ok';}
+    else if(r.status===409){msg.textContent="You're already subscribed ✓";msg.className='submsg ok';}
+    else{msg.textContent='Could not subscribe — try again later.';msg.className='submsg err';$('subBtn').disabled=false;}
+  }catch(e){msg.textContent='Network error.';msg.className='submsg err';$('subBtn').disabled=false;}
+}
 function renderState(state){
   const body=$('playBody'), phase=state.phase;
   const mp=myPlayer(state);
@@ -278,7 +306,8 @@ function renderState(state){
   bodySig=sig;clearInterval(schedInt);schedInt=null;
   // finished
   if(phase==='finished'&&state.winner){const av=W.AVATARS.find(a=>a.id===state.winner.avatar);clearCd();
-    body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${state.winner.id===me.id?'You win! 🏆':esc(state.winner.name)+' wins!'}</h2><div class="pill">Room <b>${room.code}</b></div></div>`;return;}
+    body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${state.winner.id===me.id?'You win! 🏆':esc(state.winner.name)+' wins!'}</h2><div class="pill">Room <b>${room.code}</b></div></div>`+subHTML();
+    wireSub('win');return;}
   if(phase!=='playing'){clearCd();
     const sched=(room&&room.scheduled_at)?new Date(room.scheduled_at).getTime():0;
     const title=(room&&room.title)?esc(room.title):'';
