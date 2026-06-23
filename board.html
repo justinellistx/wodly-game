@@ -497,7 +497,7 @@ function onRoll(pid,dvRaw){
     if(pos<=0){res={none:true,pos:0};break;}
     let lc=game.landed[pos];const wasEmpty=!lc;
     if(!lc){if(!game.deck.length)game.deck=W.buildDeck();const c=game.deck.pop();let kind=W.cardType(c.val);
-      if(pos>=total-3&&kind==='back')kind='workout';   // never end on a go-back card
+      if((pos<=4||pos>=total-3)&&kind==='back')kind='workout';   // no go-back trap at the very start or end
       lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
     if(lc.kind==='skip'){if(seen.has(pos)){res={none:true,pos};break;}seen.add(pos);logPush(p,{kind:'skip',suit:lc.suit,label:lc.label,gs:gnow()});skipHit={suit:lc.suit};pos=Math.min(pos+2,total-1);continue;}
     if(lc.kind==='back'){if(seen.has(pos)){res={none:true,pos};break;}seen.add(pos);logPush(p,{kind:'back',suit:lc.suit,label:lc.label,val:lc.val,gs:gnow()});backHit={val:lc.val,suit:lc.suit};pos=Math.max(pos-lc.val,0);continue;}

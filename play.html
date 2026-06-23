@@ -175,7 +175,14 @@ function renderDie(n){const on=PIPS[n]||[];let h='';for(let i=0;i<9;i++)h+=`<spa
 let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='', dblUsed=false, lastState=null, schedInt=null, lastStartTry=0;
 const MATCH_FN=W.SUPA_URL+'/functions/v1/match';
 function isOnline(){return !!(room&&room.is_public);}
-function callMatch(action,extra){return fetch(MATCH_FN,{method:'POST',headers:{'apikey':W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,room_id:room&&room.id,player_id:me&&me.id},extra||{}))}).then(r=>r.json()).catch(e=>({error:String(e)}));}
+async function callMatch(action,extra){
+  for(let i=0;i<4;i++){
+    try{const r=await fetch(MATCH_FN,{method:'POST',headers:{'apikey':W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,room_id:room&&room.id,player_id:me&&me.id},extra||{}))});
+      const j=await r.json();if((r.ok&&!j.error)||(j&&j.early))return j;}catch(e){}
+    await new Promise(res=>setTimeout(res,300));
+  }
+  return {error:'failed'};
+}
 const BOARDBG=new Image();BOARDBG.onload=()=>drawMini();BOARDBG.src='assets/board-bg.png';
 const TOKIMG={};(W.AVATARS||[]).forEach(a=>{const im=new Image();im.onload=()=>drawMini();im.src=a.img;TOKIMG[a.id]=im;});
 function sizeMini(){const c=$('miniBoard');if(!c)return;const wrap=$('miniWrap'),focus=wrap.classList.contains('focus');
@@ -283,13 +290,16 @@ function renderState(state){
     if(sched){const tick=()=>{const el=$('cdown');if(el)el.textContent=fmtCountdown(sched-Date.now());if(sched-Date.now()<=0)tryStart();};tick();schedInt=setInterval(tick,1000);}
     else if(isOnline()){tryStart();schedInt=setInterval(tryStart,3000);}
     lastStatus='';return;}
-  if(!mp){body.innerHTML='<div class="rollwrap">Syncing…</div>';return;}
+  if(!mp){
+    if(isOnline()){if(Date.now()-lastStartTry>2500){lastStartTry=Date.now();callMatch('join').then(()=>pollOnce());}body.innerHTML='<div class="rollwrap" style="padding:24px 0;text-align:center;"><div class="mn">Joining the match…</div><div class="ms">one sec</div></div>';}
+    else body.innerHTML='<div class="rollwrap">Syncing…</div>';
+    return;}
   if(rolling){return;} // keep local dice animation until it sends
   if(mp.status==='working'&&mp.card){
     clearCd();const isAce=mp.card.kind==='ace';
     body.innerHTML=`<div class="cardpop">${cardHTML(mp.card)}<div class="cd" id="cd"></div>
       <button class="donebtn" id="doneBtn">DONE ✓</button></div>`;
-    $('doneBtn').onclick=()=>{$('doneBtn').disabled=true;$('doneBtn').textContent='Saved!';clearCd();isOnline()?callMatch('done'):sendIntent(isAce?'penalty_done':'done');};
+    $('doneBtn').onclick=()=>{$('doneBtn').disabled=true;$('doneBtn').textContent='Saved!';clearCd();if(isOnline())callMatch('done').then(()=>pollOnce());else sendIntent(isAce?'penalty_done':'done');};
     startCd(state, isAce);
     lastStatus='working';return;
   }
@@ -311,7 +321,8 @@ function doRoll(dbl){
   let ticks=0;const iv=setInterval(()=>{die.innerHTML=renderDie(1+Math.floor(Math.random()*6));if(++ticks>10){clearInterval(iv);
     die.innerHTML = dbl ? ('<div class="dvsum">'+dv+'</div>') : renderDie(dv);
     die.classList.remove('rolling');
-    (isOnline()?callMatch('roll',{dv}):sendIntent('roll',{dv}));setTimeout(()=>{rolling=false;renderState(room.state||{});},700);}},70);
+    if(isOnline()){callMatch('roll',{dv}).then(()=>{rolling=false;pollOnce();}).catch(()=>{rolling=false;pollOnce();});}
+    else{sendIntent('roll',{dv});setTimeout(()=>{rolling=false;renderState(room.state||{});},700);}}},70);
 }
 
 function startCd(state,isAce){clearCd();if(!state.useTimer)return;let rem=isAce?(state.penSec||45):(state.turnSec||60);const el=$('cd');if(!el)return;
