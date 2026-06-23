@@ -33,6 +33,21 @@
     { id:'coach',   name:'Coach',   img:'assets/characters/coach.png',   color:'#F5A623' }
   ];
 
+  // Pre-made workout decks. Movements are generic; names are playful homages, not official.
+  // Each fills the 4 suits (hearts/diamonds/clubs/spades) + the ace penalty.
+  const PRESETS = [
+    { id:'merph',  name:'Merph',  cat:'Benchmark', note:'Hero tribute', mv:{hearts:'Pull-ups',diamonds:'Push-ups',clubs:'Air Squats',spades:'Walking Lunges'}, aceReps:10, aceMove:'Burpees' },
+    { id:'cinda',  name:'Cinda',  cat:'Benchmark', note:'The bodyweight classic', mv:{hearts:'Pull-ups',diamonds:'Push-ups',clubs:'Air Squats',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
+    { id:'frenn',  name:'Frenn',  cat:'Benchmark', note:'Fast & spicy', mv:{hearts:'Thrusters',diamonds:'Pull-ups',clubs:'Burpees',spades:'Box Jumps'}, aceReps:9, aceMove:'Thrusters' },
+    { id:'hellen', name:'Hellen', cat:'Benchmark', note:'Swing & sweat', mv:{hearts:'KB Swings',diamonds:'Pull-ups',clubs:'Box Jumps',spades:'Push-ups'}, aceReps:12, aceMove:'Burpees' },
+    { id:'bwblast',name:'Bodyweight Blast', cat:'Bodyweight (no gear)', note:'Anywhere, no equipment', mv:{hearts:'Push-ups',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Burpees'}, aceReps:20, aceMove:'Jumping Jacks' },
+    { id:'nogear', name:'No-Gear Grind', cat:'Bodyweight (no gear)', note:'Bodyweight conditioning', mv:{hearts:'Walking Lunges',diamonds:'Mountain Climbers',clubs:'Plank (sec)',spades:'High Knees'}, aceReps:15, aceMove:'Burpees' },
+    { id:'dbgrind',name:'Dumbbell Grind', cat:'Dumbbell & kettlebell', note:'Grab a dumbbell', mv:{hearts:'DB Snatch',diamonds:'DB Thruster',clubs:'DB Goblet Squat',spades:'DB Row'}, aceReps:8, aceMove:'DB Burpees' },
+    { id:'kbeng',  name:'Kettlebell Engine', cat:'Dumbbell & kettlebell', note:'One kettlebell', mv:{hearts:'KB Swings',diamonds:'KB Goblet Squat',clubs:'KB Clean',spades:'KB Deadlift'}, aceReps:15, aceMove:'KB Swings' },
+    { id:'core',   name:'Core Crusher', cat:'Core & conditioning', note:'Abs on fire', mv:{hearts:'Sit-ups',diamonds:'Leg Raises',clubs:'Russian Twists',spades:'Plank (sec)'}, aceReps:20, aceMove:'Hollow Hold (sec)' },
+    { id:'cardio', name:'Cardio Burner', cat:'Core & conditioning', note:'Heart-rate spike', mv:{hearts:'Burpees',diamonds:'Mountain Climbers',clubs:'High Knees',spades:'Jumping Jacks'}, aceReps:15, aceMove:'Burpees' }
+  ];
+
   // ── Card logic ────────────────────────────────────────────────────────────
   function cardType(v){ if(v===1)return'ace'; if(v===2)return'skip'; if(v===3||v===4)return'back'; return'workout'; }
   function getReps(v,d){ if(v>=11)return v; return Math.max(1, Math.round(v * (DIFF_MULT[d]||1))); }
@@ -56,7 +71,7 @@
 
   global.WODLY = {
     SUPA_URL, SUPA_KEY, makeClient,
-    BRAND, SUITS, SYM, SCOL, FACE_LABELS, DECK_SPACES, DIFF_MULT, PCOLS, AVATARS,
+    BRAND, SUITS, SYM, SCOL, FACE_LABELS, DECK_SPACES, DIFF_MULT, PCOLS, AVATARS, PRESETS,
     cardType, getReps, buildDeck, genCode, clientId
   };
 })(typeof window !== 'undefined' ? window : globalThis);

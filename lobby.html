@@ -59,6 +59,9 @@
       <div><label>Deck size</label><select id="f-deck"><option value="quick">Fast · 1 deck</option><option value="standard" selected>Standard · 2 decks</option><option value="large">Beast · 2½ decks</option></select></div>
       <div><label>Difficulty</label><select id="f-diff"><option value="easy">Beginner</option><option value="medium" selected>Rx</option><option value="hard">Elite</option></select></div>
     </div>
+    <label>Workout preset</label>
+    <select id="presetSel"><option value="">Custom — set your own</option></select>
+    <div id="presetNote" style="font-size:12px;color:var(--green);min-height:14px;margin-top:6px;"></div>
     <label>Movements per suit (leave blank for defaults)</label>
     <div class="row">
       <div><input id="m-hearts" maxlength="22" placeholder="♥ Push-ups"></div>
@@ -150,6 +153,13 @@ function render(){
   tickAll();
 }
 function tickAll(){document.querySelectorAll('.cd').forEach(el=>{const t=+el.dataset.t;el.textContent=fmtCountdown(t-Date.now());});}
+(function(){const sel=$('presetSel');if(!sel||!W.PRESETS)return;
+  const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
+  Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});
+  sel.onchange=()=>{const p=W.PRESETS.find(x=>x.id===sel.value),note=$('presetNote');if(!p){note.textContent='';return;}
+    $('m-hearts').value=p.mv.hearts;$('m-diamonds').value=p.mv.diamonds;$('m-clubs').value=p.mv.clubs;$('m-spades').value=p.mv.spades;$('m-acereps').value=p.aceReps;$('m-acemove').value=p.aceMove;
+    note.textContent='✓ '+p.name+(p.note?' — '+p.note:'');};
+})();
 setInterval(tickAll,1000);
 setInterval(load,15000);
 load();

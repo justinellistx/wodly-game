@@ -167,6 +167,9 @@
     <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
     <div class="setup-grid">
       <div>
+        <div class="sec">Workout preset</div>
+        <select id="presetSel" style="width:100%;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;"><option value="">Custom — set your own</option></select>
+        <div id="presetNote" style="font-size:12px;color:#4CAF50;min-height:15px;margin:7px 0 16px;"></div>
         <div class="sec">Movements per suit</div>
         <div class="suit-grid">
           <div class="sc hearts"><div class="si">♥</div><label style="color:#E8363D">Hearts</label><input id="mv-hearts" placeholder="Push-ups"/></div>
@@ -323,6 +326,13 @@ function loadSettings(){let s;try{s=JSON.parse(localStorage.getItem(SET_KEY)||'n
   _set('turnTimerInput',s.turnSec);_set('penTimerInput',s.penSec);
   if(typeof s.cap==='boolean')$('capToggle').checked=s.cap;_set('capInput',s.capMin);}
 loadSettings();
+(function(){const sel=$('presetSel');if(!sel||!W.PRESETS)return;
+  const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
+  Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});
+  sel.onchange=()=>{const p=W.PRESETS.find(x=>x.id===sel.value);if(!p){$('presetNote').textContent='';return;}
+    _set('mv-hearts',p.mv.hearts);_set('mv-diamonds',p.mv.diamonds);_set('mv-clubs',p.mv.clubs);_set('mv-spades',p.mv.spades);_set('ace-reps',p.aceReps);_set('ace-move',p.aceMove);
+    $('presetNote').textContent='✓ '+p.name+(p.note?' — '+p.note:'')+' · tweak any movement below if you like';};
+})();
 
 $('openLobbyBtn').onclick=async()=>{
   const settings=gatherSettings();try{localStorage.setItem(SET_KEY,JSON.stringify(settings));}catch(e){}
