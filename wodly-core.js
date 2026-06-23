@@ -36,13 +36,13 @@
   // Pre-made workout decks. Movements are generic; names are playful homages, not official.
   // Each fills the 4 suits (hearts/diamonds/clubs/spades) + the ace penalty.
   const PRESETS = [
-    { id:'merph',  name:'Merph',  cat:'Benchmark', note:'Hero tribute', mv:{hearts:'Pull-ups',diamonds:'Push-ups',clubs:'Air Squats',spades:'Walking Lunges'}, aceReps:10, aceMove:'Burpees' },
+    { id:'merph',  name:'Merph',  cat:'Benchmark', note:'Hero tribute', mv:{hearts:'Pull-ups',diamonds:'Push-ups',clubs:'Air Squats',spades:'Burpees'}, aceReps:400, aceMove:'m Run' },
     { id:'cinda',  name:'Cinda',  cat:'Benchmark', note:'The bodyweight classic', mv:{hearts:'Pull-ups',diamonds:'Push-ups',clubs:'Air Squats',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
-    { id:'frenn',  name:'Frenn',  cat:'Benchmark', note:'Fast & spicy', mv:{hearts:'Thrusters',diamonds:'Pull-ups',clubs:'Burpees',spades:'Box Jumps'}, aceReps:9, aceMove:'Thrusters' },
-    { id:'hellen', name:'Hellen', cat:'Benchmark', note:'Swing & sweat', mv:{hearts:'KB Swings',diamonds:'Pull-ups',clubs:'Box Jumps',spades:'Push-ups'}, aceReps:12, aceMove:'Burpees' },
-    { id:'bwblast',name:'Bodyweight Blast', cat:'Bodyweight (no gear)', note:'Anywhere, no equipment', mv:{hearts:'Push-ups',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Burpees'}, aceReps:20, aceMove:'Jumping Jacks' },
+    { id:'frenn',  name:'Frenn',  cat:'Benchmark', note:'Fast & spicy', mv:{hearts:'Thrusters',diamonds:'Pull-ups',clubs:'Air Squats',spades:'Push Press'}, aceReps:5, aceMove:'Burpees' },
+    { id:'hellen', name:'Hellen', cat:'Benchmark', note:'Swing & sweat', mv:{hearts:'KB Swings',diamonds:'Pull-ups',clubs:'Box Jumps',spades:'Push-ups'}, aceReps:200, aceMove:'m Run' },
+    { id:'bwblast',name:'Bodyweight Blast', cat:'Bodyweight (no gear)', note:'Anywhere, no equipment', mv:{hearts:'Push-ups',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Burpees'}, aceReps:8, aceMove:'50ft Shuttle Runs' },
     { id:'nogear', name:'No-Gear Grind', cat:'Bodyweight (no gear)', note:'Bodyweight conditioning', mv:{hearts:'Walking Lunges',diamonds:'Mountain Climbers',clubs:'Plank (sec)',spades:'High Knees'}, aceReps:15, aceMove:'Burpees' },
-    { id:'dbgrind',name:'Dumbbell Grind', cat:'Dumbbell & kettlebell', note:'Grab a dumbbell', mv:{hearts:'DB Snatch',diamonds:'DB Thruster',clubs:'DB Goblet Squat',spades:'DB Row'}, aceReps:8, aceMove:'DB Burpees' },
+    { id:'dbgrind',name:'Dumbbell Grind', cat:'Dumbbell & kettlebell', note:'Grab a dumbbell', mv:{hearts:'DB Snatch',diamonds:'DB Thruster',clubs:'DB Goblet Squat',spades:'DB Row'}, aceReps:8, aceMove:'DB Devil Press' },
     { id:'kbeng',  name:'Kettlebell Engine', cat:'Dumbbell & kettlebell', note:'One kettlebell', mv:{hearts:'KB Swings',diamonds:'KB Goblet Squat',clubs:'KB Clean',spades:'KB Deadlift'}, aceReps:15, aceMove:'KB Swings' },
     { id:'core',   name:'Core Crusher', cat:'Core & conditioning', note:'Abs on fire', mv:{hearts:'Sit-ups',diamonds:'Leg Raises',clubs:'Russian Twists',spades:'Plank (sec)'}, aceReps:20, aceMove:'Hollow Hold (sec)' },
     { id:'cardio', name:'Cardio Burner', cat:'Core & conditioning', note:'Heart-rate spike', mv:{hearts:'Burpees',diamonds:'Mountain Climbers',clubs:'High Knees',spades:'Jumping Jacks'}, aceReps:15, aceMove:'Burpees' }
