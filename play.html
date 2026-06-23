@@ -278,7 +278,7 @@ function subHTML(){return `<div class="subwrap">
   <input id="subEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
   <button class="subbtn" id="subBtn">Notify me</button>
   <div class="submsg" id="subMsg"></div>
-  <label class="subconsent"><input type="checkbox" id="subConsent" checked> I agree to receive occasional WODLY emails. <a href="/privacy" target="_blank">Privacy</a></label>
+  <label class="subconsent"><input type="checkbox" id="subConsent"> I agree to receive occasional WODLY emails. <a href="/privacy" target="_blank">Privacy</a></label>
 </div>`;}
 function wireSub(source){const b=$('subBtn');if(b)b.onclick=()=>doSubscribe(source);}
 async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim(),msg=$('subMsg');if(!msg)return;
