@@ -14,17 +14,20 @@
   ];
   function getZone(i, total){ const f=i/(total-1); for(const z of ZONES){ if(f>=z.from&&f<=z.to) return z; } return ZONES[ZONES.length-1]; }
   function srng(seed){ let s=(seed||1)>>>0; return function(){ s=(s+0x6D2B79F5)>>>0; let t=Math.imul(s^(s>>>15),1|s); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
-  function genPath(total, W2, H, seed){
-    const rand=srng(seed);
-    const mx=W2*0.12, top=H*0.135, bot=H*0.9;
-    const rows=Math.max(4,Math.min(16,Math.round(total/8))), perRow=Math.ceil(total/rows), rowH=(bot-top)/rows;
-    const span=(W2-mx*2)/Math.max(1,perRow-1);
-    const ns=Math.max(26,Math.min(rowH*0.62, span*0.7, 78));
-    const p=[];
-    for(let i=0;i<total;i++){ const r=Math.floor(i/perRow),c=i%perRow,ltr=r%2===0,col=ltr?c:(perRow-1-c);
-      let x=mx+col*span, y=top+r*rowH+rowH/2;
-      x+=(rand()-0.5)*rowH*0.62; y+=(rand()-0.5)*rowH*0.36;
-      p.push({x,y}); }
+  // Square spiral: GO at the outer corner, winding clockwise inward to WIN near the centre.
+  function genPath(total, W2, H){
+    const G=Math.max(3,Math.ceil(Math.sqrt(total)));
+    const inset=W2*0.105, area=Math.min(W2,H)-inset*2, cell=area/G;
+    const ns=Math.max(20,Math.min(cell*0.82,80));
+    let t=0,b=G-1,l=0,r=G-1; const order=[];
+    while(t<=b&&l<=r){
+      for(let c=l;c<=r;c++)order.push([t,c]); t++;
+      for(let row=t;row<=b;row++)order.push([row,r]); r--;
+      if(t<=b){for(let c=r;c>=l;c--)order.push([b,c]); b--;}
+      if(l<=r){for(let row=b;row>=t;row--)order.push([row,l]); l++;}
+    }
+    const offX=inset+(W2-inset*2-area)/2, offY=inset+(H-inset*2-area)/2, p=[];
+    for(let i=0;i<total;i++){ const cc=order[i]||order[order.length-1]; p.push({x:offX+cell*cc[1]+cell/2, y:offY+cell*cc[0]+cell/2}); }
     return { p, ns };
   }
   function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
@@ -35,17 +38,11 @@
     ctx.clearRect(0,0,W2,H);
     if(!state || !state.total) return;
     const total = state.total, landed = state.landed || {}, players = state.players || [];
-    const { p:P, ns } = genPath(total, W2, H, state.seed || 1);
+    const { p:P, ns } = genPath(total, W2, H);
     const img = opts.boardImg;
     if(img && img.complete && img.naturalWidth){ ctx.drawImage(img,0,0,W2,H); }
     else { const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#141414'); bg.addColorStop(1,'#070707'); ctx.fillStyle=bg; ctx.fillRect(0,0,W2,H); }
-    // path trail
-    ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
-    const trail=()=>{ ctx.beginPath(); ctx.moveTo(P[0].x,P[0].y); for(let i=1;i<total;i++) ctx.lineTo(P[i].x,P[i].y); ctx.stroke(); };
-    ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.lineWidth=ns*0.46+10; trail();
-    ctx.strokeStyle='rgba(255,255,255,.09)'; ctx.lineWidth=ns*0.46; trail();
-    ctx.strokeStyle='rgba(245,166,35,.4)'; ctx.lineWidth=2.5; ctx.setLineDash([5,10]); trail(); ctx.setLineDash([]); ctx.restore();
-    // nodes
+    // nodes (no connecting trail — spiral layout)
     ctx.textAlign='center'; ctx.textBaseline='alphabetic';
     for(let i=0;i<total;i++){
       const px=P[i].x, py=P[i].y, zone=getZone(i,total), lc=landed[i], s=ns, hx=px-s/2, hy=py-s/2;
@@ -62,14 +59,6 @@
       }
       else { const sg=ctx.createLinearGradient(hx,hy,hx,hy+s); sg.addColorStop(0,zone.accent+'33'); sg.addColorStop(1,'#0c0c0d'); ctx.fillStyle=sg; rr(ctx,hx,hy,s,s,9); ctx.fill(); ctx.strokeStyle=zone.accent+'66'; ctx.lineWidth=1.5; rr(ctx,hx,hy,s,s,9); ctx.stroke(); ctx.fillStyle=zone.accent+'88'; ctx.font='900 '+Math.round(s*0.34)+'px system-ui'; ctx.fillText('W',px,py+s*0.12); }
     }
-    // slim zone labels
-    let pz=null;
-    for(let i=1;i<total-1;i++){ const z=getZone(i,total); if(z===pz) continue; pz=z;
-      const px=P[i].x, ty=P[i].y-ns*0.74; ctx.font='bold '+Math.max(9,Math.round(ns*0.2))+'px system-ui';
-      const tw=ctx.measureText(z.name).width+14, th=Math.round(ns*0.34);
-      ctx.fillStyle='rgba(8,8,9,.85)'; rr(ctx,px-tw/2,ty-th*0.7,tw,th,6); ctx.fill();
-      ctx.strokeStyle=z.accent+'bb'; ctx.lineWidth=1; ctx.stroke();
-      ctx.fillStyle=z.accent; ctx.fillText(z.name,px,ty+th*0.12); }
     // tokens
     const offs=[[-.5,-.5],[.5,-.5],[-.5,.5],[.5,.5],[0,-.65],[0,.65]];
     players.forEach((pl,pi)=>{ const node=P[Math.max(0,Math.min(pl.pos||0,total-1))]; if(!node) return;
