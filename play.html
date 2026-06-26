@@ -106,6 +106,14 @@
   .submsg{font-size:12px;margin-top:8px;min-height:15px;}.submsg.ok{color:var(--green);}.submsg.err{color:var(--red);}
   .subconsent{display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--text3);margin-top:10px;line-height:1.4;}
   .subconsent a{color:var(--text2);}
+  .recap{max-width:340px;margin:14px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:left;}
+  .recap-h{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+  .recap-total{font-size:46px;font-weight:900;color:#fff;line-height:1;margin:4px 0 2px;}
+  .recap-total span{font-size:13px;color:var(--text3);font-weight:600;margin-left:8px;text-transform:uppercase;letter-spacing:1px;}
+  .recap-moves{margin:8px 0 2px;}
+  .rm{display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-top:1px solid var(--border);}
+  .rm span{color:var(--text2);}.rm b{color:var(--orange);font-variant-numeric:tabular-nums;}
+  .sharebtn{width:100%;margin-top:12px;padding:13px;font-size:15px;font-weight:800;background:#fff;color:#000;border:none;border-radius:12px;cursor:pointer;}
   .pill{display:inline-block;margin-top:14px;padding:8px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text2);}.pill b{color:var(--orange);letter-spacing:3px;}
   .conn{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;padding:4px 12px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--text3);z-index:50;}
   .conn.live{color:var(--green);border-color:rgba(76,175,80,.45);}
@@ -181,7 +189,8 @@ const $=id=>document.getElementById(id);
 const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,3,6,2,5,8]};
 function renderDie(n){const on=PIPS[n]||[];let h='';for(let i=0;i<9;i++)h+=`<span class="pip${on.indexOf(i)>=0?' on':''}"></span>`;return h;}
-let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='', dblUsed=false, lastState=null, schedInt=null, lastStartTry=0;
+let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='', dblUsed=false, lastState=null, schedInt=null, lastStartTry=0, lastRecap=null, winSponsor=null;
+(async()=>{try{const{data}=await sb.from('sponsors').select('name,logo,website_url').eq('active',true).order('sort');if(data&&data.length)winSponsor=data[Math.floor(Math.random()*data.length)];}catch(e){}})();
 const MATCH_FN=W.SUPA_URL+'/functions/v1/match';
 function isOnline(){return !!(room&&room.is_public);}
 async function callMatch(action,extra){
@@ -270,13 +279,44 @@ function sendIntent(type,payload){return sb.from('intents').insert({room_id:room
 
 function myPlayer(state){return (state.players||[]).find(p=>p.id===me.id);}
 
+function computeRecap(mp){const h=(mp&&mp.hist)||[];const byMove={};let total=0;h.forEach(e=>{byMove[e.m]=(byMove[e.m]||0)+e.r;total+=e.r;});return {byMove,total,count:h.length,order:h};}
+function loadImg(src){return new Promise(res=>{if(!src){res(null);return;}const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src;});}
+async function makeRecapImage(rec,mp){
+  const C=document.createElement('canvas');C.width=1080;C.height=1080;const x=C.getContext('2d');
+  const g=x.createRadialGradient(540,320,80,540,720,920);g.addColorStop(0,'#1d1d24');g.addColorStop(1,'#09090a');x.fillStyle=g;x.fillRect(0,0,1080,1080);
+  x.fillStyle='#F5A623';x.fillRect(0,0,1080,9);x.fillRect(0,1071,1080,9);
+  x.textAlign='center';
+  x.fillStyle='#fff';x.font='900 86px system-ui,sans-serif';x.fillText('WODLY',540,135);
+  x.font='800 25px system-ui';x.fillStyle='#4CAF50';x.fillText('TRAIN.',438,172);x.fillStyle='#F5A623';x.fillText('PLAY.',540,172);x.fillStyle='#E8363D';x.fillText('COMPETE.',654,172);
+  const av=W.AVATARS.find(a=>a.id===mp.avatar);const cim=await loadImg(av?av.img:null);
+  if(cim&&cim.naturalWidth){x.drawImage(cim,540-140,198,280,280);}
+  x.fillStyle='#fff';x.font='900 50px system-ui';x.fillText((mp.name||'Athlete').toUpperCase(),540,545);
+  x.fillStyle='#F5A623';x.font='800 23px system-ui';x.fillText('CRUSHED THE WOD',540,582);
+  x.fillStyle='#fff';x.font='900 128px system-ui';x.fillText(String(rec.total),540,700);
+  x.fillStyle='#888';x.font='800 25px system-ui';x.fillText('TOTAL REPS',540,738);
+  const moves=Object.keys(rec.byMove);let yy=805;
+  moves.slice(0,5).forEach(m=>{x.textAlign='left';x.fillStyle='#dddddd';x.font='600 30px system-ui';x.fillText(m.length>22?m.slice(0,22):m,170,yy);x.textAlign='right';x.fillStyle='#F5A623';x.font='800 30px system-ui';x.fillText(String(rec.byMove[m]),910,yy);yy+=42;});
+  x.textAlign='center';
+  if(winSponsor){x.fillStyle='#888';x.font='700 19px system-ui';x.fillText('PRESENTED BY '+(winSponsor.name||'').toUpperCase(),540,1010);}
+  x.fillStyle='#F5A623';x.font='800 23px system-ui';x.fillText('wodly-game.vercel.app   ·   Tag @wodlygame',540,1048);
+  return new Promise(res=>C.toBlob(b=>res(b),'image/png'));
+}
+async function shareRecap(rec,mp){
+  const btn=$('shareBtn');if(btn){btn.disabled=true;btn.textContent='Building…';}
+  const blob=await makeRecapImage(rec,mp);
+  if(btn){btn.disabled=false;btn.textContent='📸 Share my card';}
+  if(!blob)return;
+  const file=new File([blob],'wodly-wod.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'My WODLY WOD'});return;}catch(e){}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wodly-wod.png';a.click();
+}
 function fmtCountdown(ms){if(ms<=0)return 'Starting any moment…';const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sec=s%60;
   if(d>0)return d+'d '+h+'h '+m+'m';if(h>0)return h+'h '+m+'m '+sec+'s';return m+'m '+sec+'s';}
-function subHTML(){return `<div class="subwrap">
-  <div class="subttl">🔔 New boards & worldwide matches</div>
-  <div class="subsub">Get an email when we release new workouts and schedule global matches. No spam.</div>
+function subHTML(kind){const recap=kind==='recap';return `<div class="subwrap">
+  <div class="subttl">${recap?'📧 Email me my recap':'🔔 New boards & worldwide matches'}</div>
+  <div class="subsub">${recap?'Get this workout emailed to you, plus alerts for new boards & worldwide matches.':'Get an email when we release new workouts and schedule global matches. No spam.'}</div>
   <input id="subEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
-  <button class="subbtn" id="subBtn">Notify me</button>
+  <button class="subbtn" id="subBtn">${recap?'Email it to me':'Notify me'}</button>
   <div class="submsg" id="subMsg"></div>
   <label class="subconsent"><input type="checkbox" id="subConsent"> I agree to receive occasional WODLY emails. <a href="/privacy" target="_blank">Privacy</a></label>
 </div>`;}
@@ -285,6 +325,7 @@ async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='Enter a valid email.';msg.className='submsg err';return;}
   if(!$('subConsent').checked){msg.textContent='Please tick the box to consent.';msg.className='submsg err';return;}
   $('subBtn').disabled=true;msg.textContent='…';msg.className='submsg';
+  if(source==='recap'&&lastRecap){try{fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,deck:null,summary:lastRecap})});}catch(e){}}
   try{const r=await fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,source,consent:true})});
     if(r.status===201||r.status===204||r.status===200){msg.textContent="You're on the list ✓";msg.className='submsg ok';}
     else if(r.status===409){msg.textContent="You're already subscribed ✓";msg.className='submsg ok';}
@@ -306,8 +347,11 @@ function renderState(state){
   bodySig=sig;clearInterval(schedInt);schedInt=null;
   // finished
   if(phase==='finished'&&state.winner){const av=W.AVATARS.find(a=>a.id===state.winner.avatar);clearCd();
-    body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${state.winner.id===me.id?'You win! 🏆':esc(state.winner.name)+' wins!'}</h2><div class="pill">Room <b>${room.code}</b></div></div>`+subHTML();
-    wireSub('win');return;}
+    const rec=computeRecap(mp);lastRecap=rec;const moves=Object.keys(rec.byMove);
+    const recHTML=rec.total>0?`<div class="recap"><div class="recap-h">Your workout</div><div class="recap-total">${rec.total}<span>total reps</span></div><div class="recap-moves">${moves.map(m=>`<div class="rm"><span>${esc(m)}</span><b>${rec.byMove[m]}</b></div>`).join('')}</div><button class="sharebtn" id="shareBtn">📸 Share my card</button></div>`:'';
+    body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${state.winner.id===me.id?'You win! 🏆':esc(state.winner.name)+' wins!'}</h2><div class="pill">Room <b>${room.code}</b></div></div>`+recHTML+subHTML('recap');
+    const shb=$('shareBtn');if(shb)shb.onclick=()=>shareRecap(rec,mp);
+    wireSub('recap');return;}
   if(phase!=='playing'){clearCd();
     const sched=(room&&room.scheduled_at)?new Date(room.scheduled_at).getTime():0;
     const title=(room&&room.title)?esc(room.title):'';

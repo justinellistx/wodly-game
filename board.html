@@ -382,7 +382,7 @@ $('startBtn').onclick=async()=>{
   if(!players.length)return;
   const s=room.settings||gatherSettings();
   const total=W.DECK_SPACES[s.deckSz]||52;
-  game={ players:players.map((p,i)=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle'})),
+  game={ players:players.map((p,i)=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[]})),
     total, diff:s.diff||'easy', mv:s.mv, ace:{reps:s.aceReps,move:s.aceMove},
     useTimer:!!s.useTimer, turnSec:s.turnSec||60, penSec:s.penSec||45, timeCap:(s.cap?(s.capMin||20)*60:0),
     deck:W.buildDeck(), landed:{}, log:[], winner:null, startTime:Date.now(),
@@ -508,6 +508,7 @@ function onRoll(pid,dvRaw){
   p.lastRoll=dv;p.pos=res.pos;
   p.event=backHit?{type:'back',val:backHit.val,suit:backHit.suit,eid:(game.eid=(game.eid||0)+1)}:skipHit?{type:'skip',suit:skipHit.suit,eid:(game.eid=(game.eid||0)+1)}:null;
   if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
+  if(res.kind==='workout'||res.kind==='ace'){(p.hist=p.hist||[]).push({m:res.card.move,r:res.card.reps});}
   // keep the freshly-revealed destination card face-down until the token actually lands on it
   if(!game.hidden)game.hidden=new Set();
   if((res.kind==='workout'||res.kind==='ace')&&res.fresh)game.hidden.add(res.pos);
@@ -557,7 +558,7 @@ function renderRecent(){const el=$('recent');if(!el||!game)return;const lg=game.
 // ── State sync ──
 async function writeState(){if(!room||!game)return;
   const state={phase:game.winner?'finished':'playing',total:game.total,seed:game.seed,landed:game.landed,
-    players:game.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,pos:p.pos,lastRoll:p.lastRoll,card:p.card,status:p.status,event:p.event||null})),
+    players:game.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,pos:p.pos,lastRoll:p.lastRoll,card:p.card,status:p.status,event:p.event||null,hist:p.hist||[]})),
     winner:game.winner?{id:game.winner.id,name:game.winner.name,avatar:game.winner.avatar,timeSec:game.winner.timeSec,cap:!!game.winner.cap}:null,
     log:game.log.slice(-5),
     useTimer:game.useTimer,turnSec:game.turnSec,penSec:game.penSec};
