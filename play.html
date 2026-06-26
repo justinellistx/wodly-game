@@ -97,6 +97,12 @@
   .lrow .lc{font-size:14px;font-weight:700;}
   .lrow .lk{font-size:14px;font-weight:800;margin-left:8px;}
   .winbox{text-align:center;padding:30px 16px;}.winbox img{width:130px;height:130px;object-fit:contain;}.winbox h2{font-size:26px;font-weight:900;margin-top:10px;}
+  .results{max-width:340px;margin:6px auto 0;}
+  .rrow{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);margin-bottom:6px;}
+  .rrow.me{border-color:var(--orange);}
+  .rrow .rpl{font-size:17px;font-weight:900;width:34px;text-align:center;}
+  .rrow .rnm{flex:1;font-weight:700;font-size:15px;}
+  .rrow .rtm{font-size:14px;color:var(--text2);font-variant-numeric:tabular-nums;}
   .subwrap{max-width:340px;margin:18px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:left;}
   .subttl{font-size:15px;font-weight:800;}
   .subsub{font-size:12px;color:var(--text3);margin:4px 0 12px;line-height:1.45;}
@@ -293,7 +299,7 @@ async function makeRecapImage(rec,mp){
   const av=W.AVATARS.find(a=>a.id===mp.avatar);const cim=await loadImg(av?av.img:null);
   if(cim&&cim.naturalWidth){x.drawImage(cim,540-140,198,280,280);}
   x.fillStyle='#fff';x.font='900 50px system-ui';x.fillText((mp.name||'Athlete').toUpperCase(),540,545);
-  x.fillStyle='#F5A623';x.font='800 23px system-ui';x.fillText('CRUSHED THE WOD',540,582);
+  x.fillStyle='#F5A623';x.font='800 23px system-ui';x.fillText(rec.place?(ord(rec.place).toUpperCase()+' PLACE · CRUSHED THE WOD'):'CRUSHED THE WOD',540,582);
   x.fillStyle='#fff';x.font='900 128px system-ui';x.fillText(String(rec.total),540,700);
   x.fillStyle='#888';x.font='800 25px system-ui';x.fillText('TOTAL REPS',540,738);
   const moves=Object.keys(rec.byMove);let yy=805;
@@ -346,15 +352,24 @@ function renderState(state){
   if(mp)$('mePos').textContent=mp.pos;
   if(mp&&mp.event&&(mp.event.type==='back'||mp.event.type==='skip')&&mp.event.eid!==seenEid){seenEid=mp.event.eid;showEvent(mp.event);}
   renderStandings(state);renderRecentLog(state);
-  const sig=phase+'|'+(mp?(mp.status+'|'+mp.pos+'|'+(mp.card?(mp.card.kind+mp.card.reps+(mp.card.move||'')):'no')):'nomp')+'|'+(state.winner?state.winner.id:'');
+  const sig=phase+'|'+(mp?(mp.status+'|'+mp.pos+'|'+(mp.finished?'F'+mp.place:'')+'|'+(mp.card?(mp.card.kind+mp.card.reps+(mp.card.move||'')):'no')):'nomp')+'|'+(state.winner?state.winner.id:'')+'|'+((state.results||[]).length);
   if(sig===bodySig&&!rolling)return; // body unchanged — don't disturb countdown/animations on poll
   if(rolling)return;
   bodySig=sig;clearInterval(schedInt);schedInt=null;
   // finished
-  if(phase==='finished'&&state.winner){const av=W.AVATARS.find(a=>a.id===state.winner.avatar);clearCd();
-    const rec=computeRecap(mp);lastRecap=rec;const moves=Object.keys(rec.byMove);
+  if(phase==='finished'&&state.winner){clearCd();
+    const results=state.results||[];
+    const myR=results.find(r=>r.id===me.id)||(mp?{place:(mp.finished?mp.place:null),finishSec:mp.finishSec,dnf:!mp.finished,pos:mp.pos}:null);
+    const av=W.AVATARS.find(a=>a.id===((mp&&mp.avatar)||state.winner.avatar));
+    const rec=computeRecap(mp);lastRecap=rec;if(myR&&myR.place)rec.place=myR.place;const moves=Object.keys(rec.byMove);
+    let head;
+    if(myR&&myR.place===1)head='You win! 🏆';
+    else if(myR&&!myR.dnf&&myR.place)head='You finished '+ord(myR.place)+'! 🏁';
+    else head=esc(state.winner.name)+' wins!';
+    const subt=(myR&&!myR.dnf&&myR.finishSec!=null)?`<div class="pill">Your time <b>${pfmt(myR.finishSec)}</b></div>`:`<div class="pill">Room <b>${room.code}</b></div>`;
+    const resHTML=results.length>1?`<div class="results">${results.map(r=>{const medal=r.place===1?'🥇':r.place===2?'🥈':r.place===3?'🥉':(r.place+'.');const t=r.dnf?'—':pfmt(r.finishSec||0);return `<div class="rrow${r.id===me.id?' me':''}"><span class="rpl">${medal}</span><span class="rnm">${esc(r.name)}</span><span class="rtm">${t}</span></div>`;}).join('')}</div>`:'';
     const recHTML=rec.total>0?`<div class="recap"><div class="recap-h">Your workout</div><div class="recap-total">${rec.total}<span>total reps</span></div><div class="recap-moves">${moves.map(m=>`<div class="rm"><span>${esc(m)}</span><b>${rec.byMove[m]}</b></div>`).join('')}</div><button class="sharebtn" id="shareBtn">📸 Share my card</button></div>`:'';
-    body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${state.winner.id===me.id?'You win! 🏆':esc(state.winner.name)+' wins!'}</h2><div class="pill">Room <b>${room.code}</b></div></div>`+recHTML+subHTML('recap');
+    body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${head}</h2>${subt}</div>`+resHTML+recHTML+subHTML('recap');
     const shb=$('shareBtn');if(shb)shb.onclick=()=>shareRecap(rec,mp);
     wireSub('recap');return;}
   if(phase!=='playing'){clearCd();
@@ -373,6 +388,12 @@ function renderState(state){
     else body.innerHTML='<div class="rollwrap">Syncing…</div>';
     return;}
   if(rolling){return;} // keep local dice animation until it sends
+  if(mp.finished){clearCd();
+    body.innerHTML=`<div class="rollwrap" style="padding:24px 0;text-align:center;">
+      <div class="mn" style="font-size:26px;">🏁 Finished ${ord(mp.place)}!</div>
+      <div class="ms" style="margin-top:6px;">Your time ${pfmt(mp.finishSec||0)}</div>
+      <div class="ms" style="margin-top:14px;">Waiting for the others to finish…</div></div>`;
+    lastStatus='finished';return;}
   if(mp.status==='working'&&mp.card){
     clearCd();const isAce=mp.card.kind==='ace';
     body.innerHTML=`<div class="cardpop">${cardHTML(mp.card)}<div class="cd" id="cd"></div>
@@ -408,13 +429,18 @@ function startCd(state,isAce){clearCd();if(!state.useTimer)return;let rem=isAce?
   tick();cdInt=setInterval(tick,1000);}
 function clearCd(){if(cdInt){clearInterval(cdInt);cdInt=null;}}
 
+function ord(n){n=n||0;const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
 function renderStandings(state){const list=$('standList'),wrap=$('standWrap');const ps=state.players||[];
-  if(!ps.length||state.phase!=='playing'){wrap.style.display='none';return;}
+  if(!ps.length||(state.phase!=='playing'&&state.phase!=='finished')){wrap.style.display='none';return;}
   wrap.style.display='';const total=state.total||52;
-  const ranked=ps.slice().sort((a,b)=>b.pos-a.pos);list.innerHTML='';
-  ranked.forEach(p=>{const doing=p.status==='working'&&p.card?`<span class="sdo ${p.card.kind==='ace'?'ace':''}">${p.card.reps} ${esc(p.card.move||'')}</span>`:'';
+  // finished first (by placing), then racers by furthest position
+  const ranked=ps.slice().sort((a,b)=>{if(a.finished&&b.finished)return a.place-b.place;if(a.finished)return -1;if(b.finished)return 1;return b.pos-a.pos;});
+  list.innerHTML='';
+  ranked.forEach(p=>{const medal=p.finished?(p.place===1?'🥇':p.place===2?'🥈':p.place===3?'🥉':(p.place+'.')):'';
+    const doing=p.finished?`<span class="sdo" style="color:var(--orange)">🏁 ${pfmt(p.finishSec||0)}</span>`:(p.status==='working'&&p.card?`<span class="sdo ${p.card.kind==='ace'?'ace':''}">${p.card.reps} ${esc(p.card.move||'')}</span>`:'');
+    const posCell=p.finished?`<span class="spos">${medal}</span>`:`<span class="spos">${p.pos}/${total-1}</span>`;
     const row=document.createElement('div');row.className='srow'+(p.id===me.id?' me':'');
-    row.innerHTML=`<span class="sd" style="background:${p.color}"></span><span class="sn">${esc(p.name)}</span><span class="spos">${p.pos}/${total-1}</span>${doing}`;
+    row.innerHTML=`<span class="sd" style="background:${p.color}"></span><span class="sn">${esc(p.name)}</span>${posCell}${doing}`;
     list.appendChild(row);});}
 function pfmt(s){s=s||0;const m=Math.floor(s/60),sc=s%60;return m+':'+(sc<10?'0':'')+sc;}
 function renderRecentLog(state){const wrap=$('logWrap'),list=$('logList');const lg=state.log||[];

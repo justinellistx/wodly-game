@@ -35,6 +35,7 @@
   #diffRow .ob[data-v="easy"].sel{background:var(--blue);border-color:var(--blue);color:#000;}#diffRow .ob[data-v="easy"].sel b{color:#000;}
   #diffRow .ob[data-v="medium"].sel{background:var(--orange);border-color:var(--orange);color:#000;}#diffRow .ob[data-v="medium"].sel b{color:#000;}
   #diffRow .ob[data-v="hard"].sel{background:var(--red);border-color:var(--red);color:#fff;}#diffRow .ob[data-v="hard"].sel b{color:#fff;}
+  #finishRow .ob.sel{background:var(--orange);border-color:var(--orange);color:#000;}#finishRow .ob.sel b{color:#000;}
   .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
   .toggle{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;}
   .toggle input{opacity:0;width:0;height:0;}
@@ -84,6 +85,14 @@
   #tokenCanvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:14px;pointer-events:none;}
   /* game dashboard layout */
   #setupScreen,#winScreen{max-width:1080px;margin:0 auto;}
+  .winstand{max-width:560px;margin:18px auto 0;text-align:left;}
+  .wsrow{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:8px;}
+  .wsrow .wsplace{font-size:22px;font-weight:900;width:46px;text-align:center;}
+  .wsrow img{width:36px;height:36px;object-fit:contain;}
+  .wsrow .wsname{flex:1;font-weight:800;font-size:17px;}
+  .wsrow .wstime{font-size:15px;color:var(--text2);font-variant-numeric:tabular-nums;}
+  .wsrow.p1{border-color:var(--orange);box-shadow:0 0 16px #F5A62333;}
+  .wsrow.dnf .wstime{color:var(--text3);}
   .gamegrid{display:grid;grid-template-columns:minmax(320px,360px) 1fr minmax(190px,230px);gap:16px;align-items:start;}
   .gcol{display:flex;flex-direction:column;gap:10px;min-width:0;}
   .gcol .sec{margin-top:4px;}
@@ -198,6 +207,11 @@
           <button class="ob" data-v="medium"><b>Rx</b><small>standard</small></button>
           <button class="ob" data-v="hard"><b>Elite</b><small>max</small></button>
         </div>
+        <div class="sec">Finish</div>
+        <div class="opt-row" id="finishRow">
+          <button class="ob sel" data-v="all"><b>Everyone finishes</b><small>placings &amp; times</small></button>
+          <button class="ob" data-v="first"><b>First to finish</b><small>race over at #1</small></button>
+        </div>
         <div class="sec">Timers</div>
         <div class="toggle-row">
           <label class="toggle"><input type="checkbox" id="turnTimerToggle"/><span class="slider"></span></label>
@@ -260,6 +274,7 @@
         <div class="clock"><div class="cl">Game clock</div><div class="cv" id="gameClock">0:00</div></div>
         <div class="clock" id="capBox" style="display:none;"><div class="cl">Time cap</div><div class="cv" id="capClock">—</div></div>
         <div class="clock"><div class="cl">Room</div><div class="room" id="gameCode">····</div></div>
+        <button class="ghost" id="endResultsBtn" style="display:none;width:100%;margin-top:10px;">🏁 End &amp; show results</button>
       </aside>
     </div>
   </div>
@@ -270,6 +285,7 @@
       <img id="winImg" alt="">
       <h2 id="winName">Winner!</h2>
       <div class="wt" id="winTime"></div>
+      <div id="winStandings" class="winstand"></div>
       <button class="bigbtn inline" id="againBtn" style="margin-top:24px;">NEW GAME</button>
     </div>
   </div>
@@ -310,18 +326,19 @@ $('discLink').onclick=()=>$('discOverlay').classList.add('show');
 
 // ── Setup ──
 function mkOptRow(id){$(id).addEventListener('click',e=>{const b=e.target.closest('.ob');if(!b||!b.dataset.v)return;document.querySelectorAll('#'+id+' .ob').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');});}
-mkOptRow('deckRow');mkOptRow('diffRow');
+mkOptRow('deckRow');mkOptRow('diffRow');mkOptRow('finishRow');
 $('turnTimerToggle').addEventListener('change',function(){$('timerSettings').classList.toggle('show',this.checked);});
 function selVal(id){const e=document.querySelector('#'+id+' .ob.sel');return e?e.dataset.v:null;}
 function _v(id){const e=$(id);return e?e.value:'';}
 function _set(id,v){if(v==null||v==='')return;const e=$(id);if(e)e.value=v;}
 const SET_KEY='wodly_settings_v1';
-function gatherSettings(){return{mv:{hearts:_v('mv-hearts')||'Push-ups',diamonds:_v('mv-diamonds')||'Air Squats',clubs:_v('mv-clubs')||'Burpees',spades:_v('mv-spades')||'Sit-ups'},aceReps:Math.max(1,parseInt(_v('ace-reps'))||10),aceMove:(_v('ace-move').trim()||'Burpees'),deckSz:selVal('deckRow')||'standard',diff:selVal('diffRow')||'easy',useTimer:$('turnTimerToggle').checked,turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60),penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),cap:$('capToggle').checked,capMin:Math.max(1,parseInt(_v('capInput'))||20)};}
+function gatherSettings(){return{mv:{hearts:_v('mv-hearts')||'Push-ups',diamonds:_v('mv-diamonds')||'Air Squats',clubs:_v('mv-clubs')||'Burpees',spades:_v('mv-spades')||'Sit-ups'},aceReps:Math.max(1,parseInt(_v('ace-reps'))||10),aceMove:(_v('ace-move').trim()||'Burpees'),deckSz:selVal('deckRow')||'standard',diff:selVal('diffRow')||'easy',useTimer:$('turnTimerToggle').checked,turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60),penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),cap:$('capToggle').checked,capMin:Math.max(1,parseInt(_v('capInput'))||20),finishMode:selVal('finishRow')||'all'};}
 function loadSettings(){let s;try{s=JSON.parse(localStorage.getItem(SET_KEY)||'null');}catch(e){}if(!s)return;
   if(s.mv){_set('mv-hearts',s.mv.hearts);_set('mv-diamonds',s.mv.diamonds);_set('mv-clubs',s.mv.clubs);_set('mv-spades',s.mv.spades);}
   _set('ace-reps',s.aceReps);_set('ace-move',s.aceMove);
   if(s.deckSz)document.querySelectorAll('#deckRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.deckSz));
   if(s.diff)document.querySelectorAll('#diffRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.diff));
+  if(s.finishMode)document.querySelectorAll('#finishRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.finishMode));
   if(typeof s.useTimer==='boolean'){$('turnTimerToggle').checked=s.useTimer;$('timerSettings').classList.toggle('show',s.useTimer);}
   _set('turnTimerInput',s.turnSec);_set('penTimerInput',s.penSec);
   if(typeof s.cap==='boolean')$('capToggle').checked=s.cap;_set('capInput',s.capMin);}
@@ -375,6 +392,7 @@ function renderRoster(){const r=$('roster');$('pcount').textContent=players.leng
 $('editBtn').onclick=async()=>{if(room){await sb.from('rooms').delete().eq('id',room.id);room=null;}show('setupScreen');setStatus('setup');};
 $('newRoomBtn').onclick=async()=>{if(room)await sb.from('rooms').delete().eq('id',room.id);room=null;$('openLobbyBtn').click();};
 $('quitBtn').onclick=async()=>{stopClocks();if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}game=null;show('lobbyScreen');};
+$('endResultsBtn').onclick=()=>{if(!game||game.ended)return;const left=game.players.filter(p=>!p.finished).length;if(left>0&&!confirm(left+' team'+(left>1?'s':'')+" haven't finished. End now and show results?"))return;endGame('manual');};
 $('againBtn').onclick=async()=>{game=null;if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}await refreshPlayers();renderRoster();show('lobbyScreen');};
 
 // ── START GAME ──
@@ -382,14 +400,15 @@ $('startBtn').onclick=async()=>{
   if(!players.length)return;
   const s=room.settings||gatherSettings();
   const total=W.DECK_SPACES[s.deckSz]||52;
-  game={ players:players.map((p,i)=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[]})),
-    total, diff:s.diff||'easy', mv:s.mv, ace:{reps:s.aceReps,move:s.aceMove},
+  game={ players:players.map((p,i)=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[],finished:false,place:null,finishSec:null})),
+    total, diff:s.diff||'easy', mv:s.mv, ace:{reps:s.aceReps,move:s.aceMove}, finishMode:(s.finishMode==='first'?'first':'all'),
     useTimer:!!s.useTimer, turnSec:s.turnSec||60, penSec:s.penSec||45, timeCap:(s.cap?(s.capMin||20)*60:0),
-    deck:W.buildDeck(), landed:{}, log:[], winner:null, startTime:Date.now(),
+    deck:W.buildDeck(), landed:{}, log:[], winner:null, results:null, finishedCount:0, ended:false, startTime:Date.now(),
     seed:(Math.floor(Math.random()*2e9))>>>0, path:null, nodeSize:44 };
   capFired=false;vpos={};
   await sb.from('rooms').update({status:'playing'}).eq('id',room.id);
   show('gameScreen');$('gameCode').textContent=room.code;loadSponsors().then(pickSponsor);
+  $('endResultsBtn').style.display=(game.finishMode==='all')?'':'none';
   $('capBox').style.display=game.timeCap>0?'':'none';
   if(game.timeCap>0)$('capClock').textContent=fmt(game.timeCap);
   sizeCanvas();drawBoard();drawTokens();renderStandings();renderRecent();startGameClock();
@@ -485,7 +504,7 @@ function onIntent(it){if(!game)return;
   else if(it.type==='done'||it.type==='penalty_done')onDone(it.player_id);}
 
 function onRoll(pid,dvRaw){
-  const p=game.players.find(x=>x.id===pid);if(!p||game.winner||p.status==='working')return;
+  const p=game.players.find(x=>x.id===pid);if(!p||game.ended||game.winner||p.finished||p.status==='working')return;
   let dv=parseInt(dvRaw);if(!(dv>=1&&dv<=12))dv=1+Math.floor(Math.random()*6);
   const from=p.pos, total=game.total;
   let pos=Math.min(from+dv,total-1), guard=0, res=null, hops=[], backHit=null, skipHit=null;
@@ -515,7 +534,7 @@ function onRoll(pid,dvRaw){
   drawBoard();renderStandings();renderRecent();writeState();
   // cosmetic: walk through each landing in order — forward to a back/skip card, pause, then move.
   vpos[p.id]=from;drawTokens();
-  animateHops(p.id,from,hops,()=>{if(game.hidden)game.hidden.delete(res.pos);drawBoard();drawTokens();if(res.win)win(p);});
+  animateHops(p.id,from,hops,()=>{if(game.hidden)game.hidden.delete(res.pos);drawBoard();drawTokens();if(res.win)playerFinish(p);});
 }
 function animateHops(pid,from,hops,done){let prev=from,i=0;
   (function next(){if(i>=hops.length){delete vpos[pid];drawBoard();drawTokens();if(done)done();return;}
@@ -523,24 +542,66 @@ function animateHops(pid,from,hops,done){let prev=from,i=0;
       if(i<hops.length)setTimeout(next,600);else next();});})();}
 function onDone(pid){const p=game.players.find(x=>x.id===pid);if(!p||p.status!=='working')return;
   p.card=null;p.status='idle';renderStandings();writeState();}
-function win(p){game.winner={id:p.id,name:p.name,avatar:p.avatar,timeSec:Math.floor((Date.now()-game.startTime)/1000)};stopClocks();
-  const av=W.AVATARS.find(a=>a.id===p.avatar);$('winImg').src=av?av.img:'';$('winName').textContent=p.name+' wins!';$('winTime').textContent='Total time: '+fmt(game.winner.timeSec);
-  show('winScreen');sb.from('rooms').update({status:'finished'}).eq('id',room.id).then(()=>{});writeState();}
-function triggerCap(){if(capFired||!game||game.winner)return;capFired=true;let leader=game.players[0];game.players.forEach(p=>{if(p.pos>leader.pos)leader=p;});
-  game.winner={id:leader.id,name:leader.name,avatar:leader.avatar,timeSec:Math.floor((Date.now()-game.startTime)/1000),cap:true};stopClocks();
-  const av=W.AVATARS.find(a=>a.id===leader.avatar);$('winImg').src=av?av.img:'';$('winName').textContent=leader.name+' wins!';$('winTime').textContent='Time cap — furthest along.';
-  show('winScreen');sb.from('rooms').update({status:'finished'}).eq('id',room.id).then(()=>{});writeState();}
+// A player crossed the line: lock them in with a placing + finish time.
+function playerFinish(p){
+  if(p.finished||game.ended)return;
+  p.finished=true;p.status='idle';p.card=null;p.pos=game.total-1;
+  game.finishedCount=(game.finishedCount||0)+1;p.place=game.finishedCount;
+  p.finishSec=Math.floor((Date.now()-game.startTime)/1000);
+  logPush(p,{kind:'finish',place:p.place,gs:p.finishSec});
+  if(game.finishMode==='first'){endGame('first');return;}
+  if(game.players.every(x=>x.finished)){endGame('all');return;}
+  drawBoard();drawTokens();renderStandings();renderRecent();writeState();
+}
+// Build final ordered standings: finishers by place, then the rest by furthest position.
+function computeResults(){
+  const fin=game.players.filter(p=>p.finished).sort((a,b)=>a.place-b.place);
+  const rest=game.players.filter(p=>!p.finished).sort((a,b)=>b.pos-a.pos);
+  const out=fin.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,place:p.place,finishSec:p.finishSec,pos:p.pos,dnf:false,hist:p.hist||[]}));
+  let place=fin.length;
+  rest.forEach(p=>{place++;out.push({id:p.id,name:p.name,avatar:p.avatar,color:p.color,place,finishSec:null,pos:p.pos,dnf:true,hist:p.hist||[]});});
+  return out;
+}
+function endGame(reason){
+  if(game.ended)return;game.ended=true;
+  game.results=computeResults();const top=game.results[0]||{};
+  game.winner={id:top.id,name:top.name,avatar:top.avatar,timeSec:top.finishSec||Math.floor((Date.now()-game.startTime)/1000),place:1,cap:(reason==='cap')};
+  stopClocks();renderResults(reason);
+  sb.from('rooms').update({status:'finished'}).eq('id',room.id).then(()=>{});writeState();
+}
+function renderResults(reason){
+  const top=game.results[0]||{};const av=W.AVATARS.find(a=>a.id===top.avatar);
+  $('winImg').src=av?av.img:'';
+  $('winName').textContent=(game.finishMode==='first'||game.players.length<2)?((top.name||'')+' wins! 🏆'):'Results 🏁';
+  $('winTime').textContent=reason==='cap'?'Time cap reached':(top.finishSec!=null?('Winner · '+fmt(top.finishSec)):'');
+  const sb2=$('winStandings');sb2.innerHTML='';
+  game.results.forEach(r=>{const a=W.AVATARS.find(x=>x.id===r.avatar);const row=document.createElement('div');
+    row.className='wsrow'+(r.place===1?' p1':'')+(r.dnf?' dnf':'');
+    const medal=r.place===1?'🥇':r.place===2?'🥈':r.place===3?'🥉':(r.place+'.');
+    const time=r.dnf?('—  ('+r.pos+'/'+(game.total-1)+')'):fmt(r.finishSec||0);
+    row.innerHTML=`<span class="wsplace">${medal}</span><img src="${a?a.img:''}" alt=""><span class="wsname">${esc(r.name)}</span><span class="wstime">${time}</span>`;
+    sb2.appendChild(row);});
+  show('winScreen');
+}
+function triggerCap(){if(capFired||!game||game.ended)return;capFired=true;
+  // mark any not-yet-finished players' standing by position; end with results.
+  endGame('cap');}
 
 function cardText(c){if(!c)return null;return c.reps+' '+c.move;}
 function renderStandings(){const b=$('standBody');if(!game)return;b.innerHTML='';
-  const ranked=game.players.map((p,i)=>({p,i})).sort((a,b)=>b.p.pos-a.p.pos);
-  ranked.forEach(({p})=>{const tr=document.createElement('tr');tr.className='row'+(p.status==='working'?(p.card&&p.card.kind==='ace'?' ace':' working'):'');
+  // finished players first (by placing), then racers by furthest position.
+  const ranked=game.players.slice().sort((a,b)=>{
+    if(a.finished&&b.finished)return a.place-b.place;
+    if(a.finished)return -1; if(b.finished)return 1; return b.pos-a.pos;});
+  ranked.forEach(p=>{const tr=document.createElement('tr');tr.className='row'+(p.finished?' done':(p.status==='working'?(p.card&&p.card.kind==='ace'?' ace':' working'):''));
     const av=W.AVATARS.find(a=>a.id===p.avatar);
     const pct=Math.round(p.pos/(game.total-1)*100);
-    const doing=p.status==='working'&&p.card?`<span class="doing ${p.card.kind==='ace'?'ace':'work'}">${p.card.kind==='ace'?'Ace · ':''}${esc(cardText(p.card))}</span>`:'<span class="doing idle">—</span>';
+    const medal=p.finished?(p.place===1?'🥇':p.place===2?'🥈':p.place===3?'🥉':(p.place+'.')):'';
+    const posCell=p.finished?`<span class="pos" style="color:var(--orange)">🏁 ${fmt(p.finishSec||0)}</span>`:`<span class="pos">${p.pos}/${game.total-1}<span class="bar2"><i style="width:${pct}%"></i></span></span>`;
+    const doing=p.finished?`<span class="doing" style="color:var(--orange)">Finished ${medal}</span>`:(p.status==='working'&&p.card?`<span class="doing ${p.card.kind==='ace'?'ace':'work'}">${p.card.kind==='ace'?'Ace · ':''}${esc(cardText(p.card))}</span>`:'<span class="doing idle">—</span>');
     tr.innerHTML=`<td><div class="team"><span class="dot" style="background:${p.color}"></span><img src="${av?av.img:''}" alt=""><span class="nm">${esc(p.name)}</span></div></td>
-      <td><span class="pos">${p.pos}/${game.total-1}<span class="bar2"><i style="width:${pct}%"></i></span></span></td>
-      <td>${p.lastRoll?`<span class="die">${p.lastRoll<=6?DICE_FACE[p.lastRoll-1]:p.lastRoll}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td>${posCell}</td>
+      <td>${p.finished?'<span style="color:var(--text3)">—</span>':(p.lastRoll?`<span class="die">${p.lastRoll<=6?DICE_FACE[p.lastRoll-1]:p.lastRoll}</span>`:'<span style="color:var(--text3)">—</span>')}</td>
       <td>${doing}</td>`;
     b.appendChild(tr);});}
 function logPush(p,e){game.log.push(Object.assign({name:p.name,color:p.color},e));if(game.log.length>12)game.log.shift();}
@@ -557,9 +618,10 @@ function renderRecent(){const el=$('recent');if(!el||!game)return;const lg=game.
 
 // ── State sync ──
 async function writeState(){if(!room||!game)return;
-  const state={phase:game.winner?'finished':'playing',total:game.total,seed:game.seed,landed:game.landed,
-    players:game.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,pos:p.pos,lastRoll:p.lastRoll,card:p.card,status:p.status,event:p.event||null,hist:p.hist||[]})),
-    winner:game.winner?{id:game.winner.id,name:game.winner.name,avatar:game.winner.avatar,timeSec:game.winner.timeSec,cap:!!game.winner.cap}:null,
+  const state={phase:game.ended?'finished':'playing',total:game.total,seed:game.seed,landed:game.landed,finishMode:game.finishMode,
+    players:game.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,pos:p.pos,lastRoll:p.lastRoll,card:p.card,status:p.status,event:p.event||null,hist:p.hist||[],finished:!!p.finished,place:p.place||null,finishSec:(p.finishSec!=null?p.finishSec:null)})),
+    winner:game.winner?{id:game.winner.id,name:game.winner.name,avatar:game.winner.avatar,timeSec:game.winner.timeSec,place:game.winner.place||1,cap:!!game.winner.cap}:null,
+    results:game.results||null,
     log:game.log.slice(-5),
     useTimer:game.useTimer,turnSec:game.turnSec,penSec:game.penSec};
   try{await sb.from('rooms').update({state}).eq('id',room.id);}catch(e){}}
