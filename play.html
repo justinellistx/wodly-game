@@ -318,10 +318,10 @@ async function shareRecap(rec,mp){
 function fmtCountdown(ms){if(ms<=0)return 'Starting any moment…';const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sec=s%60;
   if(d>0)return d+'d '+h+'h '+m+'m';if(h>0)return h+'h '+m+'m '+sec+'s';return m+'m '+sec+'s';}
 function subHTML(kind){const recap=kind==='recap';return `<div class="subwrap">
-  <div class="subttl">${recap?'📧 Email me my recap':'🔔 New boards & worldwide matches'}</div>
-  <div class="subsub">${recap?'Get this workout emailed to you, plus alerts for new boards & worldwide matches.':'Get an email when we release new workouts and schedule global matches. No spam.'}</div>
+  <div class="subttl">${recap?'🔔 Get WODLY updates':'🔔 New boards & worldwide matches'}</div>
+  <div class="subsub">${recap?'Drop your email for new boards & worldwide matches — and emailed recaps when they go live. No spam.':'Get an email when we release new workouts and schedule global matches. No spam.'}</div>
   <input id="subEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
-  <button class="subbtn" id="subBtn">${recap?'Email it to me':'Notify me'}</button>
+  <button class="subbtn" id="subBtn">${recap?'Sign me up':'Notify me'}</button>
   <div class="submsg" id="subMsg"></div>
   <label class="subconsent"><input type="checkbox" id="subConsent"> I agree to receive occasional WODLY emails. <a href="/privacy" target="_blank">Privacy</a></label>
 </div>`;}
