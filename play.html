@@ -336,7 +336,16 @@ async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='Enter a valid email.';msg.className='submsg err';return;}
   if(!$('subConsent').checked){msg.textContent='Please tick the box to consent.';msg.className='submsg err';return;}
   $('subBtn').disabled=true;msg.textContent='…';msg.className='submsg';
-  if(source==='recap'&&lastRecap){try{fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,deck:null,summary:lastRecap})});}catch(e){}}
+  if(source==='recap'&&lastRecap){try{
+    let imageUrl=null;
+    try{const blob=await makeRecapImage(lastRecap,me);
+      if(blob){const path='r_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.png';
+        const up=await sb.storage.from('recaps').upload(path,blob,{contentType:'image/png',upsert:true});
+        if(!up.error)imageUrl=sb.storage.from('recaps').getPublicUrl(path).data.publicUrl;}
+    }catch(e){}
+    fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,deck:null,summary:lastRecap,image_url:imageUrl})});
+    fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:{apikey:W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:(me&&me.name)||null,image_url:imageUrl,summary:lastRecap})});
+  }catch(e){}}
   try{const r=await fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,source,consent:true})});
     if(r.status===201||r.status===204||r.status===200){msg.textContent="You're on the list ✓";msg.className='submsg ok';}
     else if(r.status===409){msg.textContent="You're already subscribed ✓";msg.className='submsg ok';}
@@ -361,7 +370,7 @@ function renderState(state){
     const results=state.results||[];
     const myR=results.find(r=>r.id===me.id)||(mp?{place:(mp.finished?mp.place:null),finishSec:mp.finishSec,dnf:!mp.finished,pos:mp.pos}:null);
     const av=W.AVATARS.find(a=>a.id===((mp&&mp.avatar)||state.winner.avatar));
-    const rec=computeRecap(mp);lastRecap=rec;if(myR&&myR.place)rec.place=myR.place;const moves=Object.keys(rec.byMove);
+    const rec=computeRecap(mp);lastRecap=rec;if(myR&&myR.place)rec.place=myR.place;if(myR&&!myR.dnf&&myR.finishSec!=null)rec.timeSec=myR.finishSec;const moves=Object.keys(rec.byMove);
     let head;
     if(myR&&myR.place===1)head='You win! 🏆';
     else if(myR&&!myR.dnf&&myR.place)head='You finished '+ord(myR.place)+'! 🏁';
