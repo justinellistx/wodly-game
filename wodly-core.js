@@ -45,7 +45,9 @@
     { id:'dbgrind',name:'Dumbbell Grind', cat:'Dumbbell & kettlebell', note:'Grab a dumbbell', mv:{hearts:'DB Snatch',diamonds:'DB Thruster',clubs:'DB Goblet Squat',spades:'DB Row'}, aceReps:8, aceMove:'DB Devil Press' },
     { id:'kbeng',  name:'Kettlebell Engine', cat:'Dumbbell & kettlebell', note:'One kettlebell', mv:{hearts:'KB Swings',diamonds:'KB Goblet Squat',clubs:'KB Clean',spades:'KB Deadlift'}, aceReps:15, aceMove:'KB Swings' },
     { id:'core',   name:'Core Crusher', cat:'Core & conditioning', note:'Abs on fire', mv:{hearts:'Sit-ups',diamonds:'Leg Raises',clubs:'Russian Twists',spades:'Plank (sec)'}, aceReps:20, aceMove:'Hollow Hold (sec)' },
-    { id:'cardio', name:'Cardio Burner', cat:'Core & conditioning', note:'Heart-rate spike', mv:{hearts:'Burpees',diamonds:'Mountain Climbers',clubs:'High Knees',spades:'Jumping Jacks'}, aceReps:15, aceMove:'Burpees' }
+    { id:'cardio', name:'Cardio Burner', cat:'Core & conditioning', note:'Heart-rate spike', mv:{hearts:'Burpees',diamonds:'Mountain Climbers',clubs:'High Knees',spades:'Jumping Jacks'}, aceReps:15, aceMove:'Burpees' },
+    { id:'hybridrace',   name:'Hybrid Race',   cat:'Hybrid race', note:'The 8-station sim', mv:{hearts:'Wall Balls',diamonds:'Burpee Broad Jumps',clubs:'Sandbag Lunges',spades:'SkiErg (cal)'}, aceReps:1000, aceMove:'m Run' },
+    { id:'hybridengine', name:'Hybrid Engine', cat:'Hybrid race', note:'Erg-heavy conditioning', mv:{hearts:'SkiErg (cal)',diamonds:'Row (cal)',clubs:'Burpee Broad Jumps',spades:'Wall Balls'}, aceReps:500, aceMove:'m Run' }
   ];
 
   // ── Card logic ────────────────────────────────────────────────────────────
