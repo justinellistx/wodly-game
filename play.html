@@ -306,9 +306,9 @@ async function makeRecapImage(rec,mp){
   moves.slice(0,5).forEach(m=>{x.textAlign='left';x.fillStyle='#dddddd';x.font='600 30px system-ui';x.fillText(m.length>22?m.slice(0,22):m,170,yy);x.textAlign='right';x.fillStyle='#F5A623';x.font='800 30px system-ui';x.fillText(String(rec.byMove[m]),910,yy);yy+=42;});
   x.textAlign='center';
   if(winSponsor){x.fillStyle='#888';x.font='700 19px system-ui';x.fillText('PRESENTED BY '+(winSponsor.name||'').toUpperCase(),540,1010);}
-  x.fillStyle='#F5A623';x.font='800 23px system-ui';x.fillText('wodly-game.vercel.app   ·   Tag @wodlygame',540,1048);
+  x.fillStyle='#F5A623';x.font='800 23px system-ui';x.fillText('wodlygame.com   ·   Tag @wodlygame',540,1048);
   // "Scan to play" QR (top-right corner)
-  const qr=await makeQR('https://wodly-game.vercel.app',150);
+  const qr=await makeQR('https://wodlygame.com',150);
   if(qr){const qx=892,qy=30,qs=150;x.fillStyle='#fff';x.fillRect(qx-9,qy-9,qs+18,qs+18);try{x.drawImage(qr,qx,qy,qs,qs);}catch(e){}x.textAlign='center';x.fillStyle='#F5A623';x.font='800 19px system-ui';x.fillText('SCAN TO PLAY',qx+qs/2,qy+qs+26);}
   return new Promise(res=>C.toBlob(b=>res(b),'image/png'));
 }
