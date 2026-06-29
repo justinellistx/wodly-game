@@ -59,6 +59,7 @@
       <div><label>Deck size</label><select id="f-deck"><option value="quick">Fast · 1 deck</option><option value="standard" selected>Standard · 2 decks</option><option value="large">Beast · 2½ decks</option></select></div>
       <div><label>Difficulty</label><select id="f-diff"><option value="easy">Beginner</option><option value="medium" selected>Rx</option><option value="hard">Elite</option></select></div>
       <div><label>Finish</label><select id="f-finish"><option value="all" selected>Everyone finishes</option><option value="first">First to finish wins</option></select></div>
+      <div><label>Board theme</label><select id="f-board"></select></div>
     </div>
     <label>Workout preset</label>
     <select id="presetSel"><option value="">Custom — set your own</option></select>
@@ -105,7 +106,7 @@ $('createBtn').onclick=async()=>{
   if(!when){$('createErr').textContent='Pick a date & time.';return;}
   const mv={hearts:($('m-hearts').value.trim()||'Push-ups'),diamonds:($('m-diamonds').value.trim()||'Air Squats'),clubs:($('m-clubs').value.trim()||'Burpees'),spades:($('m-spades').value.trim()||'Sit-ups')};
   const settings={mv,aceReps:Math.max(1,parseInt($('m-acereps').value)||10),aceMove:($('m-acemove').value.trim()||'Burpees'),
-    deckSz:$('f-deck').value,diff:$('f-diff').value,finishMode:$('f-finish').value,useTimer:false,turnSec:60,penSec:45,cap:false,capMin:20};
+    deckSz:$('f-deck').value,diff:$('f-diff').value,finishMode:$('f-finish').value,boardId:$('f-board').value||'classic',useTimer:false,turnSec:60,penSec:45,cap:false,capMin:20};
   $('createBtn').disabled=true;
   let room=null;
   for(let a=0;a<6;a++){const code=W.genCode();
@@ -155,6 +156,7 @@ function render(){
 }
 function tickAll(){document.querySelectorAll('.cd').forEach(el=>{const t=+el.dataset.t;el.textContent=fmtCountdown(t-Date.now());});}
 (function(){const sel=$('presetSel');if(!sel||!W.PRESETS)return;
+  (function(){const bs=$('f-board');if(bs&&W.BOARDS)W.BOARDS.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.name;bs.appendChild(o);});})();
   const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
   Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});
   sel.onchange=()=>{const p=W.PRESETS.find(x=>x.id===sel.value),note=$('presetNote');if(!p){note.textContent='';return;}

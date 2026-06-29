@@ -213,7 +213,10 @@ const TOKIMG={};(W.AVATARS||[]).forEach(a=>{const im=new Image();im.onload=()=>d
 function sizeMini(){const c=$('miniBoard');if(!c)return;const wrap=$('miniWrap'),focus=wrap.classList.contains('focus');
   const side=focus?Math.round(Math.min(window.innerWidth,window.innerHeight)*0.96):((wrap.clientWidth)||340);
   c.width=side*2;c.height=side*2;c.style.width=focus?side+'px':'100%';c.style.height=focus?side+'px':'auto';drawMini();}
-function drawMini(){const c=$('miniBoard');if(!c||!window.WODLYBoard||!lastState||!lastState.total)return;WODLYBoard.render(c,lastState,{boardImg:BOARDBG,tokenImgs:TOKIMG});}
+function boardFileFor(id){const b=(W.BOARDS||[]).find(x=>x.id===id);return b?b.file:'assets/board-bg.png';}
+function drawMini(){const c=$('miniBoard');if(!c||!window.WODLYBoard||!lastState||!lastState.total)return;
+  const want=boardFileFor(lastState.boardId||'classic');if(BOARDBG.src.indexOf(want)<0){BOARDBG.src=want;return;}
+  WODLYBoard.render(c,lastState,{boardImg:BOARDBG,tokenImgs:TOKIMG});}
 (function(){const c=$('miniBoard');if(c)c.addEventListener('click',()=>{$('miniWrap').classList.toggle('focus');sizeMini();});
   window.addEventListener('resize',sizeMini);})();
 function showEvent(ev){const el=$('ohno');const skip=ev.type==='skip';

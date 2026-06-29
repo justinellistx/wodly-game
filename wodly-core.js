@@ -33,6 +33,15 @@
     { id:'coach',   name:'Coach',   img:'assets/characters/coach.png',   color:'#F5A623' }
   ];
 
+  // Board background themes (square art drawn behind the spiral path). To add one, drop a
+  // square PNG (2048x2048+) in assets/boards/ and add an entry here.
+  const BOARDS = [
+    { id:'classic',  name:'Classic',  file:'assets/board-bg.png' },
+    { id:'midnight', name:'Midnight', file:'assets/board-midnight.png' },
+    { id:'forge',    name:'Forge',    file:'assets/board-forge.png' },
+    { id:'steel',    name:'Steel',    file:'assets/board-steel.png' }
+  ];
+
   // Pre-made workout decks. Movements are generic; names are playful homages, not official.
   // Each fills the 4 suits (hearts/diamonds/clubs/spades) + the ace penalty.
   const PRESETS = [
@@ -73,7 +82,7 @@
 
   global.WODLY = {
     SUPA_URL, SUPA_KEY, makeClient,
-    BRAND, SUITS, SYM, SCOL, FACE_LABELS, DECK_SPACES, DIFF_MULT, PCOLS, AVATARS, PRESETS,
+    BRAND, SUITS, SYM, SCOL, FACE_LABELS, DECK_SPACES, DIFF_MULT, PCOLS, AVATARS, PRESETS, BOARDS,
     cardType, getReps, buildDeck, genCode, clientId
   };
 })(typeof window !== 'undefined' ? window : globalThis);

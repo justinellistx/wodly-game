@@ -17,6 +17,11 @@
   .tagline .t1{color:var(--green);}.tagline .t2{color:var(--orange);}.tagline .t3{color:var(--red);}
   .sec{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:18px 0 10px;}
   .setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  .board-grid{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 4px;}
+  .bcard{width:112px;cursor:pointer;border:2px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface);}
+  .bcard img{width:100%;height:74px;object-fit:cover;display:block;}
+  .bcard .bn{font-size:11px;color:var(--text2);padding:5px 0;text-align:center;font-weight:700;}
+  .bcard.sel{border-color:var(--orange);}.bcard.sel .bn{color:var(--orange);}
   .suit-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .sc{border-radius:12px;padding:12px;border:2px solid transparent;}
   .sc.hearts{background:#2a0a0b;border-color:var(--red);}.sc.diamonds{background:#2a1a00;border-color:var(--orange);}
@@ -229,6 +234,8 @@
         </div>
       </div>
     </div>
+    <div class="sec" style="margin-top:18px;">Board theme</div>
+    <div class="board-grid" id="boardRow"></div>
     <button class="bigbtn" id="openLobbyBtn">OPEN LOBBY →</button>
     <div class="foot"><button id="discLink">Health &amp; safety disclaimer</button></div>
   </div>
@@ -327,17 +334,26 @@ $('discLink').onclick=()=>$('discOverlay').classList.add('show');
 // ── Setup ──
 function mkOptRow(id){$(id).addEventListener('click',e=>{const b=e.target.closest('.ob');if(!b||!b.dataset.v)return;document.querySelectorAll('#'+id+' .ob').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');});}
 mkOptRow('deckRow');mkOptRow('diffRow');mkOptRow('finishRow');
+// Board theme picker
+let selBoard='classic';
+function paintBoardSel(){document.querySelectorAll('#boardRow .bcard').forEach(e=>e.classList.toggle('sel',e.dataset.id===selBoard));}
+(function(){const row=$('boardRow');if(!row||!W.BOARDS)return;
+  W.BOARDS.forEach(b=>{const d=document.createElement('div');d.className='bcard';d.dataset.id=b.id;
+    d.innerHTML='<img src="'+b.file+'" alt=""><div class="bn">'+esc(b.name)+'</div>';
+    d.onclick=()=>{selBoard=b.id;paintBoardSel();};row.appendChild(d);});
+  paintBoardSel();})();
 $('turnTimerToggle').addEventListener('change',function(){$('timerSettings').classList.toggle('show',this.checked);});
 function selVal(id){const e=document.querySelector('#'+id+' .ob.sel');return e?e.dataset.v:null;}
 function _v(id){const e=$(id);return e?e.value:'';}
 function _set(id,v){if(v==null||v==='')return;const e=$(id);if(e)e.value=v;}
 const SET_KEY='wodly_settings_v1';
-function gatherSettings(){return{mv:{hearts:_v('mv-hearts')||'Push-ups',diamonds:_v('mv-diamonds')||'Air Squats',clubs:_v('mv-clubs')||'Burpees',spades:_v('mv-spades')||'Sit-ups'},aceReps:Math.max(1,parseInt(_v('ace-reps'))||10),aceMove:(_v('ace-move').trim()||'Burpees'),deckSz:selVal('deckRow')||'standard',diff:selVal('diffRow')||'easy',useTimer:$('turnTimerToggle').checked,turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60),penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),cap:$('capToggle').checked,capMin:Math.max(1,parseInt(_v('capInput'))||20),finishMode:selVal('finishRow')||'all'};}
+function gatherSettings(){return{mv:{hearts:_v('mv-hearts')||'Push-ups',diamonds:_v('mv-diamonds')||'Air Squats',clubs:_v('mv-clubs')||'Burpees',spades:_v('mv-spades')||'Sit-ups'},aceReps:Math.max(1,parseInt(_v('ace-reps'))||10),aceMove:(_v('ace-move').trim()||'Burpees'),deckSz:selVal('deckRow')||'standard',diff:selVal('diffRow')||'easy',useTimer:$('turnTimerToggle').checked,turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60),penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),cap:$('capToggle').checked,capMin:Math.max(1,parseInt(_v('capInput'))||20),finishMode:selVal('finishRow')||'all',boardId:selBoard||'classic'};}
 function loadSettings(){let s;try{s=JSON.parse(localStorage.getItem(SET_KEY)||'null');}catch(e){}if(!s)return;
   if(s.mv){_set('mv-hearts',s.mv.hearts);_set('mv-diamonds',s.mv.diamonds);_set('mv-clubs',s.mv.clubs);_set('mv-spades',s.mv.spades);}
   _set('ace-reps',s.aceReps);_set('ace-move',s.aceMove);
   if(s.deckSz)document.querySelectorAll('#deckRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.deckSz));
   if(s.diff)document.querySelectorAll('#diffRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.diff));
+  if(s.boardId){selBoard=s.boardId;paintBoardSel();}
   if(s.finishMode)document.querySelectorAll('#finishRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.finishMode));
   if(typeof s.useTimer==='boolean'){$('turnTimerToggle').checked=s.useTimer;$('timerSettings').classList.toggle('show',s.useTimer);}
   _set('turnTimerInput',s.turnSec);_set('penTimerInput',s.penSec);
@@ -401,11 +417,12 @@ $('startBtn').onclick=async()=>{
   const s=room.settings||gatherSettings();
   const total=W.DECK_SPACES[s.deckSz]||52;
   game={ players:players.map((p,i)=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[],finished:false,place:null,finishSec:null})),
-    total, diff:s.diff||'easy', mv:s.mv, ace:{reps:s.aceReps,move:s.aceMove}, finishMode:(s.finishMode==='first'?'first':'all'),
+    total, diff:s.diff||'easy', mv:s.mv, ace:{reps:s.aceReps,move:s.aceMove}, finishMode:(s.finishMode==='first'?'first':'all'), boardId:s.boardId||'classic',
     useTimer:!!s.useTimer, turnSec:s.turnSec||60, penSec:s.penSec||45, timeCap:(s.cap?(s.capMin||20)*60:0),
     deck:W.buildDeck(), landed:{}, log:[], winner:null, results:null, finishedCount:0, ended:false, startTime:Date.now(),
     seed:(Math.floor(Math.random()*2e9))>>>0, path:null, nodeSize:44 };
   capFired=false;vpos={};
+  {const bdef=(W.BOARDS||[]).find(b=>b.id===game.boardId)||(W.BOARDS||[])[0];if(bdef&&BOARDBG.src.indexOf(bdef.file)<0)BOARDBG.src=bdef.file;}
   await sb.from('rooms').update({status:'playing'}).eq('id',room.id);
   show('gameScreen');$('gameCode').textContent=room.code;loadSponsors().then(pickSponsor);
   $('endResultsBtn').style.display=(game.finishMode==='all')?'':'none';
@@ -620,7 +637,7 @@ function renderRecent(){const el=$('recent');if(!el||!game)return;const lg=game.
 
 // ── State sync ──
 async function writeState(){if(!room||!game)return;
-  const state={phase:game.ended?'finished':'playing',total:game.total,seed:game.seed,landed:game.landed,finishMode:game.finishMode,
+  const state={phase:game.ended?'finished':'playing',total:game.total,seed:game.seed,landed:game.landed,finishMode:game.finishMode,boardId:game.boardId||'classic',
     players:game.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,pos:p.pos,lastRoll:p.lastRoll,card:p.card,status:p.status,event:p.event||null,hist:p.hist||[],finished:!!p.finished,place:p.place||null,finishSec:(p.finishSec!=null?p.finishSec:null)})),
     winner:game.winner?{id:game.winner.id,name:game.winner.name,avatar:game.winner.avatar,timeSec:game.winner.timeSec,place:game.winner.place||1,cap:!!game.winner.cap}:null,
     results:game.results||null,
