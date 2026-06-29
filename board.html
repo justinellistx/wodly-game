@@ -93,7 +93,7 @@
   .wsrow .wstime{font-size:15px;color:var(--text2);font-variant-numeric:tabular-nums;}
   .wsrow.p1{border-color:var(--orange);box-shadow:0 0 16px #F5A62333;}
   .wsrow.dnf .wstime{color:var(--text3);}
-  .gamegrid{display:grid;grid-template-columns:minmax(320px,360px) 1fr minmax(190px,230px);gap:16px;align-items:start;}
+  .gamegrid{display:grid;grid-template-columns:minmax(280px,320px) 1fr minmax(170px,200px);gap:14px;align-items:start;}
   .gcol{display:flex;flex-direction:column;gap:10px;min-width:0;}
   .gcol .sec{margin-top:4px;}
   #gboard{display:flex;flex-direction:column;align-items:center;min-width:0;}
@@ -420,7 +420,9 @@ function sizeCanvas(){const wrap=$('boardWrap'),gs=$('gameScreen'),focus=gs&&gs.
   let side;
   if(focus){side=Math.max(360,Math.min(window.innerWidth,window.innerHeight)-24);}
   else{const gb=$('gboard'),pw=(gb&&gb.clientWidth)||(wrap.parentElement&&wrap.parentElement.clientWidth)||700;
-    const maxH=Math.max(360,(window.innerHeight||820)-180);
+    // fill the column down to near the bottom of the screen (auto-accounts for the top bar / sponsor)
+    const top=gb?gb.getBoundingClientRect().top:120;
+    const maxH=Math.max(360,(window.innerHeight||820)-top-40);
     side=Math.max(320,Math.min(pw,maxH));}
   wrap.style.width=side+'px';wrap.style.height=side+'px';
   ['boardCanvas','tokenCanvas'].forEach(id=>{const c=$(id);c.width=side*2;c.height=side*2;c.style.width='100%';c.style.height='100%';});
@@ -430,7 +432,7 @@ function srng(seed){let s=seed>>>0;return function(){s=(s+0x6D2B79F5)>>>0;let t=
 function genPath(total,W2,H){
   const G=Math.max(3,Math.ceil(Math.sqrt(total)));
   const inset=W2*0.105, area=Math.min(W2,H)-inset*2, cell=area/G;
-  game.nodeSize=Math.max(20,Math.min(cell*0.82,80));
+  game.nodeSize=Math.max(20,Math.min(cell*0.82,120));
   let t=0,b=G-1,l=0,r=G-1;const order=[];
   while(t<=b&&l<=r){
     for(let c=l;c<=r;c++)order.push([t,c]);t++;
