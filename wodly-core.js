@@ -39,7 +39,8 @@
     { id:'classic', name:'Classic', file:'assets/board-bg.png' },
     { id:'arena',   name:'Arena',   file:'assets/board-arena.jpg' },
     { id:'box',     name:'The Box', file:'assets/board-box.jpg' },
-    { id:'vintage', name:'Vintage', file:'assets/board-vintage.jpg' }
+    { id:'vintage', name:'Vintage', file:'assets/board-vintage.jpg' },
+    { id:'july4th', name:'July 4th', file:'assets/board-july4th.jpg' }
   ];
 
   // Pre-made workout decks. Movements are generic; names are playful homages, not official.
