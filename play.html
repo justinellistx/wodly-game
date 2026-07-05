@@ -30,6 +30,11 @@
   .me-head img{width:54px;height:54px;object-fit:contain;}
   .me-head .mn{font-size:17px;font-weight:800;}.me-head .ms{font-size:12px;color:var(--text3);}
   .me-head .mpos{margin-left:auto;text-align:right;}.me-head .mpos b{font-size:20px;color:var(--orange);}.me-head .mpos span{font-size:11px;color:var(--text3);display:block;}
+  .spbar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:9px 13px;margin-bottom:14px;text-decoration:none;color:inherit;}
+  .spbar .spl{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);}
+  .spbar .spn{font-size:14px;font-weight:800;color:#fff;}
+  .spbar .spgo{margin-left:auto;font-size:12px;font-weight:800;color:var(--orange);white-space:nowrap;}
+  .spbar img{height:26px;max-width:90px;object-fit:contain;}
   /* dice + roll */
   .rollwrap{text-align:center;padding:8px 0 4px;}
   .die{width:130px;height:130px;margin:0 auto 16px;border-radius:26px;background:linear-gradient(145deg,#262626,#0b0b0b);border:2px solid #3a3a3a;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:6px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 24px rgba(245,166,35,.28);}
@@ -179,6 +184,7 @@
     <div><div class="mn" id="meName">You</div><div class="ms" id="meRoom">Room ····</div></div>
     <div class="mpos"><b id="mePos">0</b><span>your space</span></div>
   </div>
+  <a id="spBar" class="spbar" style="display:none;" target="_blank" rel="noopener"></a>
   <div id="miniWrap" style="display:none;"><canvas id="miniBoard"></canvas><div class="minihint">tap to expand</div></div>
   <div id="playBody"></div>
   <div class="stand" id="standWrap" style="display:none;"><div class="sh">Standings</div><div id="standList"></div></div>
@@ -308,7 +314,7 @@ async function makeRecapImage(rec,mp){
   const moves=Object.keys(rec.byMove);let yy=805;
   moves.slice(0,5).forEach(m=>{x.textAlign='left';x.fillStyle='#dddddd';x.font='600 30px system-ui';x.fillText(m.length>22?m.slice(0,22):m,170,yy);x.textAlign='right';x.fillStyle='#F5A623';x.font='800 30px system-ui';x.fillText(String(rec.byMove[m]),910,yy);yy+=42;});
   x.textAlign='center';
-  if(winSponsor){x.fillStyle='#888';x.font='700 19px system-ui';x.fillText('PRESENTED BY '+(winSponsor.name||'').toUpperCase(),540,1010);}
+  {const sp=curSponsor||winSponsor;if(sp&&sp.name){x.fillStyle='#888';x.font='700 19px system-ui';x.fillText('PRESENTED BY '+(sp.name||'').toUpperCase(),540,1010);}}
   x.fillStyle='#F5A623';x.font='800 23px system-ui';x.fillText('wodlygame.com   ·   Tag @wodlygame',540,1048);
   // "Scan to play" QR (top-right corner)
   const qr=await makeQR('https://wodlygame.com',150);
@@ -347,7 +353,7 @@ async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim
         if(!up.error)imageUrl=sb.storage.from('recaps').getPublicUrl(path).data.publicUrl;}
     }catch(e){}
     fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,deck:null,summary:lastRecap,image_url:imageUrl})});
-    fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:{apikey:W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:(me&&me.name)||null,image_url:imageUrl,summary:lastRecap})});
+    fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:{apikey:W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:(me&&me.name)||null,image_url:imageUrl,summary:lastRecap,sponsor:curSponsor?{name:curSponsor.name,website_url:curSponsor.website_url||curSponsor.social_url||null}:null})});
   }catch(e){}}
   try{const r=await fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,source,consent:true})});
     if(r.status===201||r.status===204||r.status===200){msg.textContent="You're on the list ✓";msg.className='submsg ok';}
@@ -363,7 +369,7 @@ function renderState(state){
   if(_hasBoard){mw.style.display='';const c=$('miniBoard'),want=((mw.clientWidth||340)*2);if(!mw.classList.contains('focus')&&Math.abs(c.width-want)>4)sizeMini();else drawMini();}else if(!mw.classList.contains('focus')){mw.style.display='none';}
   if(mp)$('mePos').textContent=mp.pos;
   if(mp&&mp.event&&(mp.event.type==='back'||mp.event.type==='skip')&&mp.event.eid!==seenEid){seenEid=mp.event.eid;showEvent(mp.event);}
-  renderStandings(state);renderRecentLog(state);
+  renderStandings(state);renderRecentLog(state);renderSponsorBar(state);
   const sig=phase+'|'+(mp?(mp.status+'|'+mp.pos+'|'+(mp.finished?'F'+mp.place:'')+'|'+(mp.card?(mp.card.kind+mp.card.reps+(mp.card.move||'')):'no')):'nomp')+'|'+(state.winner?state.winner.id:'')+'|'+((state.results||[]).length);
   if(sig===bodySig&&!rolling)return; // body unchanged — don't disturb countdown/animations on poll
   if(rolling)return;
@@ -442,6 +448,16 @@ function startCd(state,isAce){clearCd();if(!state.useTimer)return;let rem=isAce?
 function clearCd(){if(cdInt){clearInterval(cdInt);cdInt=null;}}
 
 function ord(n){n=n||0;const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+let curSponsor=null;
+function renderSponsorBar(state){const bar=$('spBar');if(!bar)return;
+  // gym games carry the chosen sponsor in state; online matches use the phone's own random pick
+  const s=(state&&state.sponsor)||winSponsor||null;
+  const phase=state&&state.phase;
+  if(!s||!(phase==='playing'||phase==='finished')){curSponsor=null;bar.style.display='none';return;}
+  curSponsor=s;const link=s.website_url||s.social_url||'';
+  bar.href=link||'#';if(!link)bar.removeAttribute('target');else bar.target='_blank';
+  bar.innerHTML=`${s.logo?`<img src="${s.logo}" alt="">`:''}<span class="spl">Presented by</span><span class="spn">${esc(s.name||'')}</span>${link?'<span class="spgo">Visit →</span>':''}`;
+  bar.style.display='flex';}
 function renderStandings(state){const list=$('standList'),wrap=$('standWrap');const ps=state.players||[];
   if(!ps.length||(state.phase!=='playing'&&state.phase!=='finished')){wrap.style.display='none';return;}
   wrap.style.display='';const total=state.total||52;
