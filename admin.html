@@ -36,6 +36,22 @@
   .pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
   .pill.on{background:rgba(76,175,80,.2);color:var(--green);}.pill.off{background:rgba(120,120,120,.2);color:var(--text3);}
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .sectitle{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:28px 0 12px;display:flex;justify-content:space-between;align-items:center;}
+  .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:8px;}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+  .stat b{display:block;font-size:30px;font-weight:900;line-height:1.1;}
+  .stat span{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);}
+  .stat.hl{border-color:rgba(245,166,35,.5);}.stat.hl b{color:var(--orange);}
+  .angrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+  @media(max-width:640px){.angrid{grid-template-columns:1fr;}}
+  .blk{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 16px;}
+  .blk h4{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:11px;}
+  .bar{display:flex;align-items:center;gap:9px;margin:6px 0;font-size:13px;}
+  .bar .lbl{width:118px;flex-shrink:0;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar .track{flex:1;background:var(--surface2);border-radius:6px;height:15px;overflow:hidden;}
+  .bar .fill{height:100%;background:linear-gradient(90deg,var(--orange),#f7bd57);border-radius:6px;min-width:2px;}
+  .bar .val{width:44px;text-align:right;color:var(--text2);font-variant-numeric:tabular-nums;flex-shrink:0;}
+  .nodata{color:var(--text3);font-size:13px;padding:4px 0;}
 </style>
 </head>
 <body>
@@ -53,8 +69,14 @@
 
   <!-- PANEL -->
   <div id="panel" class="screen">
-    <div class="topbar"><div><h1>WODLY</h1><div class="sub" style="margin-bottom:0;">Sponsor admin</div></div><button class="btn ghost" id="lockBtn">Lock</button></div>
+    <div class="topbar"><div><h1>WODLY</h1><div class="sub" style="margin-bottom:0;">Admin</div></div><button class="btn ghost" id="lockBtn">Lock</button></div>
 
+    <!-- ANALYTICS -->
+    <div class="sectitle"><span>📊 Analytics</span><button class="btn ghost" id="refreshStats" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
+    <div class="statgrid" id="statGrid"><div class="nodata">Loading…</div></div>
+    <div class="angrid" id="anGrid"></div>
+
+    <div class="sectitle" style="margin-top:34px;"><span>Sponsors &amp; deals</span></div>
     <div class="card">
       <div style="font-weight:800;font-size:15px;margin-bottom:6px;" id="formTitle">Add a sponsor</div>
       <div class="row">
@@ -114,8 +136,48 @@ async function api(action,extra){
 $('enterBtn').onclick=async()=>{
   passcode=$('pass').value.trim();$('gateErr').textContent='';
   const r=await api('verify');
-  if(r&&r.ok){show('panel');loadSponsors();}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
+  if(r&&r.ok){show('panel');loadSponsors();loadAnalytics();}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
 };
+
+// ── Analytics ──
+const B_NAME={classic:'Classic',arena:'Arena',box:'The Box',vintage:'Vintage',july4th:'July 4th'};
+const DF_NAME={easy:'Beginner',medium:'Rx',hard:'Elite'};
+const DK_NAME={quick:'Fast',standard:'Standard',large:'Beast'};
+const FIN_NAME={all:'Everyone finishes',first:'First to finish'};
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const cap=s=>String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1);
+const hourLbl=k=>{const h=+k,ap=h<12?'am':'pm';let hh=h%12;if(!hh)hh=12;return hh+ap;};
+const commaN=n=>Number(n).toLocaleString();
+function bars(arr,o){o=o||{};if(!arr||!arr.length)return '<div class="nodata">No data yet</div>';
+  const max=Math.max.apply(null,arr.map(x=>+x.n).concat([1]));
+  return arr.map(x=>{const lbl=o.labelMap?(o.labelMap[x.k]!=null?o.labelMap[x.k]:x.k):(o.labelFn?o.labelFn(x.k):x.k);
+    const w=Math.round(+x.n/max*100),v=o.fmt?o.fmt(x.n):x.n;
+    return `<div class="bar"><span class="lbl" title="${esc(String(lbl))}">${esc(String(lbl))}</span><span class="track"><span class="fill" style="width:${w}%"></span></span><span class="val">${v}</span></div>`;}).join('');}
+function blk(title,inner){return `<div class="blk"><h4>${title}</h4>${inner}</div>`;}
+async function loadAnalytics(){
+  $('statGrid').innerHTML='<div class="nodata">Loading…</div>';$('anGrid').innerHTML='';
+  const r=await api('analytics');
+  if(!r||r.error||!r.data){$('statGrid').innerHTML='<div class="nodata">Could not load analytics'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
+  const d=r.data,o=d.overview||{};
+  const cards=[['Games played',o.games_played,1],['Last 7 days',o.games_7d,0],['Gym games',o.games_gym,0],['Online games',o.games_online,0],
+    ['Unique players',o.players_total,0],['Workouts finished',o.finishers_total,0],['Avg players/game',o.players_per_game,0],
+    ['Subscribers',o.subscribers,0],['Upcoming sessions',o.upcoming_sessions,0]];
+  $('statGrid').innerHTML=cards.map(c=>`<div class="stat${c[2]?' hl':''}"><b>${c[1]!=null?c[1]:0}</b><span>${c[0]}</span></div>`).join('');
+  const g=[];
+  g.push(blk('Most-used presets',bars(d.presets)));
+  g.push(blk('Board themes',bars(d.boards,{labelMap:B_NAME})));
+  g.push(blk('Movements programmed',bars(d.movements)));
+  g.push(blk('Reps performed by movement',bars(d.reps_by_movement,{fmt:commaN})));
+  g.push(blk('Difficulty',bars(d.difficulty,{labelMap:DF_NAME})));
+  g.push(blk('Deck size',bars(d.deck,{labelMap:DK_NAME})));
+  g.push(blk('Finish mode',bars(d.finish,{labelMap:FIN_NAME})));
+  g.push(blk('Characters picked',bars(d.avatars,{labelFn:cap})));
+  g.push(blk('Games per day (14d)',bars(d.games_by_day)));
+  g.push(blk('Busiest hours (Central)',bars(d.by_hour,{labelFn:hourLbl})));
+  g.push(blk('Busiest days',bars(d.by_dow,{labelFn:k=>DOW[+k]||k})));
+  $('anGrid').innerHTML=g.join('');
+}
+$('refreshStats').onclick=loadAnalytics;
 $('pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('enterBtn').click();});
 $('lockBtn').onclick=()=>{passcode='';$('pass').value='';show('gate');};
 

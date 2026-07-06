@@ -106,7 +106,8 @@ $('createBtn').onclick=async()=>{
   if(!when){$('createErr').textContent='Pick a date & time.';return;}
   const mv={hearts:($('m-hearts').value.trim()||'Push-ups'),diamonds:($('m-diamonds').value.trim()||'Air Squats'),clubs:($('m-clubs').value.trim()||'Burpees'),spades:($('m-spades').value.trim()||'Sit-ups')};
   const settings={mv,aceReps:Math.max(1,parseInt($('m-acereps').value)||10),aceMove:($('m-acemove').value.trim()||'Burpees'),
-    deckSz:$('f-deck').value,diff:$('f-diff').value,finishMode:$('f-finish').value,boardId:$('f-board').value||'classic',useTimer:false,turnSec:60,penSec:45,cap:false,capMin:20};
+    deckSz:$('f-deck').value,diff:$('f-diff').value,finishMode:$('f-finish').value,boardId:$('f-board').value||'classic',useTimer:false,turnSec:60,penSec:45,cap:false,capMin:20,
+    presetId:($('presetSel').value||''),presetName:(function(){var s=$('presetSel'),p=(s&&s.value&&W.PRESETS)?W.PRESETS.find(x=>x.id===s.value):null;return p?p.name:'Custom';})(),source:'online'};
   $('createBtn').disabled=true;
   let room=null;
   for(let a=0;a<6;a++){const code=W.genCode();
