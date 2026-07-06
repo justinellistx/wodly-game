@@ -52,6 +52,9 @@
   .bar .fill{height:100%;background:linear-gradient(90deg,var(--orange),#f7bd57);border-radius:6px;min-width:2px;}
   .bar .val{width:44px;text-align:right;color:var(--text2);font-variant-numeric:tabular-nums;flex-shrink:0;}
   .nodata{color:var(--text3);font-size:13px;padding:4px 0;}
+  .seg{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:9px;overflow:hidden;}
+  .seg button{background:none;border:none;color:var(--text2);font-size:12px;font-weight:700;padding:6px 11px;cursor:pointer;font-family:inherit;}
+  .seg button.on{background:var(--orange);color:#000;}
 </style>
 </head>
 <body>
@@ -72,7 +75,15 @@
     <div class="topbar"><div><h1>WODLY</h1><div class="sub" style="margin-bottom:0;">Admin</div></div><button class="btn ghost" id="lockBtn">Lock</button></div>
 
     <!-- ANALYTICS -->
-    <div class="sectitle"><span>📊 Analytics</span><button class="btn ghost" id="refreshStats" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
+    <div class="sectitle"><span>📊 Analytics</span>
+      <span style="display:flex;gap:6px;align-items:center;">
+        <span class="seg" id="periodSeg">
+          <button data-d="" class="on">All</button><button data-d="90">90d</button><button data-d="30">30d</button><button data-d="7">7d</button>
+        </span>
+        <button class="btn ghost" id="dlStats" style="padding:6px 12px;font-size:12px;">⬇ CSV</button>
+        <button class="btn ghost" id="refreshStats" style="padding:6px 12px;font-size:12px;">Refresh</button>
+      </span>
+    </div>
     <div class="statgrid" id="statGrid"><div class="nodata">Loading…</div></div>
     <div class="angrid" id="anGrid"></div>
 
@@ -154,11 +165,12 @@ function bars(arr,o){o=o||{};if(!arr||!arr.length)return '<div class="nodata">No
     const w=Math.round(+x.n/max*100),v=o.fmt?o.fmt(x.n):x.n;
     return `<div class="bar"><span class="lbl" title="${esc(String(lbl))}">${esc(String(lbl))}</span><span class="track"><span class="fill" style="width:${w}%"></span></span><span class="val">${v}</span></div>`;}).join('');}
 function blk(title,inner){return `<div class="blk"><h4>${title}</h4>${inner}</div>`;}
+let lastStats=null, curDays='';
 async function loadAnalytics(){
   $('statGrid').innerHTML='<div class="nodata">Loading…</div>';$('anGrid').innerHTML='';
-  const r=await api('analytics');
+  const r=await api('analytics',{days:curDays?+curDays:null});
   if(!r||r.error||!r.data){$('statGrid').innerHTML='<div class="nodata">Could not load analytics'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
-  const d=r.data,o=d.overview||{};
+  const d=r.data,o=d.overview||{};lastStats=d;
   const cards=[['Games played',o.games_played,1],['Last 7 days',o.games_7d,0],['Gym games',o.games_gym,0],['Online games',o.games_online,0],
     ['Unique players',o.players_total,0],['Workouts finished',o.finishers_total,0],['Avg players/game',o.players_per_game,0],
     ['Subscribers',o.subscribers,0],['Upcoming sessions',o.upcoming_sessions,0]];
@@ -178,6 +190,27 @@ async function loadAnalytics(){
   $('anGrid').innerHTML=g.join('');
 }
 $('refreshStats').onclick=loadAnalytics;
+$('periodSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  $('periodSeg').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');curDays=b.dataset.d;loadAnalytics();});
+// CSV export of the currently-loaded stats
+const SEC={presets:'Presets',boards:'Board themes',movements:'Movements programmed',reps_by_movement:'Reps by movement',difficulty:'Difficulty',deck:'Deck size',finish:'Finish mode',avatars:'Characters',games_by_day:'Games per day',by_hour:'By hour (Central)',by_dow:'By day of week'};
+function csvCell(c){c=String(c==null?'':c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}
+$('dlStats').onclick=()=>{
+  if(!lastStats){return;}
+  const rows=[['Section','Label','Value']];
+  const o=lastStats.overview||{};
+  Object.keys(o).forEach(k=>rows.push(['Overview',k.replace(/_/g,' '),o[k]]));
+  Object.keys(SEC).forEach(key=>{(lastStats[key]||[]).forEach(x=>{
+    let lbl=x.k;if(key==='boards')lbl=B_NAME[x.k]||x.k;else if(key==='difficulty')lbl=DF_NAME[x.k]||x.k;
+    else if(key==='deck')lbl=DK_NAME[x.k]||x.k;else if(key==='finish')lbl=FIN_NAME[x.k]||x.k;
+    else if(key==='avatars')lbl=cap(x.k);else if(key==='by_hour')lbl=hourLbl(x.k);else if(key==='by_dow')lbl=DOW[+x.k]||x.k;
+    rows.push([SEC[key],lbl,x.n]);});});
+  const csv=rows.map(r=>r.map(csvCell).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='wodly-stats-'+(curDays?curDays+'d':'all')+'-'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+};
 $('pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('enterBtn').click();});
 $('lockBtn').onclick=()=>{passcode='';$('pass').value='';show('gate');};
 
