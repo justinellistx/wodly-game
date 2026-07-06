@@ -38,6 +38,8 @@
   .heroes{display:flex;justify-content:center;align-items:flex-end;gap:1px;margin:2px 0 24px;}
   .heroes img{width:clamp(38px,12.5vw,56px);height:clamp(38px,12.5vw,56px);object-fit:contain;filter:drop-shadow(0 5px 7px rgba(0,0,0,.6));}
   .heroes img:nth-child(even){transform:translateY(-5px);}
+  .hero-vid{margin:2px auto 22px;border-radius:20px;overflow:hidden;border:2px solid rgba(245,166,35,.4);box-shadow:0 0 30px rgba(245,166,35,.18);line-height:0;width:fit-content;max-width:100%;}
+  .hero-vid video{display:block;height:min(46vh,470px);width:auto;max-width:100%;background:#0d0d0d;}
   .choice{display:block;width:100%;text-decoration:none;border-radius:18px;padding:18px 20px;margin-bottom:14px;cursor:pointer;text-align:left;position:relative;overflow:hidden;transition:transform .12s;}
   .choice:active{transform:scale(.985);}
   .choice .tag{position:absolute;top:13px;right:14px;font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:3px 9px;border-radius:20px;z-index:2;}
@@ -107,6 +109,12 @@
     <img src="assets/characters/gymnast.png" alt="">
     <img src="assets/characters/champ.png" alt="">
     <img src="assets/characters/coach.png" alt="">
+  </div>
+
+  <div class="hero-vid">
+    <video src="assets/wodly-home.mp4" poster="assets/wodly-home-poster.jpg"
+           autoplay muted loop playsinline preload="metadata"
+           aria-label="WODLY feature preview"></video>
   </div>
 
   <a class="choice start" href="board">
