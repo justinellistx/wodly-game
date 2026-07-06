@@ -82,6 +82,7 @@
   .sp-logo{max-height:48px;max-width:190px;object-fit:contain;}
   .sp-name{font-size:17px;font-weight:800;}
   .sp-web{font-size:11px;color:var(--text3);}
+  .sp-deal{font-size:13px;font-weight:700;color:var(--orange);background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.35);border-radius:999px;padding:4px 12px;}
   .sp-qrwrap{display:flex;align-items:center;gap:9px;margin-left:6px;border-left:1px solid var(--border);padding-left:18px;}
   .sp-qr{background:#fff;padding:6px;border-radius:8px;width:130px;height:130px;display:flex;align-items:center;justify-content:center;}
   .sp-scan{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;max-width:72px;line-height:1.3;}
@@ -637,7 +638,7 @@ function renderRecent(){const el=$('recent');if(!el||!game)return;const lg=game.
 
 // ── State sync ──
 async function writeState(){if(!room||!game)return;
-  const state={phase:game.ended?'finished':'playing',total:game.total,seed:game.seed,landed:game.landed,finishMode:game.finishMode,boardId:game.boardId||'classic',sponsor:chosenSponsor?{name:chosenSponsor.name,website_url:chosenSponsor.website_url||null,social_url:chosenSponsor.social_url||null}:null,
+  const state={phase:game.ended?'finished':'playing',total:game.total,seed:game.seed,landed:game.landed,finishMode:game.finishMode,boardId:game.boardId||'classic',sponsor:chosenSponsor?{name:chosenSponsor.name,website_url:chosenSponsor.website_url||null,social_url:chosenSponsor.social_url||null,tagline:chosenSponsor.tagline||null}:null,
     players:game.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,pos:p.pos,lastRoll:p.lastRoll,card:p.card,status:p.status,event:p.event||null,hist:p.hist||[],finished:!!p.finished,place:p.place||null,finishSec:(p.finishSec!=null?p.finishSec:null)})),
     winner:game.winner?{id:game.winner.id,name:game.winner.name,avatar:game.winner.avatar,timeSec:game.winner.timeSec,place:game.winner.place||1,cap:!!game.winner.cap}:null,
     results:game.results||null,
@@ -667,7 +668,7 @@ function pickSponsor(){
 function renderSponsor(){const el=$('sponsor');if(!el)return;const s=chosenSponsor;if(!s){el.style.display='none';return;}
   el.style.display='flex';
   const qtarget=s.website_url||s.social_url;
-  el.innerHTML=`<span class="sp-lbl">Presented by</span>${s.logo?`<img class="sp-logo" src="${s.logo}" alt="${esc(s.name)}">`:''}<span class="sp-name">${esc(s.name)}</span>${s.website_url?`<span class="sp-web">${esc(s.website_url.replace(/^https?:\/\//,''))}</span>`:''}${qtarget?`<div class="sp-qrwrap"><div class="sp-qr" id="spQr"></div><span class="sp-scan">${s.website_url?'Scan to visit':'Scan for socials'}</span></div>`:''}`;
+  el.innerHTML=`<span class="sp-lbl">Presented by</span>${s.logo?`<img class="sp-logo" src="${s.logo}" alt="${esc(s.name)}">`:''}<span class="sp-name">${esc(s.name)}</span>${s.website_url?`<span class="sp-web">${esc(s.website_url.replace(/^https?:\/\//,''))}</span>`:''}${s.tagline?`<span class="sp-deal">${esc(s.tagline)}</span>`:''}${qtarget?`<div class="sp-qrwrap"><div class="sp-qr" id="spQr"></div><span class="sp-scan">${s.website_url?'Scan to visit':'Scan for socials'}</span></div>`:''}`;
   if(qtarget){const q=$('spQr');q.innerHTML='';try{new QRCode(q,{text:qtarget,width:118,height:118,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}}}
 loadSponsors();
 

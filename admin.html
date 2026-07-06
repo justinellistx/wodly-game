@@ -65,6 +65,8 @@
           <input type="url" id="f-web" placeholder="https://example.com">
           <label>Socials URL (for the QR code)</label>
           <input type="url" id="f-social" placeholder="https://instagram.com/example">
+          <label>Deal / tagline <span style="text-transform:none;letter-spacing:0;color:var(--text3);">(optional, ~60 chars)</span></label>
+          <input type="text" id="f-tagline" maxlength="80" placeholder="e.g. 15% off for WODLY players">
           <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:14px;color:var(--text2);margin-top:14px;"><input type="checkbox" id="f-active" checked> Active (shown on boards)</label>
         </div>
         <div>
@@ -131,7 +133,7 @@ $('saveBtn').onclick=async()=>{
   $('formErr').textContent='';
   const name=$('f-name').value.trim();
   if(!name){$('formErr').textContent='Sponsor name is required.';return;}
-  const sponsor={name,website_url:$('f-web').value.trim()||null,social_url:$('f-social').value.trim()||null,active:$('f-active').checked};
+  const sponsor={name,website_url:$('f-web').value.trim()||null,social_url:$('f-social').value.trim()||null,tagline:$('f-tagline').value.trim()||null,active:$('f-active').checked};
   if(logoData)sponsor.logo=logoData;
   $('saveBtn').disabled=true;
   const r=await api(editId?'update':'create',editId?{id:editId,sponsor}:{sponsor});
@@ -140,7 +142,7 @@ $('saveBtn').onclick=async()=>{
   resetForm();loadSponsors();
 };
 $('cancelBtn').onclick=resetForm;
-function resetForm(){editId=null;logoData=null;$('f-name').value='';$('f-web').value='';$('f-social').value='';$('f-active').checked=true;
+function resetForm(){editId=null;logoData=null;$('f-name').value='';$('f-web').value='';$('f-social').value='';$('f-tagline').value='';$('f-active').checked=true;
   $('logoPrev').style.display='none';$('logoPrev').src='';$('formTitle').textContent='Add a sponsor';$('saveBtn').textContent='Add sponsor';$('cancelBtn').style.display='none';$('formErr').textContent='';}
 
 // ── List ──
@@ -151,14 +153,14 @@ async function loadSponsors(){
   data.forEach(s=>{const d=document.createElement('div');d.className='srow'+(s.active?'':' off');
     d.innerHTML=`<div class="lg">${s.logo?`<img src="${s.logo}">`:'<span style="color:#444;font-size:11px">no logo</span>'}</div>
       <div class="meta"><b>${esc(s.name)}</b> <span class="pill ${s.active?'on':'off'}">${s.active?'Active':'Hidden'}</span>
-        <div>${s.website_url?esc(s.website_url):'—'}</div><div>QR → ${s.social_url?esc(s.social_url):'—'}</div></div>
+        <div>${s.website_url?esc(s.website_url):'—'}</div><div>QR → ${s.social_url?esc(s.social_url):'—'}</div>${s.tagline?`<div style="color:var(--brand,#F5A623)">🏷️ ${esc(s.tagline)}</div>`:''}</div>
       <div class="acts"><button class="btn ghost" data-edit="${s.id}">Edit</button><button class="btn ghost" data-toggle="${s.id}">${s.active?'Hide':'Show'}</button><button class="btn danger" data-del="${s.id}">Delete</button></div>`;
     l.appendChild(d);});
   l.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>startEdit(data.find(x=>x.id===b.dataset.edit)));
   l.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{const s=data.find(x=>x.id===b.dataset.toggle);await api('update',{id:s.id,sponsor:{active:!s.active}});loadSponsors();});
   l.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this sponsor?'))return;await api('delete',{id:b.dataset.del});loadSponsors();});
 }
-function startEdit(s){editId=s.id;logoData=null;$('f-name').value=s.name||'';$('f-web').value=s.website_url||'';$('f-social').value=s.social_url||'';$('f-active').checked=!!s.active;
+function startEdit(s){editId=s.id;logoData=null;$('f-name').value=s.name||'';$('f-web').value=s.website_url||'';$('f-social').value=s.social_url||'';$('f-tagline').value=s.tagline||'';$('f-active').checked=!!s.active;
   if(s.logo){$('logoPrev').src=s.logo;$('logoPrev').style.display='inline-block';}else{$('logoPrev').style.display='none';}
   $('formTitle').textContent='Edit sponsor';$('saveBtn').textContent='Save changes';$('cancelBtn').style.display='inline-block';window.scrollTo(0,0);}
 // ── Subscribers ──
