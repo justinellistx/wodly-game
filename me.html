@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WODLY — My Stats</title>
+<meta name="description" content="Track your WODLY streak, reps, PRs, and badges.">
+<meta name="theme-color" content="#0a0a0b">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--gold:#F5A623;--bg:#0a0a0b;--surface:#161616;--surface2:#1f1f1f;--border:#333;--text:#fff;--text2:#aaa;--text3:#777;}
+  body{font-family:system-ui,sans-serif;background:radial-gradient(circle at 50% -8%,#1d1d22,#0a0a0b 60%);color:#fff;min-height:100vh;padding:26px 18px 60px;}
+  .wrap{max-width:640px;margin:0 auto;}
+  .top{text-align:center;margin-bottom:20px;}
+  h1{font-size:30px;font-weight:900;letter-spacing:5px;}
+  .sub{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-top:6px;}
+  .back{display:inline-block;margin-top:12px;font-size:12px;color:var(--text3);text-decoration:none;}
+  .enter{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;}
+  .enter label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;}
+  .enter .row{display:flex;gap:10px;}
+  .enter input{flex:1;min-width:0;font-size:15px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:#fff;}
+  .enter button{padding:12px 18px;font-size:14px;font-weight:800;background:var(--orange);border:none;border-radius:10px;color:#000;cursor:pointer;white-space:nowrap;}
+  .enter button:disabled{opacity:.5;}
+  .msg{font-size:13px;color:var(--text3);margin-top:10px;min-height:16px;}
+  .msg.err{color:var(--red);}
+  .name{font-size:26px;font-weight:900;text-align:center;margin:22px 0 4px;}
+  .played{font-size:12px;color:var(--text3);text-align:center;margin-bottom:16px;}
+  .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px;}
+  @media(max-width:520px){.statgrid{grid-template-columns:repeat(2,1fr);}}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;}
+  .stat b{display:block;font-size:26px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;}
+  .stat.fire b{color:var(--orange);}
+  .stat span{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);}
+  .sec{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin:24px 0 10px;}
+  .badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;}
+  .badge{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 6px;text-align:center;}
+  .badge .ic{font-size:30px;line-height:1;}
+  .badge .bn{font-size:11px;font-weight:700;margin-top:6px;}
+  .badge .bp{font-size:10px;color:var(--text3);margin-top:2px;}
+  .badge.locked{opacity:.4;filter:grayscale(1);}
+  .badge.earned{border-color:rgba(245,166,35,.5);box-shadow:0 0 14px rgba(245,166,35,.12);}
+  .bar{display:flex;align-items:center;gap:9px;margin:6px 0;font-size:13px;}
+  .bar .lbl{width:120px;flex-shrink:0;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar .track{flex:1;background:var(--surface2);border-radius:6px;height:15px;overflow:hidden;}
+  .bar .fill{height:100%;background:linear-gradient(90deg,var(--orange),#f7bd57);border-radius:6px;min-width:2px;}
+  .bar .val{width:78px;text-align:right;color:var(--text2);font-variant-numeric:tabular-nums;flex-shrink:0;font-size:12px;}
+  .rrow{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;}
+  .rrow .pl{color:var(--gold);font-weight:700;}
+  .foot{text-align:center;margin-top:24px;font-size:12px;color:var(--text3);}
+  .foot a{color:var(--orange);text-decoration:none;font-weight:700;}
+  .note{font-size:11px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.5;}
+  #results{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>MY STATS</h1>
+    <div class="sub">Streaks · reps · badges</div>
+    <a class="back" href="/">← back to home</a>
+  </div>
+
+  <div class="enter">
+    <label>Your email (the one you use at the end of a game)</label>
+    <div class="row">
+      <input id="email" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
+      <button id="go">See my stats</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div id="results">
+    <div class="name" id="pname"></div>
+    <div class="played" id="pplayed"></div>
+    <div class="statgrid" id="statGrid"></div>
+    <div class="sec">🏅 Badges</div>
+    <div class="badges" id="badges"></div>
+    <div class="sec">Your movements</div>
+    <div id="moves"></div>
+    <div class="sec">Recent workouts</div>
+    <div id="recent"></div>
+    <div class="foot">Keep the streak alive — <a href="/board">start a game →</a></div>
+  </div>
+
+  <div class="note">Stats are tied to the email you enter when you save a workout. We only show your own totals — no one else's personal data.</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL='https://ynznwosssctxbdiauekj.supabase.co';
+const PUB='sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq';
+const sb=supabase.createClient(SUPA_URL,PUB);
+const $=id=>document.getElementById(id);
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const nfmt=n=>Number(n||0).toLocaleString();
+
+function streakWeeks(weeks){
+  if(!weeks||!weeks.length)return 0;
+  const set=new Set(weeks);
+  const now=new Date();const day=(now.getDay()+6)%7; // 0=Mon
+  const mon=new Date(now);mon.setDate(now.getDate()-day);mon.setHours(0,0,0,0);
+  const iso=d=>{const m=(''+(d.getMonth()+1)).padStart(2,'0'),dd=(''+d.getDate()).padStart(2,'0');return d.getFullYear()+'-'+m+'-'+dd;};
+  let cur=new Date(mon);
+  if(!set.has(iso(cur))){cur.setDate(cur.getDate()-7);if(!set.has(iso(cur)))return 0;}
+  let c=0;while(set.has(iso(cur))){c++;cur.setDate(cur.getDate()-7);}
+  return c;
+}
+
+const BADGES=[
+  {ic:'🎬',n:'First WOD',ok:d=>d.workouts>=1,pr:d=>`${Math.min(d.workouts,1)}/1`},
+  {ic:'💪',n:'Regular',ok:d=>d.workouts>=5,pr:d=>`${Math.min(d.workouts,5)}/5 WODs`},
+  {ic:'🎖️',n:'Committed',ok:d=>d.workouts>=10,pr:d=>`${Math.min(d.workouts,10)}/10 WODs`},
+  {ic:'🏆',n:'Veteran',ok:d=>d.workouts>=25,pr:d=>`${Math.min(d.workouts,25)}/25 WODs`},
+  {ic:'💯',n:'Century',ok:d=>d.total_reps>=100,pr:d=>`${nfmt(Math.min(d.total_reps,100))}/100`},
+  {ic:'🔟',n:'1K Reps',ok:d=>d.total_reps>=1000,pr:d=>`${nfmt(Math.min(d.total_reps,1000))}/1K`},
+  {ic:'⚡',n:'5K Reps',ok:d=>d.total_reps>=5000,pr:d=>`${nfmt(Math.min(d.total_reps,5000))}/5K`},
+  {ic:'🔥',n:'10K Reps',ok:d=>d.total_reps>=10000,pr:d=>`${nfmt(Math.min(d.total_reps,10000))}/10K`},
+  {ic:'🥇',n:'Winner',ok:d=>d.first_places>=1,pr:d=>`${d.first_places} wins`},
+  {ic:'🏅',n:'Podium x3',ok:d=>d.podiums>=3,pr:d=>`${Math.min(d.podiums,3)}/3`},
+  {ic:'📅',n:'2-Wk Streak',ok:d=>d.streak>=2,pr:d=>`${Math.min(d.streak,2)}/2 wks`},
+  {ic:'🚀',n:'On Fire (4wk)',ok:d=>d.streak>=4,pr:d=>`${Math.min(d.streak,4)}/4 wks`},
+];
+
+async function load(email){
+  const msg=$('msg');msg.className='msg';msg.textContent='…';$('go').disabled=true;
+  let d=null;
+  try{const r=await sb.rpc('player_stats',{p_email:email});d=r.data;}catch(e){}
+  $('go').disabled=false;
+  if(!d||!d.found){msg.className='msg err';msg.textContent='No workouts found for that email yet. Play a game, save your recap, and check back!';$('results').style.display='none';return;}
+  msg.textContent='';try{localStorage.setItem('wodly_email',email);}catch(e){}
+  d.streak=streakWeeks(d.active_weeks);
+  $('pname').textContent=esc(d.name);
+  $('pplayed').textContent=`Playing since ${esc(d.first_played)} · last game ${esc(d.last_played)}`;
+  const cards=[['Workouts',d.workouts,''],['Total reps',nfmt(d.total_reps),''],['Week streak',d.streak,'fire'],['1st places',d.first_places,'']];
+  $('statGrid').innerHTML=cards.map(c=>`<div class="stat ${c[2]}"><b>${c[1]}</b><span>${c[0]}</span></div>`).join('');
+  $('badges').innerHTML=BADGES.map(b=>{const ok=b.ok(d);return `<div class="badge ${ok?'earned':'locked'}"><div class="ic">${b.ic}</div><div class="bn">${b.n}</div><div class="bp">${ok?'✓ earned':esc(b.pr(d))}</div></div>`;}).join('');
+  const mv=d.by_movement||[];const max=Math.max(...mv.map(x=>+x.reps),1);
+  $('moves').innerHTML=mv.length?mv.map(x=>`<div class="bar"><span class="lbl" title="${esc(x.m)}">${esc(x.m)}</span><span class="track"><span class="fill" style="width:${Math.round(x.reps/max*100)}%"></span></span><span class="val">${nfmt(x.reps)} · PR ${nfmt(x.best)}</span></div>`).join(''):'<div class="note">No movements logged yet.</div>';
+  const rec=d.recent||[];
+  $('recent').innerHTML=rec.length?rec.map(r=>`<div class="rrow"><span>${esc(r.date)}</span><span>${nfmt(r.total)} reps ${r.place?`<span class="pl">· ${r.place==1?'🥇':r.place==2?'🥈':r.place==3?'🥉':(r.place+'th')}</span>`:''}</span></div>`).join(''):'<div class="note">No recent workouts.</div>';
+  $('results').style.display='block';
+}
+
+$('go').onclick=()=>{const e=($('email').value||'').trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){$('msg').className='msg err';$('msg').textContent='Enter a valid email.';return;}load(e);};
+$('email').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click();});
+(function(){const p=new URLSearchParams(location.search).get('email');let saved='';try{saved=localStorage.getItem('wodly_email')||'';}catch(e){}
+  const e=p||saved;if(e){$('email').value=e;load(e);}})();
+</script>
+</body>
+</html>
