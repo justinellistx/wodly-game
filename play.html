@@ -355,7 +355,8 @@ async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim
         if(!up.error)imageUrl=sb.storage.from('recaps').getPublicUrl(path).data.publicUrl;}
     }catch(e){}
     const gym=((($('subGym')||{}).value)||'').trim()||null;if(gym){try{localStorage.setItem('wodly_gym',gym);}catch(e){}}
-    fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,deck:null,summary:lastRecap,image_url:imageUrl,gym:gym})});
+    const daily=(room&&room.settings&&room.settings.daily)||null;
+    fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,deck:null,summary:lastRecap,image_url:imageUrl,gym:gym,daily:daily})});
     fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:{apikey:W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:(me&&me.name)||null,image_url:imageUrl,summary:lastRecap,sponsor:curSponsor?{id:curSponsor.id||null,name:curSponsor.name,website_url:curSponsor.website_url||curSponsor.social_url||null,tagline:curSponsor.tagline||null}:null})});
   }catch(e){}}
   try{const r=await fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,source,consent:true})});

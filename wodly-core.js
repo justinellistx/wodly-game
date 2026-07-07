@@ -81,9 +81,29 @@
     } catch(e){ return 'c_'+Math.random().toString(36).slice(2); }
   }
 
+  // ── Daily WOD: one shared, deterministic workout per calendar day ──
+  const DAILY_WODS = [
+    { name:'Full Send',    mv:{hearts:'Burpees',diamonds:'Air Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
+    { name:'Engine Room',  mv:{hearts:'Mountain Climbers',diamonds:'High Knees',clubs:'Jumping Jacks',spades:'Burpees'}, aceReps:15, aceMove:'Burpees' },
+    { name:'Core Quake',   mv:{hearts:'Sit-ups',diamonds:'Leg Raises',clubs:'Russian Twists',spades:'Plank (sec)'}, aceReps:20, aceMove:'Hollow Hold (sec)' },
+    { name:'Leg Day Lite', mv:{hearts:'Air Squats',diamonds:'Walking Lunges',clubs:'Jump Squats',spades:'Wall Sit (sec)'}, aceReps:15, aceMove:'Air Squats' },
+    { name:'Push Party',   mv:{hearts:'Push-ups',diamonds:'Pike Push-ups',clubs:'Shoulder Taps',spades:'Plank (sec)'}, aceReps:10, aceMove:'Push-ups' },
+    { name:'Burpee Blast', mv:{hearts:'Burpees',diamonds:'Air Squats',clubs:'Push-ups',spades:'Mountain Climbers'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Cardio Cruise',mv:{hearts:'High Knees',diamonds:'Butt Kicks',clubs:'Jumping Jacks',spades:'Skaters'}, aceReps:15, aceMove:'Burpees' },
+    { name:'Squad Squats', mv:{hearts:'Air Squats',diamonds:'Jump Squats',clubs:'Cossack Squats',spades:'Wall Sit (sec)'}, aceReps:15, aceMove:'Air Squats' },
+    { name:'Ab Attack',    mv:{hearts:'Sit-ups',diamonds:'Bicycle Crunches',clubs:'V-ups',spades:'Plank (sec)'}, aceReps:20, aceMove:'Sit-ups' },
+    { name:'Sprint & Squat',mv:{hearts:'Air Squats',diamonds:'Mountain Climbers',clubs:'Burpees',spades:'High Knees'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Grip & Rip',   mv:{hearts:'Pull-ups',diamonds:'Hollow Rocks',clubs:'Superman',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
+    { name:'Total Torch',  mv:{hearts:'Burpees',diamonds:'Jump Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Burpees' }
+  ];
+  function dailyKey(d){ d=d||new Date(); const m=(''+(d.getMonth()+1)).padStart(2,'0'), day=(''+d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; }
+  function dailyIndex(d){ d=d||new Date(); const epochDay=Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000); return ((epochDay%DAILY_WODS.length)+DAILY_WODS.length)%DAILY_WODS.length; }
+  function dailyWod(d){ d=d||new Date(); const w=DAILY_WODS[dailyIndex(d)]; return { key:dailyKey(d), name:w.name, mv:w.mv, aceReps:w.aceReps, aceMove:w.aceMove }; }
+
   global.WODLY = {
     SUPA_URL, SUPA_KEY, makeClient,
     BRAND, SUITS, SYM, SCOL, FACE_LABELS, DECK_SPACES, DIFF_MULT, PCOLS, AVATARS, PRESETS, BOARDS,
+    DAILY_WODS, dailyKey, dailyWod,
     cardType, getReps, buildDeck, genCode, clientId
   };
 })(typeof window !== 'undefined' ? window : globalThis);

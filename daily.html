@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WODLY — Daily WOD</title>
+<meta name="description" content="Today's WODLY daily workout — everyone plays the same WOD. Climb the daily leaderboard.">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:title" content="WODLY — Daily WOD">
+<meta property="og:description" content="One shared workout a day. Play it and climb the daily leaderboard.">
+<meta property="og:image" content="https://wodlygame.com/assets/og-image.png">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--gold:#F5A623;--bg:#0a0a0b;--surface:#161616;--surface2:#1f1f1f;--border:#333;--text:#fff;--text2:#aaa;--text3:#777;}
+  body{font-family:system-ui,sans-serif;background:radial-gradient(circle at 50% -8%,#1d1d22,#0a0a0b 60%);color:#fff;min-height:100vh;padding:26px 18px 60px;}
+  .wrap{max-width:600px;margin:0 auto;}
+  .top{text-align:center;margin-bottom:18px;}
+  h1{font-size:30px;font-weight:900;letter-spacing:4px;}
+  .sub{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-top:6px;}
+  .back{display:inline-block;margin-top:12px;font-size:12px;color:var(--text3);text-decoration:none;}
+  .wod{background:linear-gradient(150deg,#241a06,#120d04);border:1px solid rgba(245,166,35,.4);border-radius:18px;padding:22px;text-align:center;box-shadow:0 0 26px rgba(245,166,35,.14);}
+  .wod .lbl{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--orange);}
+  .wod .nm{font-size:34px;font-weight:900;margin:4px 0 2px;}
+  .wod .date{font-size:12px;color:#e8d3a8;margin-bottom:14px;}
+  .moves{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;text-align:left;}
+  .mv{background:rgba(0,0,0,.3);border:1px solid rgba(245,166,35,.2);border-radius:12px;padding:10px 12px;}
+  .mv .s{font-size:18px;} .mv .s.r{color:var(--red);}.mv .s.o{color:var(--orange);}.mv .s.g{color:var(--green);}.mv .s.b{color:var(--blue);}
+  .mv .mn{font-size:15px;font-weight:700;margin-top:2px;}
+  .ace{font-size:13px;color:#e8d3a8;margin-top:4px;}
+  .play{display:block;width:100%;margin-top:16px;padding:16px;font-size:17px;font-weight:800;letter-spacing:.5px;background:var(--orange);border:none;border-radius:14px;color:#000;cursor:pointer;text-decoration:none;text-align:center;}
+  .cd{font-size:12px;color:var(--text3);text-align:center;margin:14px 0 6px;}
+  .cd b{color:var(--gold);font-variant-numeric:tabular-nums;}
+  .sec{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin:24px 0 10px;}
+  .row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 14px;margin-bottom:9px;}
+  .row.top1{border-color:var(--gold);}.row.top2{border-color:#c9c9d0;}.row.top3{border-color:#c8924e;}
+  .rank{width:34px;text-align:center;font-size:18px;font-weight:900;color:var(--text3);flex-shrink:0;}
+  .who{flex:1;min-width:0;} .who .n{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .who .g{font-size:12px;color:var(--text3);}
+  .res{flex-shrink:0;text-align:right;} .res b{font-size:18px;font-weight:900;color:var(--orange);}.res span{display:block;font-size:11px;color:var(--text3);}
+  .empty{color:var(--text3);font-size:14px;text-align:center;padding:24px 10px;line-height:1.6;}
+  .foot{text-align:center;margin-top:20px;font-size:12px;color:var(--text3);}
+  .foot a{color:var(--orange);text-decoration:none;font-weight:700;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>🔥 DAILY WOD</h1>
+    <div class="sub">One workout · everyone · every day</div>
+    <a class="back" href="/">← back to home</a>
+  </div>
+
+  <div class="wod">
+    <div class="lbl">Today's WOD</div>
+    <div class="nm" id="wodName">—</div>
+    <div class="date" id="wodDate"></div>
+    <div class="moves" id="moves"></div>
+    <div class="ace" id="ace"></div>
+    <a class="play" href="/board?daily=1">▶ Play today's WOD</a>
+    <div class="cd">New WOD in <b id="cd">…</b></div>
+  </div>
+
+  <div class="sec">Today's leaderboard</div>
+  <div id="list"><div class="empty">Loading…</div></div>
+
+  <div class="foot">🏆 <a href="/leaderboard">All-time movements</a> · 🏋️ <a href="/gyms">Gyms</a> · 📈 <a href="/me">My stats</a></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="wodly-core.js"></script>
+<script>
+const W=window.WODLY, sb=W.makeClient();
+const $=id=>document.getElementById(id);
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const nfmt=n=>Number(n||0).toLocaleString();
+function pfmt(sec){if(sec==null)return '';const m=Math.floor(sec/60),s=sec%60;return m+':'+(s<10?'0':'')+s;}
+const MEDAL=['🥇','🥈','🥉'];
+const SUITS=[['hearts','♥','r'],['diamonds','♦','o'],['clubs','♣','g'],['spades','♠','b']];
+
+const wod=W.dailyWod();
+$('wodName').textContent=wod.name;
+$('wodDate').textContent=new Date().toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});
+$('moves').innerHTML=SUITS.map(([k,sym,c])=>`<div class="mv"><span class="s ${c}">${sym}</span> <span class="mn">${esc(wod.mv[k])}</span></div>`).join('');
+$('ace').textContent='🅰 Ace penalty: '+wod.aceReps+' '+wod.aceMove;
+
+function tickCd(){const now=new Date();const mid=new Date(now);mid.setHours(24,0,0,0);let s=Math.max(0,Math.floor((mid-now)/1000));
+  const h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;$('cd').textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(ss<10?'0':'')+ss;}
+tickCd();setInterval(tickCd,1000);
+
+async function loadLb(){
+  let data=[];
+  try{const r=await sb.rpc('daily_leaderboard',{p_day:wod.key});if(!r.error&&Array.isArray(r.data))data=r.data;}catch(e){}
+  const l=$('list');
+  if(!data.length){l.innerHTML='<div class="empty">No finishers yet today.<br>Be the first to post a score on today’s WOD! 🔥</div>';return;}
+  l.innerHTML=data.map((x,i)=>{const cls=i<3?' top'+(i+1):'';const rank=i<3?MEDAL[i]:(i+1);
+    return `<div class="row${cls}"><div class="rank">${rank}</div>
+      <div class="who"><div class="n">${esc(x.name)}</div>${x.gym?`<div class="g">${esc(x.gym)}</div>`:''}</div>
+      <div class="res"><b>${nfmt(x.reps)}</b><span>reps${x.time?' · '+pfmt(x.time):''}</span></div></div>`;}).join('');
+}
+loadLb();setInterval(loadLb,30000);
+</script>
+</body>
+</html>
