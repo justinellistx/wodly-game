@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>WODLY — Movement Leaderboard</title>
-<meta name="description" content="See what the whole WODLY community is grinding — movement popularity and total reps, live.">
+<title>WODLY — Gym Leaderboard</title>
+<meta name="description" content="Which box is grinding hardest? See how gyms stack up on WODLY.">
 <meta name="theme-color" content="#0a0a0b">
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-<meta property="og:title" content="WODLY — Movement Leaderboard">
-<meta property="og:description" content="What the community is grinding — live movement popularity and total reps.">
+<meta property="og:title" content="WODLY — Gym Leaderboard">
+<meta property="og:description" content="Which box is grinding hardest? Gym-vs-gym on WODLY.">
 <meta property="og:image" content="https://wodlygame.com/assets/og-image.png">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -16,7 +16,7 @@
   body{font-family:system-ui,sans-serif;background:radial-gradient(circle at 50% -8%,#1d1d22,#0a0a0b 60%);color:#fff;min-height:100vh;padding:26px 18px 60px;}
   .wrap{max-width:640px;margin:0 auto;}
   .top{text-align:center;margin-bottom:20px;}
-  h1{font-size:32px;font-weight:900;letter-spacing:6px;}
+  h1{font-size:30px;font-weight:900;letter-spacing:4px;}
   .sub{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-top:6px;}
   .back{display:inline-block;margin-top:12px;font-size:12px;color:var(--text3);text-decoration:none;}
   .headline{background:linear-gradient(150deg,#241a06,#120d04);border:1px solid rgba(245,166,35,.4);border-radius:16px;padding:18px;text-align:center;margin-bottom:8px;}
@@ -30,9 +30,8 @@
   .rank{width:40px;flex-shrink:0;text-align:center;font-size:22px;font-weight:900;color:var(--text3);}
   .rank .medal{font-size:26px;}
   .info{flex:1;min-width:0;}
-  .mname{font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .mmeta{font-size:12px;color:var(--text3);margin-top:2px;}
-  .mtop{font-size:12px;color:var(--gold);margin-top:3px;font-weight:600;}
+  .gname{font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .gmeta{font-size:12px;color:var(--text3);margin-top:2px;}
   .reps{flex-shrink:0;text-align:right;}
   .reps b{font-size:24px;font-weight:900;color:var(--orange);font-variant-numeric:tabular-nums;}
   .reps span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);}
@@ -45,19 +44,18 @@
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🏆 LEADERBOARD</h1>
-    <div class="sub">What the community is grinding</div>
+    <h1>🏋️ GYM LEADERBOARD</h1>
+    <div class="sub">Which box grinds hardest</div>
     <a class="back" href="/">← back to home</a>
   </div>
 
-  <div class="headline"><b id="totReps">—</b><span>total reps by WODLY players</span></div>
-  <div class="note">Every movement climbs the board each time someone plays. Rack up reps — they all count here.</div>
+  <div class="headline"><b id="totGyms">—</b><span>gyms on the board</span></div>
+  <div class="note">Reps from every athlete count toward their gym. Enter your gym when you save a workout to put it on the board.</div>
 
   <div id="list"><div class="empty">Loading…</div></div>
 
-  <div class="foot">🏋️ <a href="/gyms">Gym-vs-gym leaderboard →</a></div>
-  <div class="foot">📈 <a href="/me">Track your own streak &amp; badges →</a></div>
-  <div class="foot">Want to move the board? <a href="/board">Start a game →</a></div>
+  <div class="foot">🏆 <a href="/leaderboard">Movement leaderboard →</a></div>
+  <div class="foot">Rep for your box — <a href="/board">start a game →</a></div>
   <div class="refreshed" id="refreshed"></div>
 </div>
 
@@ -73,21 +71,17 @@ const MEDAL=['🥇','🥈','🥉'];
 
 async function load(){
   let data=[];
-  try{const r=await sb.rpc('movement_leaderboard');if(!r.error&&Array.isArray(r.data))data=r.data;}catch(e){}
-  const total=data.reduce((s,x)=>s+(+x.reps||0),0);
-  $('totReps').textContent=nfmt(total);
+  try{const r=await sb.rpc('gym_leaderboard');if(!r.error&&Array.isArray(r.data))data=r.data;}catch(e){}
+  $('totGyms').textContent=nfmt(data.length);
   const l=$('list');
-  if(!data.length){l.innerHTML='<div class="empty">No reps logged yet.<br>Play a game and be the first movement on the board! 💪</div>';$('refreshed').textContent='';return;}
+  if(!data.length){l.innerHTML='<div class="empty">No gyms on the board yet.<br>Add your gym when you save a workout and put your box on the map! 🏋️</div>';$('refreshed').textContent='';return;}
   l.innerHTML=data.map((x,i)=>{
     const cls=i<3?' top'+(i+1):'';
     const rank=i<3?`<span class="medal">${MEDAL[i]}</span>`:(i+1);
-    const games=+x.games||0, reps=+x.reps||0;
-    const meta=games?`used in ${games} game${games===1?'':'s'}`:'ready to climb';
-    const top=x.top;
-    const topLine=(top&&+top.reps>0)?`<div class="mtop">🔥 Best game: ${nfmt(top.reps)} by ${esc(top.name)}</div>`:'';
+    const players=+x.players||0, workouts=+x.workouts||0, reps=+x.reps||0;
     return `<div class="row${cls}">
       <div class="rank">${rank}</div>
-      <div class="info"><div class="mname">${esc(x.m)}</div><div class="mmeta">${meta}</div>${topLine}</div>
+      <div class="info"><div class="gname">${esc(x.gym)}</div><div class="gmeta">${players} athlete${players===1?'':'s'} · ${workouts} workout${workouts===1?'':'s'}</div></div>
       <div class="reps"><b>${nfmt(reps)}</b><span>reps</span></div>
     </div>`;
   }).join('');

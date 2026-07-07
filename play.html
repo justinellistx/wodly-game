@@ -336,6 +336,7 @@ function fmtCountdown(ms){if(ms<=0)return 'Starting any moment…';const s=Math.
 function subHTML(kind){const recap=kind==='recap';return `<div class="subwrap">
   <div class="subttl">${recap?'📧 Email me my recap':'🔔 New boards & worldwide matches'}</div>
   <div class="subsub">${recap?'Get this workout — reps, time & your share card — emailed to you. Plus alerts for new boards & worldwide matches. No spam.':'Get an email when we release new workouts and schedule global matches. No spam.'}</div>
+  ${recap?`<input id="subGym" maxlength="40" placeholder="Your gym / box (optional)" autocomplete="organization">`:''}
   <input id="subEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
   <button class="subbtn" id="subBtn">${recap?'Email it to me':'Notify me'}</button>
   <div class="submsg" id="subMsg"></div>
@@ -353,7 +354,8 @@ async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim
         const up=await sb.storage.from('recaps').upload(path,blob,{contentType:'image/png',upsert:true});
         if(!up.error)imageUrl=sb.storage.from('recaps').getPublicUrl(path).data.publicUrl;}
     }catch(e){}
-    fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,deck:null,summary:lastRecap,image_url:imageUrl})});
+    const gym=((($('subGym')||{}).value)||'').trim()||null;if(gym){try{localStorage.setItem('wodly_gym',gym);}catch(e){}}
+    fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,deck:null,summary:lastRecap,image_url:imageUrl,gym:gym})});
     fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:{apikey:W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:(me&&me.name)||null,image_url:imageUrl,summary:lastRecap,sponsor:curSponsor?{id:curSponsor.id||null,name:curSponsor.name,website_url:curSponsor.website_url||curSponsor.social_url||null,tagline:curSponsor.tagline||null}:null})});
   }catch(e){}}
   try{const r=await fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,source,consent:true})});
@@ -390,6 +392,7 @@ function renderState(state){
     const recHTML=rec.total>0?`<div class="recap"><div class="recap-h">Your workout</div><div class="recap-total">${rec.total}<span>total reps</span></div><div class="recap-moves">${moves.map(m=>`<div class="rm"><span>${esc(m)}</span><b>${rec.byMove[m]}</b></div>`).join('')}</div><button class="sharebtn" id="shareBtn">📸 Share my card</button></div>`:'';
     body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${head}</h2>${subt}</div>`+resHTML+recHTML+subHTML('recap');
     const shb=$('shareBtn');if(shb)shb.onclick=()=>shareRecap(rec,mp);
+    (function(){const g=$('subGym');if(!g)return;let v='';try{v=localStorage.getItem('wodly_gym')||'';}catch(e){}if(room&&!room.is_public&&room.settings&&room.settings.gym)v=room.settings.gym;g.value=v;})();
     wireSub('recap');return;}
   if(phase!=='playing'){clearCd();
     const sched=(room&&room.scheduled_at)?new Date(room.scheduled_at).getTime():0;
