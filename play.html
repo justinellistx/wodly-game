@@ -297,6 +297,8 @@ function sendIntent(type,payload){return sb.from('intents').insert({room_id:room
 function myPlayer(state){return (state.players||[]).find(p=>p.id===me.id);}
 
 function computeRecap(mp){const h=(mp&&mp.hist)||[];const byMove={};let total=0;h.forEach(e=>{byMove[e.m]=(byMove[e.m]||0)+e.r;total+=e.r;});return {byMove,total,count:h.length,order:h};}
+function buzz(pat){try{if(navigator.vibrate)navigator.vibrate(pat);}catch(e){}}
+function confettiP(){try{const cv=document.createElement('canvas');cv.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:9998;';cv.width=innerWidth;cv.height=innerHeight;document.body.appendChild(cv);const x=cv.getContext('2d');const cols=['#F5A623','#E8363D','#4CAF50','#2196F3','#fff'],P=[];for(let i=0;i<110;i++)P.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*0.4,vx:(Math.random()-0.5)*6,vy:2+Math.random()*5,s:6+Math.random()*8,c:cols[i%cols.length],r:Math.random()*6,vr:(Math.random()-0.5)*0.35});const st=performance.now();let last=st;(function fr(now){const dt=Math.min(34,now-last);last=now;x.clearRect(0,0,cv.width,cv.height);let al=false;P.forEach(p=>{p.vy+=0.06*dt/16;p.x+=p.vx*dt/16;p.y+=p.vy*dt/16;p.r+=p.vr;if(p.y<cv.height+30)al=true;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62);x.restore();});if(now-st<4200&&al)requestAnimationFrame(fr);else cv.remove();})(st);}catch(e){}}
 function loadImg(src){return new Promise(res=>{if(!src){res(null);return;}const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src;});}
 function makeQR(text,size){return new Promise(res=>{try{if(typeof QRCode==='undefined'){res(null);return;}const d=document.createElement('div');new QRCode(d,{text,width:size,height:size,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});setTimeout(()=>{const c=d.querySelector('canvas');if(c){res(c);return;}const im=d.querySelector('img');if(im){if(im.complete&&im.naturalWidth){res(im);}else{im.onload=()=>res(im);im.onerror=()=>res(null);}return;}res(null);},80);}catch(e){res(null);}});}
 async function makeRecapImage(rec,mp){
@@ -394,6 +396,7 @@ function renderState(state){
     body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${head}</h2>${subt}</div>`+resHTML+recHTML+subHTML('recap');
     const shb=$('shareBtn');if(shb)shb.onclick=()=>shareRecap(rec,mp);
     (function(){const g=$('subGym');if(!g)return;let v='';try{v=localStorage.getItem('wodly_gym')||'';}catch(e){}if(room&&!room.is_public&&room.settings&&room.settings.gym)v=room.settings.gym;g.value=v;})();
+    if(!window.__cel){window.__cel=true;confettiP();buzz([90,40,90,40,160]);}
     wireSub('recap');return;}
   if(phase!=='playing'){clearCd();
     const sched=(room&&room.scheduled_at)?new Date(room.scheduled_at).getTime():0;
@@ -416,6 +419,7 @@ function renderState(state){
       <div class="mn" style="font-size:26px;">🏁 Finished ${ord(mp.place)}!</div>
       <div class="ms" style="margin-top:6px;">Your time ${pfmt(mp.finishSec||0)}</div>
       <div class="ms" style="margin-top:14px;">Waiting for the others to finish…</div></div>`;
+    if(lastStatus!=='finished')buzz([120,60,200]);
     lastStatus='finished';return;}
   if(mp.status==='working'&&mp.card){
     clearCd();const isAce=mp.card.kind==='ace';

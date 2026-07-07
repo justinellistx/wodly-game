@@ -421,6 +421,42 @@ $('endResultsBtn').onclick=()=>{if(!game||game.ended)return;const left=game.play
 $('againBtn').onclick=async()=>{game=null;if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}await refreshPlayers();renderRoster();show('lobbyScreen');};
 
 // ── START GAME ──
+// ── Game juice: synthesized SFX + announcer + confetti (board = the big-screen show) ──
+const JUICE=(function(){
+  let ctx=null, muted=false;
+  try{muted=localStorage.getItem('wodly_muted')==='1';}catch(e){}
+  function AC(){if(!ctx){try{ctx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}return ctx;}
+  function tone(freq,dur,type,vol,delay,slideTo){const c=AC();if(!c||muted)return;const t0=c.currentTime+(delay||0);
+    const o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(freq,t0);
+    if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,t0+dur);
+    g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(vol||0.2,t0+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);o.connect(g);g.connect(c.destination);o.start(t0);o.stop(t0+dur+0.03);}
+  function noise(dur,vol){const c=AC();if(!c||muted)return;const n=c.createBufferSource();const b=c.createBuffer(1,Math.max(1,c.sampleRate*dur),c.sampleRate);const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);n.buffer=b;const g=c.createGain();g.gain.value=vol||0.14;const f=c.createBiquadFilter();f.type='highpass';f.frequency.value=700;n.connect(f);f.connect(g);g.connect(c.destination);n.start();}
+  function say(t){if(muted||!('speechSynthesis' in window))return;try{const u=new SpeechSynthesisUtterance(t);u.rate=1.05;u.pitch=1.08;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
+  function ord(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+  function confetti(){try{
+    const cv=document.createElement('canvas');cv.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:9998;';
+    cv.width=window.innerWidth;cv.height=window.innerHeight;document.body.appendChild(cv);const x=cv.getContext('2d');
+    const cols=['#F5A623','#E8363D','#4CAF50','#2196F3','#ffffff'],P=[];
+    for(let i=0;i<170;i++)P.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*0.4,vx:(Math.random()-0.5)*7,vy:2+Math.random()*5,s:7+Math.random()*9,c:cols[i%cols.length],r:Math.random()*6,vr:(Math.random()-0.5)*0.35});
+    const start=performance.now();let last=start;
+    (function frame(now){const dt=Math.min(34,now-last);last=now;x.clearRect(0,0,cv.width,cv.height);let alive=false;
+      P.forEach(p=>{p.vy+=0.06*dt/16;p.x+=p.vx*dt/16;p.y+=p.vy*dt/16;p.r+=p.vr;if(p.y<cv.height+30)alive=true;
+        x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62);x.restore();});
+      if(now-start<4800&&alive)requestAnimationFrame(frame);else cv.remove();})(start);
+  }catch(e){}}
+  function btn(){if(document.getElementById('juiceBtn'))return;const b=document.createElement('button');b.id='juiceBtn';b.title='Sound on/off';
+    b.style.cssText='position:fixed;top:12px;right:12px;z-index:9999;background:rgba(0,0,0,.55);border:1px solid #444;color:#fff;font-size:20px;width:46px;height:46px;border-radius:12px;cursor:pointer;';
+    b.textContent=muted?'🔇':'🔊';b.onclick=()=>{muted=!muted;try{localStorage.setItem('wodly_muted',muted?'1':'0');}catch(e){}b.textContent=muted?'🔇':'🔊';if(!muted)AC();};document.body.appendChild(b);}
+  return {
+    unlock(){const c=AC();if(c&&c.state==='suspended'){try{c.resume();}catch(e){}}try{if('speechSynthesis' in window)speechSynthesis.resume();}catch(e){}btn();},
+    start(){tone(330,0.12,'square',0.18,0);tone(440,0.12,'square',0.18,0.12);tone(660,0.22,'square',0.2,0.24);say('WODLY! Game on!');},
+    dice(){noise(0.16,0.11);tone(190,0.08,'triangle',0.11,0,95);},
+    finish(name,place){tone(523,0.1,'sine',0.18,0);tone(784,0.2,'sine',0.2,0.1);say((name||'A team')+' finishes'+(place?' '+ord(place)+'!':'!'));},
+    win(name){[523,659,784,1047].forEach((f,i)=>tone(f,0.3,'sawtooth',0.18,i*0.14));say((name?name+' wins! ':'')+'What a game!');confetti();}
+  };
+})();
+
 $('startBtn').onclick=async()=>{
   if(!players.length)return;
   const s=room.settings||gatherSettings();
@@ -433,6 +469,7 @@ $('startBtn').onclick=async()=>{
   capFired=false;vpos={};
   {const bdef=(W.BOARDS||[]).find(b=>b.id===game.boardId)||(W.BOARDS||[])[0];if(bdef&&BOARDBG.src.indexOf(bdef.file)<0)BOARDBG.src=bdef.file;}
   await sb.from('rooms').update({status:'playing'}).eq('id',room.id);
+  try{JUICE.unlock();JUICE.start();}catch(e){}
   show('gameScreen');$('gameCode').textContent=room.code;loadSponsors().then(pickSponsor);
   $('endResultsBtn').style.display=(game.finishMode==='all')?'':'none';
   $('capBox').style.display=game.timeCap>0?'':'none';
@@ -533,6 +570,7 @@ function onIntent(it){if(!game)return;
 
 function onRoll(pid,dvRaw){
   const p=game.players.find(x=>x.id===pid);if(!p||game.ended||game.winner||p.finished||p.status==='working')return;
+  try{JUICE.dice();}catch(e){}
   let dv=parseInt(dvRaw);if(!(dv>=1&&dv<=12))dv=1+Math.floor(Math.random()*6);
   const from=p.pos, total=game.total;
   let pos=Math.min(from+dv,total-1), guard=0, res=null, hops=[], backHit=null, skipHit=null;
@@ -577,6 +615,7 @@ function playerFinish(p){
   game.finishedCount=(game.finishedCount||0)+1;p.place=game.finishedCount;
   p.finishSec=Math.floor((Date.now()-game.startTime)/1000);
   logPush(p,{kind:'finish',place:p.place,gs:p.finishSec});
+  try{if(game.finishMode!=='first')JUICE.finish(p.name,p.place);}catch(e){}
   if(game.finishMode==='first'){endGame('first');return;}
   if(game.players.every(x=>x.finished)){endGame('all');return;}
   drawBoard();drawTokens();renderStandings();renderRecent();writeState();
@@ -610,6 +649,7 @@ function renderResults(reason){
     row.innerHTML=`<span class="wsplace">${medal}</span><img src="${a?a.img:''}" alt=""><span class="wsname">${esc(r.name)}</span><span class="wstime">${time}</span>`;
     sb2.appendChild(row);});
   show('winScreen');
+  try{const nm=(game.finishMode==='first'||game.players.length<2)?((game.results[0]||{}).name||''):'';JUICE.win(nm);}catch(e){}
 }
 function triggerCap(){if(capFired||!game||game.ended)return;capFired=true;
   // mark any not-yet-finished players' standing by position; end with results.
