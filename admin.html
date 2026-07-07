@@ -118,6 +118,9 @@
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:18px 0 10px;">Sponsors</div>
     <div class="slist" id="slist"><div style="color:var(--text3)">Loading…</div></div>
 
+    <div class="sectitle" style="margin-top:26px;"><span>📈 Sponsor engagement</span><button class="btn ghost" id="loadClicks" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
+    <div id="clicksBox"><div class="nodata">Loading…</div></div>
+
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:28px 0 10px;">Email subscribers <span id="subsCount" style="color:var(--text2);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
     <div style="display:flex;gap:10px;margin-bottom:12px;">
       <button class="btn ghost" id="loadSubs">Load subscribers</button>
@@ -147,8 +150,27 @@ async function api(action,extra){
 $('enterBtn').onclick=async()=>{
   passcode=$('pass').value.trim();$('gateErr').textContent='';
   const r=await api('verify');
-  if(r&&r.ok){show('panel');loadSponsors();loadAnalytics();}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
+  if(r&&r.ok){show('panel');loadSponsors();loadAnalytics();loadClicks();}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
 };
+
+// ── Sponsor engagement ──
+async function loadClicks(){
+  const box=$('clicksBox');box.innerHTML='<div class="nodata">Loading…</div>';
+  const r=await api('sponsor_clicks');
+  if(!r||r.error||!r.data){box.innerHTML='<div class="nodata">Could not load'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
+  const d=r.data;
+  if(!d.length){box.innerHTML='<div class="nodata">No sponsors yet — add one above.</div>';return;}
+  const any=d.some(s=>(s.total||0)>0);
+  box.innerHTML=(any?'':'<div class="nodata" style="margin-bottom:10px;">No scans or clicks logged yet — they’ll appear here as people scan the board QR or tap sponsor links.</div>')
+    +'<div class="slist">'+d.map(s=>`<div class="srow">
+      <div class="meta"><b>${esc(s.name)}</b> <span class="pill ${s.active?'on':'off'}">${s.active?'Active':'Hidden'}</span>
+        <div style="margin-top:7px;display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text2);">
+          <span>📺 ${s.scans||0} board scans</span><span>📲 ${s.phone||0} phone</span><span>✉️ ${s.email||0} email</span>
+          <span style="color:var(--orange);font-weight:800;">${s.total||0} total</span><span style="color:var(--text3);">${s.last30||0} in 30d</span>
+        </div>
+      </div></div>`).join('')+'</div>';
+}
+$('loadClicks').onclick=loadClicks;
 
 // ── Analytics ──
 const B_NAME={classic:'Classic',arena:'Arena',box:'The Box',vintage:'Vintage',july4th:'July 4th'};

@@ -204,7 +204,7 @@ const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,3,6,2,5,8]};
 function renderDie(n){const on=PIPS[n]||[];let h='';for(let i=0;i<9;i++)h+=`<span class="pip${on.indexOf(i)>=0?' on':''}"></span>`;return h;}
 let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='', dblUsed=false, lastState=null, schedInt=null, lastStartTry=0, lastRecap=null, winSponsor=null;
-(async()=>{try{const{data}=await sb.from('sponsors').select('name,logo,website_url,tagline').eq('active',true).order('sort');if(data&&data.length)winSponsor=data[Math.floor(Math.random()*data.length)];}catch(e){}})();
+(async()=>{try{const{data}=await sb.from('sponsors').select('id,name,logo,website_url,social_url,tagline').eq('active',true).order('sort');if(data&&data.length)winSponsor=data[Math.floor(Math.random()*data.length)];}catch(e){}})();
 const MATCH_FN=W.SUPA_URL+'/functions/v1/match';
 function isOnline(){return !!(room&&room.is_public);}
 async function callMatch(action,extra){
@@ -354,7 +354,7 @@ async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim
         if(!up.error)imageUrl=sb.storage.from('recaps').getPublicUrl(path).data.publicUrl;}
     }catch(e){}
     fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,deck:null,summary:lastRecap,image_url:imageUrl})});
-    fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:{apikey:W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:(me&&me.name)||null,image_url:imageUrl,summary:lastRecap,sponsor:curSponsor?{name:curSponsor.name,website_url:curSponsor.website_url||curSponsor.social_url||null,tagline:curSponsor.tagline||null}:null})});
+    fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:{apikey:W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:(me&&me.name)||null,image_url:imageUrl,summary:lastRecap,sponsor:curSponsor?{id:curSponsor.id||null,name:curSponsor.name,website_url:curSponsor.website_url||curSponsor.social_url||null,tagline:curSponsor.tagline||null}:null})});
   }catch(e){}}
   try{const r=await fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,source,consent:true})});
     if(r.status===201||r.status===204||r.status===200){msg.textContent="You're on the list ✓";msg.className='submsg ok';}
@@ -455,7 +455,7 @@ function renderSponsorBar(state){const bar=$('spBar');if(!bar)return;
   const s=(state&&state.sponsor)||winSponsor||null;
   const phase=state&&state.phase;
   if(!s||!(phase==='playing'||phase==='finished')){curSponsor=null;bar.style.display='none';return;}
-  curSponsor=s;const link=s.website_url||s.social_url||'';
+  curSponsor=s;const dest=s.website_url||s.social_url||'';const link=(dest&&s.id)?('https://wodlygame.com/go?s='+s.id+'&src=phone'):dest;
   bar.href=link||'#';if(!link)bar.removeAttribute('target');else bar.target='_blank';
   bar.innerHTML=`${s.logo?`<img src="${s.logo}" alt="">`:''}<span class="spl">Presented by</span><span class="spn">${esc(s.name||'')}</span>${s.tagline?`<span class="spdeal">${esc(s.tagline)}</span>`:''}${link?'<span class="spgo">Visit →</span>':''}`;
   bar.style.display='flex';}
