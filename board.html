@@ -445,10 +445,14 @@ const JUICE=(function(){
         x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62);x.restore();});
       if(now-start<4800&&alive)requestAnimationFrame(frame);else cv.remove();})(start);
   }catch(e){}}
+  function click(){tone(600,0.045,'square',0.07,0);}
+  function hover(){tone(900,0.028,'sine',0.033,0);}
   function btn(){if(document.getElementById('juiceBtn'))return;const b=document.createElement('button');b.id='juiceBtn';b.title='Sound on/off';
     b.style.cssText='position:fixed;top:12px;right:12px;z-index:9999;background:rgba(0,0,0,.55);border:1px solid #444;color:#fff;font-size:20px;width:46px;height:46px;border-radius:12px;cursor:pointer;';
-    b.textContent=muted?'🔇':'🔊';b.onclick=()=>{muted=!muted;try{localStorage.setItem('wodly_muted',muted?'1':'0');}catch(e){}b.textContent=muted?'🔇':'🔊';if(!muted)AC();};document.body.appendChild(b);}
+    b.textContent=muted?'🔇':'🔊';b.onclick=()=>{muted=!muted;try{localStorage.setItem('wodly_muted',muted?'1':'0');}catch(e){}b.textContent=muted?'🔇':'🔊';
+      if(!muted){const c=AC();if(c&&c.state==='suspended'){try{c.resume();}catch(e){}}tone(600,0.05,'square',0.12,0);tone(990,0.13,'square',0.14,0.06);}};document.body.appendChild(b);}
   return {
+    btn, click, hover,
     unlock(){const c=AC();if(c&&c.state==='suspended'){try{c.resume();}catch(e){}}try{if('speechSynthesis' in window)speechSynthesis.resume();}catch(e){}btn();},
     start(){tone(330,0.12,'square',0.18,0);tone(440,0.12,'square',0.18,0.12);tone(660,0.22,'square',0.2,0.24);say('WODLY! Game on!');},
     dice(){noise(0.16,0.11);tone(190,0.08,'triangle',0.11,0,95);},
@@ -456,6 +460,12 @@ const JUICE=(function(){
     win(name){[523,659,784,1047].forEach((f,i)=>tone(f,0.3,'sawtooth',0.18,i*0.14));say((name?name+' wins! ':'')+'What a game!');confetti();}
   };
 })();
+
+// Show the sound toggle right away (setup screen too) + unlock audio on first tap + menu click/hover sounds
+try{JUICE.btn();}catch(e){}
+document.addEventListener('pointerdown',function(){try{JUICE.unlock();}catch(e){}},{once:true});
+document.addEventListener('click',function(e){try{const t=e.target.closest&&e.target.closest('.ob,.bigbtn,button,.toggle,.thumb,select');if(t&&t.id!=='juiceBtn'&&t.id!=='startBtn')JUICE.click();}catch(_e){}},true);
+if(window.matchMedia&&matchMedia('(pointer:fine)').matches){let _lastHov=null;document.addEventListener('mouseover',function(e){try{const t=e.target.closest&&e.target.closest('.ob,.bigbtn,.thumb');if(t&&t!==_lastHov){_lastHov=t;JUICE.hover();}}catch(_e){}},true);}
 
 $('startBtn').onclick=async()=>{
   if(!players.length)return;
