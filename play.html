@@ -338,13 +338,16 @@ function fmtCountdown(ms){if(ms<=0)return 'Starting any moment…';const s=Math.
 function subHTML(kind){const recap=kind==='recap';return `<div class="subwrap">
   <div class="subttl">${recap?'📧 Email me my recap':'🔔 New boards & worldwide matches'}</div>
   <div class="subsub">${recap?'Get this workout — reps, time & your share card — emailed to you. Plus alerts for new boards & worldwide matches. No spam.':'Get an email when we release new workouts and schedule global matches. No spam.'}</div>
-  ${recap?`<input id="subGym" maxlength="40" placeholder="Your gym / box (optional)" autocomplete="organization">`:''}
+  ${recap?`<input id="subGym" list="gymList" maxlength="40" placeholder="Your gym / box (optional)" autocomplete="off"><datalist id="gymList"></datalist>`:''}
   <input id="subEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
   <button class="subbtn" id="subBtn">${recap?'Email it to me':'Notify me'}</button>
   <div class="submsg" id="subMsg"></div>
   <label class="subconsent"><input type="checkbox" id="subConsent"> I agree to receive occasional WODLY emails. <a href="/privacy" target="_blank">Privacy</a></label>
 </div>`;}
 function wireSub(source){const b=$('subBtn');if(b)b.onclick=()=>doSubscribe(source);}
+// Gym dropdown — fill the datalist with known gyms so athletes pick an existing name (consistent spelling) or add a new one
+let __gymCache=null;
+async function fillGymList(){const list=$('gymList');if(!list)return;try{if(!__gymCache){const{data}=await sb.rpc('gym_names');__gymCache=Array.isArray(data)?data:[];}list.innerHTML=__gymCache.map(g=>'<option value="'+String(g).replace(/"/g,'&quot;')+'">').join('');}catch(e){}}
 async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim(),msg=$('subMsg');if(!msg)return;
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='Enter a valid email.';msg.className='submsg err';return;}
   if(!$('subConsent').checked){msg.textContent='Please tick the box to consent.';msg.className='submsg err';return;}
@@ -395,7 +398,7 @@ function renderState(state){
     const recHTML=rec.total>0?`<div class="recap"><div class="recap-h">Your workout</div><div class="recap-total">${rec.total}<span>total reps</span></div><div class="recap-moves">${moves.map(m=>`<div class="rm"><span>${esc(m)}</span><b>${rec.byMove[m]}</b></div>`).join('')}</div><button class="sharebtn" id="shareBtn">📸 Share my card</button></div>`:'';
     body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${head}</h2>${subt}</div>`+resHTML+recHTML+subHTML('recap');
     const shb=$('shareBtn');if(shb)shb.onclick=()=>shareRecap(rec,mp);
-    (function(){const g=$('subGym');if(!g)return;let v='';try{v=localStorage.getItem('wodly_gym')||'';}catch(e){}if(room&&!room.is_public&&room.settings&&room.settings.gym)v=room.settings.gym;g.value=v;})();
+    (function(){const g=$('subGym');if(!g)return;let v='';try{v=localStorage.getItem('wodly_gym')||'';}catch(e){}if(room&&!room.is_public&&room.settings&&room.settings.gym)v=room.settings.gym;g.value=v;fillGymList();})();
     if(!window.__cel){window.__cel=true;confettiP();buzz([90,40,90,40,160]);}
     wireSub('recap');return;}
   if(phase!=='playing'){clearCd();

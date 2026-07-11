@@ -183,7 +183,8 @@
     <div class="setup-grid">
       <div>
         <div class="sec">Gym / box name <span style="text-transform:none;letter-spacing:0;color:var(--text3);font-weight:400;">(optional — reps count toward your gym on the leaderboard)</span></div>
-        <input id="gymName" maxlength="40" placeholder="e.g. CrossFit Willis" style="width:100%;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;margin-bottom:16px;">
+        <input id="gymName" list="gymList" autocomplete="off" maxlength="40" placeholder="e.g. CrossFit Willis" style="width:100%;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;margin-bottom:16px;">
+        <datalist id="gymList"></datalist>
         <div class="sec">Workout preset</div>
         <select id="presetSel" style="width:100%;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;"><option value="">Custom — set your own</option></select>
         <div id="presetNote" style="font-size:12px;color:#4CAF50;min-height:15px;margin:7px 0 16px;"></div>
@@ -363,6 +364,8 @@ function loadSettings(){let s;try{s=JSON.parse(localStorage.getItem(SET_KEY)||'n
   _set('turnTimerInput',s.turnSec);_set('penTimerInput',s.penSec);
   if(typeof s.cap==='boolean')$('capToggle').checked=s.cap;_set('capInput',s.capMin);}
 loadSettings();
+// Gym dropdown — populate the datalist from known gyms so hosts pick an existing name (consistent spelling) or type a new one
+(async function(){try{const{data}=await sb.rpc('gym_names');const list=$('gymList');if(!list||!Array.isArray(data))return;list.innerHTML=data.map(g=>'<option value="'+String(g).replace(/"/g,'&quot;')+'">').join('');}catch(e){}})();
 // Daily WOD preload — /board?daily=1 loads today's shared workout + tags the game as daily
 (function(){try{const p=new URLSearchParams(location.search);if(p.get('daily')==='1'&&W.dailyWod){const w=W.dailyWod();
   _set('mv-hearts',w.mv.hearts);_set('mv-diamonds',w.mv.diamonds);_set('mv-clubs',w.mv.clubs);_set('mv-spades',w.mv.spades);
