@@ -603,7 +603,7 @@ function onRoll(pid,dvRaw){
   p.lastRoll=dv;p.pos=res.pos;
   p.event=backHit?{type:'back',val:backHit.val,suit:backHit.suit,eid:(game.eid=(game.eid||0)+1)}:skipHit?{type:'skip',suit:skipHit.suit,eid:(game.eid=(game.eid||0)+1)}:null;
   if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
-  if(res.kind==='workout'||res.kind==='ace'){(p.hist=p.hist||[]).push({m:res.card.move,r:res.card.reps});}
+  if(res.kind==='workout'||res.kind==='ace'){(p.hist=p.hist||[]).push({m:res.card.move,r:W.repScore(res.card.move,res.card.reps)});}
   // keep the freshly-revealed destination card face-down until the token actually lands on it
   if(!game.hidden)game.hidden=new Set();
   if((res.kind==='workout'||res.kind==='ace')&&res.fresh)game.hidden.add(res.pos);

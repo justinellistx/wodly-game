@@ -63,6 +63,9 @@
   // ── Card logic ────────────────────────────────────────────────────────────
   function cardType(v){ if(v===1)return'ace'; if(v===2)return'skip'; if(v===3||v===4)return'back'; return'workout'; }
   function getReps(v,d){ if(v>=11)return v; return Math.max(1, Math.round(v * (DIFF_MULT[d]||1))); }
+  // Distance movements (metres) score at 10 m = 1 rep. The card still shows the full distance to run.
+  function isMeters(m){ m=String(m||'').trim().toLowerCase(); return m.startsWith('m ')||m.endsWith(' m')||m.indexOf('meter')>=0||m.indexOf('(m)')>=0||/[0-9]\s*m(\b|$)/.test(m); }
+  function repScore(move,n){ n=Number(n)||0; return isMeters(move)?Math.max(1,Math.round(n/10)):n; }
   function buildDeck(){
     const d=[];
     SUITS.forEach(s=>{ d.push({suit:s,val:1,label:'A'});
@@ -104,6 +107,6 @@
     SUPA_URL, SUPA_KEY, makeClient,
     BRAND, SUITS, SYM, SCOL, FACE_LABELS, DECK_SPACES, DIFF_MULT, PCOLS, AVATARS, PRESETS, BOARDS,
     DAILY_WODS, dailyKey, dailyWod,
-    cardType, getReps, buildDeck, genCode, clientId
+    cardType, getReps, isMeters, repScore, buildDeck, genCode, clientId
   };
 })(typeof window !== 'undefined' ? window : globalThis);
