@@ -42,6 +42,11 @@
     const img = opts.boardImg;
     if(img && img.complete && img.naturalWidth){ ctx.drawImage(img,0,0,W2,H); }
     else { const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#141414'); bg.addColorStop(1,'#070707'); ctx.fillStyle=bg; ctx.fillRect(0,0,W2,H); }
+    // neutral track plate — quiet ribbon under the spaces so pieces read on any board art
+    if(P.length>1){ ctx.save(); ctx.lineJoin='round'; ctx.lineCap='round';
+      const trace=()=>{ ctx.beginPath(); ctx.moveTo(P[0].x,P[0].y); for(let i=1;i<total;i++) ctx.lineTo(P[i].x,P[i].y); };
+      ctx.strokeStyle='rgba(255,255,255,.10)'; ctx.lineWidth=ns*1.52; trace(); ctx.stroke();
+      ctx.strokeStyle='rgba(13,15,19,.72)'; ctx.lineWidth=ns*1.44; trace(); ctx.stroke(); ctx.restore(); }
     // nodes (no connecting trail — spiral layout)
     ctx.textAlign='center'; ctx.textBaseline='alphabetic';
     for(let i=0;i<total;i++){
@@ -64,6 +69,8 @@
     players.forEach((pl,pi)=>{ const node=P[Math.max(0,Math.min(pl.pos||0,total-1))]; if(!node) return;
       const o=offs[pi%6], cx=node.x+o[0]*ns*0.5, cy=node.y+o[1]*ns*0.5, rad=ns*0.32;
       ctx.save(); ctx.shadowColor=pl.color||'#fff'; ctx.shadowBlur=12; ctx.fillStyle=pl.color||'#fff'; ctx.beginPath(); ctx.arc(cx,cy,rad,0,Math.PI*2); ctx.fill(); ctx.restore();
+      const hw=Math.max(1.5,ns*0.055); ctx.strokeStyle='rgba(255,255,255,.92)'; ctx.lineWidth=hw;
+      ctx.beginPath(); ctx.arc(cx,cy,rad+hw*0.45,0,Math.PI*2); ctx.stroke();
       ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,cy,rad,0,Math.PI*2); ctx.stroke();
       const tim = opts.tokenImgs && opts.tokenImgs[pl.avatar];
       if(tim && tim.complete && tim.naturalWidth){ const sz=ns*1.15; ctx.drawImage(tim,cx-sz/2,cy-sz*0.82,sz,sz); }

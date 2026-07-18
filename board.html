@@ -527,6 +527,13 @@ function drawBoard(){const cv=$('boardCanvas'),ctx=cv.getContext('2d'),W2=cv.wid
   if(BOARDBG&&BOARDBG.complete&&BOARDBG.naturalWidth){ctx.drawImage(BOARDBG,0,0,W2,H);}
   else{const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#141414');bg.addColorStop(1,'#070707');ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(0,0,W2,H,18);ctx.fill();}
   ctx.textBaseline='alphabetic';
+  // neutral track plate — a quiet ribbon under the spaces so pieces read on ANY board art
+  if(P.length>1){ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+    const trace=()=>{ctx.beginPath();ctx.moveTo(P[0].x,P[0].y);for(let i=1;i<total;i++)ctx.lineTo(P[i].x,P[i].y);};
+    ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=14;ctx.shadowOffsetY=4;
+    ctx.strokeStyle='rgba(255,255,255,.10)';ctx.lineWidth=ns*1.52;trace();ctx.stroke();
+    ctx.restore();ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.strokeStyle='rgba(13,15,19,.72)';ctx.lineWidth=ns*1.44;trace();ctx.stroke();ctx.restore();}
   // nodes (no connecting trail — spiral layout)
   ctx.textAlign='center';
   for(let i=0;i<total;i++){const px=P[i].x,py=P[i].y,zone=getZone(i,total),lc=(game.hidden&&game.hidden.has(i))?null:game.landed[i],s=ns,hx=px-s/2,hy=py-s/2;
@@ -558,6 +565,9 @@ function drawTokens(){const cv=$('tokenCanvas'),ctx=cv.getContext('2d'),W2=cv.wi
     const img=TOKIMG[p.avatar],act=p.status==='working',rad=ns*0.32;
     // glowing base disc marks the square
     ctx.save();ctx.shadowColor=p.color;ctx.shadowBlur=act?28:12;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.fill();ctx.restore();
+    // white halo — separates the piece from any board art, light or dark
+    const hw=Math.max(2,ns*0.055);ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=hw;
+    ctx.beginPath();ctx.arc(cx,cy,rad+hw*0.45,0,Math.PI*2);ctx.stroke();
     ctx.strokeStyle='rgba(0,0,0,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.stroke();
     if(img&&img.complete&&img.naturalWidth){const sz=ns*1.15;ctx.save();if(act){ctx.shadowColor=p.color;ctx.shadowBlur=20;}ctx.drawImage(img,cx-sz/2,cy-sz*0.82,sz,sz);ctx.restore();}
     else{ctx.fillStyle='#fff';ctx.font='bold '+Math.round(ns*0.34)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((p.name||'?')[0].toUpperCase(),cx,cy+1);ctx.textBaseline='alphabetic';}
