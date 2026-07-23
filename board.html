@@ -782,6 +782,7 @@ function onRoll(pid,dvRaw){
     logPush(p,{kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,gs:gnow()});res={kind:'workout',pos,fresh:wasEmpty,card:{kind:'workout',reps:lc.num,move:lc.wkt,unit:(lc.unit||'reps'),label:lc.label,suit:lc.suit}};break;
   }
   if(!res)res={none:true,pos:Math.max(0,Math.min(pos,total-1))};
+  if(res.none&&res.pos<=from)res.pos=Math.min(from+1,total-1);
   p.lastRoll=dv;p.pos=res.pos;
   p.event=backHit?{type:'back',val:backHit.val,suit:backHit.suit,eid:(game.eid=(game.eid||0)+1)}:skipHit?{type:'skip',suit:skipHit.suit,eid:(game.eid=(game.eid||0)+1)}:null;
   if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
@@ -790,6 +791,9 @@ function onRoll(pid,dvRaw){
   if(!game.hidden)game.hidden=new Set();
   if((res.kind==='workout'||res.kind==='ace')&&res.fresh)game.hidden.add(res.pos);
   drawBoard();renderStandings();renderRecent();writeState();
+  // termination safety net (matches server): end a pathologically long game so no one gets stuck forever
+  game.rolls=(game.rolls||0)+1;
+  if(!game.ended&&game.rolls>game.total*game.players.length*6){endGame('stuck');return;}
   // cosmetic: walk through each landing in order — forward to a back/skip card, pause, then move.
   vpos[p.id]=from;drawTokens();
   animateHops(p.id,from,hops,()=>{if(game.hidden)game.hidden.delete(res.pos);drawBoard();drawTokens();if(res.win)playerFinish(p);if(SOLO)soloAfterRoll();});
@@ -823,8 +827,9 @@ function computeResults(){
 }
 function endGame(reason){
   if(game.ended)return;game.ended=true;
+  game.players.forEach(p=>{if(!p.finished){p.card=null;p.status='idle';}}); // clear leftover 'working' when a game ends
   game.results=computeResults();const top=game.results[0]||{};
-  game.winner={id:top.id,name:top.name,avatar:top.avatar,timeSec:top.finishSec||Math.floor((Date.now()-game.startTime)/1000),place:1,cap:(reason==='cap')};
+  game.winner={id:top.id,name:top.name,avatar:top.avatar,timeSec:top.finishSec||Math.floor((Date.now()-game.startTime)/1000),place:1,cap:(reason==='cap'||reason==='stuck')};
   stopClocks();renderResults(reason);
   if(SOLO){logSoloRecaps();return;}
   sb.from('rooms').update({status:'finished'}).eq('id',room.id).then(()=>{});writeState();
