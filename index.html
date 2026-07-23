@@ -36,7 +36,7 @@
   .tagline{font-size:12px;font-weight:800;letter-spacing:3px;margin:8px 0 16px;}
   .tagline .t1{color:var(--green);}.tagline .t2{color:var(--orange);}.tagline .t3{color:var(--red);}
   .heroes{display:flex;justify-content:center;align-items:flex-end;gap:1px;margin:2px 0 24px;}
-  .heroes img{width:clamp(26px,7.6vw,36px);height:clamp(26px,7.6vw,36px);object-fit:contain;filter:drop-shadow(0 5px 7px rgba(0,0,0,.6));}
+  .heroes img{width:clamp(38px,12.5vw,56px);height:clamp(38px,12.5vw,56px);object-fit:contain;filter:drop-shadow(0 5px 7px rgba(0,0,0,.6));}
   .heroes img:nth-child(even){transform:translateY(-5px);}
   .hero-vid{margin:2px auto 22px;border-radius:20px;overflow:hidden;border:2px solid rgba(245,166,35,.4);box-shadow:0 0 30px rgba(245,166,35,.18);line-height:0;width:fit-content;max-width:100%;}
   .hero-vid video{display:block;height:min(46vh,470px);width:auto;max-width:100%;background:#0d0d0d;}
@@ -60,6 +60,9 @@
   .online{background:linear-gradient(150deg,#0c1a12,#0a0f0c);border:2px solid var(--green);box-shadow:0 0 20px rgba(76,175,80,.15);}
   .online .ttl{color:#fff;}.online .sub{color:var(--text2);}
   .online .tag{background:rgba(76,175,80,.16);color:#9be0a0;border:1px solid rgba(76,175,80,.4);}
+  .solo{background:linear-gradient(150deg,#17111f,#0d0a12);border:2px solid #9b59b6;box-shadow:0 0 20px rgba(155,89,182,.16);}
+  .solo .ttl{color:#fff;}.solo .sub{color:var(--text2);}
+  .solo .tag{background:rgba(155,89,182,.16);color:#c9a0e0;border:1px solid rgba(155,89,182,.4);}
   .foot{margin-top:16px;}
   .foot button{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit;}
   .foot .footlink{color:var(--text3);font-size:11px;text-decoration:underline;}
@@ -102,19 +105,14 @@
   <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
 
   <div class="heroes">
-<img src="assets/characters/ninja.png" alt="">
-<img src="assets/characters/lifter.png" alt="">
-<img src="assets/characters/runner.png" alt="">
-<img src="assets/characters/firebreather.png" alt="">
-<img src="assets/characters/gymnast.png" alt="">
-<img src="assets/characters/champ.png" alt="">
-<img src="assets/characters/coach.png" alt="">
-<img src="assets/characters/rookie.png" alt="">
-<img src="assets/characters/cheerleader.png" alt="">
-<img src="assets/characters/sunrise.png" alt="">
-<img src="assets/characters/supplementking.png" alt="">
-<img src="assets/characters/hybridracer.png" alt="">
-</div>
+    <img src="assets/characters/ninja.png" alt="">
+    <img src="assets/characters/lifter.png" alt="">
+    <img src="assets/characters/runner.png" alt="">
+    <img src="assets/characters/dragon.png" alt="">
+    <img src="assets/characters/gymnast.png" alt="">
+    <img src="assets/characters/champ.png" alt="">
+    <img src="assets/characters/coach.png" alt="">
+  </div>
 
   <div class="hero-vid">
     <video src="assets/wodly-home.mp4" poster="assets/wodly-home-poster.jpg"
@@ -131,6 +129,11 @@
     <span class="tag">Big screen</span>
     <div class="ttl">▶ Start a game</div>
     <div class="sub">This screen becomes the board. Players join from their phones — one player or a whole class.</div>
+  </a>
+  <a class="choice solo" href="board?solo=1">
+    <span class="tag">1 device</span>
+    <div class="ttl">🎲 Play solo</div>
+    <div class="sub">Just you — set up a workout and play right here, no second screen. Pass &amp; play with friends too.</div>
   </a>
   <a class="choice join" href="play">
     <span class="tag">Your phone</span>

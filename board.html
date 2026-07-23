@@ -55,6 +55,19 @@
   .bigbtn{width:100%;padding:16px;font-size:17px;font-weight:800;letter-spacing:1px;background:var(--orange);border:none;border-radius:14px;color:#000;cursor:pointer;margin-top:18px;}
   .bigbtn:disabled{opacity:.4;cursor:not-allowed;}.bigbtn.inline{width:auto;padding:15px 40px;margin-top:0;}
   .join-card{display:flex;align-items:center;justify-content:center;gap:40px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;margin-bottom:24px;flex-wrap:wrap;}
+  /* solo / pass-and-play on-screen controls */
+  #soloControls{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center;}
+  #soloControls .who{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;}
+  #soloControls .who img{width:42px;height:42px;object-fit:contain;}
+  #soloControls .who .nm{font-size:20px;font-weight:900;}
+  #soloControls .who .turn{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;}
+  #soloControls .rollbtn{width:100%;max-width:420px;font-size:22px;font-weight:900;letter-spacing:1px;padding:20px;border:none;border-radius:14px;background:linear-gradient(150deg,#F5A623,#d1881a);color:#000;cursor:pointer;box-shadow:0 0 26px rgba(245,166,35,.3);}
+  #soloControls .rollbtn:disabled{opacity:.55;cursor:default;box-shadow:none;}
+  #soloControls .card{max-width:440px;margin:0 auto;}
+  #soloControls .card .mv{font-size:34px;font-weight:900;line-height:1.1;margin-bottom:4px;}
+  #soloControls .card .mvsub{font-size:14px;color:var(--text2);margin-bottom:14px;}
+  #soloControls .donebtn{width:100%;max-width:420px;font-size:20px;font-weight:900;padding:18px;border:none;border-radius:14px;background:linear-gradient(150deg,#4CAF50,#3a8c3e);color:#fff;cursor:pointer;box-shadow:0 0 22px rgba(76,175,80,.28);}
+  #soloControls .skipnote{font-size:13px;color:var(--text2);margin-top:8px;}
   .join-text{text-align:left;}.join-text .lbl{font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;}
   .join-url{font-size:22px;color:var(--text2);margin-bottom:14px;}.join-url b{color:#fff;}
   .code{font-size:64px;font-weight:900;letter-spacing:10px;color:var(--orange);line-height:1;}
@@ -241,6 +254,7 @@
     <div class="sec" style="margin-top:18px;">Board theme</div>
     <div class="board-grid" id="boardRow"></div>
     <button class="bigbtn" id="openLobbyBtn">OPEN LOBBY →</button>
+    <button class="ghost" id="soloBtn" style="width:100%;margin-top:10px;font-size:15px;padding:14px;">▶ Play solo / pass &amp; play (no phones)</button>
     <div class="foot"><button id="discLink">Health &amp; safety disclaimer</button></div>
   </div>
 
@@ -266,6 +280,23 @@
     </div>
   </div>
 
+  <!-- SOLO ROSTER -->
+  <div id="soloScreen" class="screen">
+    <h1>WODLY</h1>
+    <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
+    <div class="sec" style="margin-top:6px;">Who's playing? <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;">— add yourself for solo, or a few for pass &amp; play on this one screen</span></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 6px;">
+      <input id="soloName" maxlength="18" placeholder="Name" style="flex:1;min-width:140px;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;">
+      <button class="bigbtn inline" id="soloAdd" style="padding:12px 18px;">+ Add</button>
+    </div>
+    <div class="board-grid" id="soloAvatars" style="margin-bottom:10px;"></div>
+    <div class="roster" id="soloRoster"><div class="empty">No players yet — add one above.</div></div>
+    <div class="bar">
+      <button class="bigbtn inline" id="soloStart" disabled>START</button>
+      <button class="ghost" id="soloBack">← Back to setup</button>
+    </div>
+  </div>
+
   <!-- GAME -->
   <div id="gameScreen" class="screen">
     <div class="gtop"><h2>WODLY</h2><button class="ghost" id="quitBtn">End game</button></div>
@@ -280,6 +311,7 @@
       <div id="gboard">
         <div id="boardWrap"><canvas id="boardCanvas"></canvas><canvas id="tokenCanvas"></canvas></div>
         <div class="boardhint">⤢ Double-click the board to enlarge or exit</div>
+        <div id="soloControls" style="display:none;"></div>
       </div>
       <aside class="gcol gright">
         <div class="clock"><div class="cl">Game clock</div><div class="cv" id="gameClock">0:00</div></div>
@@ -380,6 +412,7 @@ loadSettings();
 })();
 
 $('openLobbyBtn').onclick=async()=>{
+  SOLO=false;
   const settings=gatherSettings();try{localStorage.setItem(SET_KEY,JSON.stringify(settings));}catch(e){}
   setStatus('creating room…');
   for(let a=0;a<6;a++){const code=W.genCode();const{data,error}=await sb.from('rooms').insert({code,status:'lobby',host_id:hostId,settings}).select().single();
@@ -419,9 +452,9 @@ function renderRoster(){const r=$('roster');$('pcount').textContent=players.leng
 
 $('editBtn').onclick=async()=>{if(room){await sb.from('rooms').delete().eq('id',room.id);room=null;}show('setupScreen');setStatus('setup');};
 $('newRoomBtn').onclick=async()=>{if(room)await sb.from('rooms').delete().eq('id',room.id);room=null;$('openLobbyBtn').click();};
-$('quitBtn').onclick=async()=>{stopClocks();if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}game=null;show('lobbyScreen');};
+$('quitBtn').onclick=async()=>{stopClocks();if(SOLO){game=null;$('soloControls').style.display='none';show('soloScreen');return;}if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}game=null;show('lobbyScreen');};
 $('endResultsBtn').onclick=()=>{if(!game||game.ended)return;const left=game.players.filter(p=>!p.finished).length;if(left>0&&!confirm(left+' team'+(left>1?'s':'')+" haven't finished. End now and show results?"))return;endGame('manual');};
-$('againBtn').onclick=async()=>{game=null;if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}await refreshPlayers();renderRoster();show('lobbyScreen');};
+$('againBtn').onclick=async()=>{game=null;if(SOLO){$('soloControls').style.display='none';show('soloScreen');return;}if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}await refreshPlayers();renderRoster();show('lobbyScreen');};
 
 // ── START GAME ──
 // ── Game juice: synthesized SFX + announcer + confetti (board = the big-screen show) ──
@@ -490,6 +523,86 @@ $('startBtn').onclick=async()=>{
   sizeCanvas();drawBoard();drawTokens();renderStandings();renderRecent();startGameClock();
   await writeState();
 };
+
+// ── SOLO / PASS-AND-PLAY (one device, no phones, reuses the same engine) ──
+let SOLO=false, soloSettings=null, soloRoster=[], soloSelAvatar=null, soloOrder=[], soloIdx=0, soloBusy=false, soloRecapDone=false;
+$('soloBtn').onclick=()=>{ const s=gatherSettings();try{localStorage.setItem(SET_KEY,JSON.stringify(s));}catch(e){} soloSettings=s;SOLO=true;buildSoloAvatars();renderSoloRoster();show('soloScreen'); };
+$('soloBack').onclick=()=>{SOLO=false;show('setupScreen');};
+function buildSoloAvatars(){const row=$('soloAvatars');if(!row)return;row.innerHTML='';
+  (W.AVATARS||[]).forEach(a=>{const d=document.createElement('div');d.className='bcard';d.dataset.id=a.id;
+    d.innerHTML='<img src="'+a.img+'" alt=""><div class="bn">'+esc(a.name)+'</div>';
+    d.onclick=()=>{soloSelAvatar=a.id;paintSoloAvatars();};row.appendChild(d);});
+  if(!soloSelAvatar)soloSelAvatar=((W.AVATARS||[])[0]||{}).id;paintSoloAvatars();}
+function paintSoloAvatars(){document.querySelectorAll('#soloAvatars .bcard').forEach(e=>e.classList.toggle('sel',e.dataset.id===soloSelAvatar));}
+$('soloAdd').onclick=()=>{
+  const nm=(($('soloName').value||'').trim()||('Player '+(soloRoster.length+1))).slice(0,18);
+  soloRoster.push({name:nm,avatar:soloSelAvatar,color:W.PCOLS[soloRoster.length%6]});
+  $('soloName').value='';
+  const taken=soloRoster.map(p=>p.avatar);const nextAv=(W.AVATARS||[]).map(a=>a.id).find(id=>taken.indexOf(id)<0);if(nextAv){soloSelAvatar=nextAv;paintSoloAvatars();}
+  renderSoloRoster();$('soloName').focus();};
+$('soloName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('soloAdd').click();}});
+function renderSoloRoster(){const r=$('soloRoster');if(!r)return;
+  if(!soloRoster.length){r.innerHTML='<div class="empty">No players yet — add one above.</div>';$('soloStart').disabled=true;return;}
+  r.innerHTML='';soloRoster.forEach((p,i)=>{const av=W.AVATARS.find(a=>a.id===p.avatar);const d=document.createElement('div');d.className='pcard';d.style.borderColor=p.color;d.style.position='relative';
+    d.innerHTML='<img src="'+(av?av.img:'')+'" alt=""><div class="pn">'+esc(p.name)+'</div><div class="pa">'+(av?av.name:'')+'</div><button class="pdel" data-i="'+i+'" style="position:absolute;top:2px;right:6px;background:none;border:none;color:#999;font-size:18px;line-height:1;cursor:pointer;">×</button>';
+    r.appendChild(d);});
+  r.querySelectorAll('.pdel').forEach(b=>b.onclick=()=>{soloRoster.splice(+b.dataset.i,1);renderSoloRoster();});
+  $('soloStart').disabled=false;}
+$('soloStart').onclick=startSolo;
+function startSolo(){
+  if(!soloRoster.length)return;
+  const s=soloSettings||gatherSettings();soloSettings=s;
+  const total=W.DECK_SPACES[s.deckSz]||52;
+  game={ players:soloRoster.map((p,i)=>({id:'L'+i,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[],finished:false,place:null,finishSec:null})),
+    total, diff:s.diff||'easy', mv:s.mv, ace:{reps:s.aceReps,move:s.aceMove}, finishMode:(s.finishMode==='first'?'first':'all'), boardId:s.boardId||'classic',
+    useTimer:false, turnSec:s.turnSec||60, penSec:s.penSec||45, timeCap:(s.cap?(s.capMin||20)*60:0),
+    deck:W.buildDeck(), landed:{}, log:[], winner:null, results:null, finishedCount:0, ended:false, startTime:Date.now(),
+    seed:(Math.floor(Math.random()*2e9))>>>0, path:null, nodeSize:44 };
+  capFired=false;vpos={};soloOrder=game.players.map(p=>p.id);soloIdx=0;soloBusy=false;soloRecapDone=false;
+  {const bdef=(W.BOARDS||[]).find(b=>b.id===game.boardId)||(W.BOARDS||[])[0];if(bdef&&BOARDBG.src.indexOf(bdef.file)<0)BOARDBG.src=bdef.file;}
+  try{JUICE.unlock();JUICE.start();}catch(e){}
+  show('gameScreen');const gc=$('gameCode');if(gc)gc.textContent='SOLO';
+  loadSponsors().then(pickSponsor);
+  $('endResultsBtn').style.display=(game.finishMode==='all'&&game.players.length>1)?'':'none';
+  $('capBox').style.display=game.timeCap>0?'':'none';if(game.timeCap>0)$('capClock').textContent=fmt(game.timeCap);
+  $('soloControls').style.display='';
+  sizeCanvas();drawBoard();drawTokens();renderStandings();renderRecent();startGameClock();
+  soloSync();
+}
+function soloCurrent(){if(!game||!game.players.length)return null;const n=game.players.length;let g=0;
+  while(g++<n){const p=game.players.find(x=>x.id===soloOrder[((soloIdx%n)+n)%n]);if(p&&!p.finished)return p;soloIdx++;}return null;}
+function soloAdvance(){soloIdx++;}
+function soloAfterRoll(){soloBusy=false;
+  if(game&&game.ended){const el=$('soloControls');if(el)el.style.display='none';return;}
+  const n=game.players.length,p=game.players.find(x=>x.id===soloOrder[((soloIdx%n)+n)%n]);
+  if(p&&p.status==='working'){soloSync();return;}
+  soloAdvance();soloSync();}
+function soloDone(){const p=soloCurrent();if(!p)return;onDone(p.id);soloAdvance();soloSync();}
+function soloRoll(){if(soloBusy)return;const p=soloCurrent();if(!p)return;soloBusy=true;soloSync();onRoll(p.id,1+Math.floor(Math.random()*6));}
+function soloSync(){
+  if(!SOLO)return;const el=$('soloControls');if(!el)return;
+  if(game&&game.ended){el.style.display='none';return;}
+  const p=soloCurrent();if(!p){el.style.display='none';return;}
+  el.style.display='';const av=W.AVATARS.find(a=>a.id===p.avatar),multi=game.players.length>1;
+  const who='<div class="who">'+(av?'<img src="'+av.img+'" alt="">':'')+'<div style="text-align:left"><div class="turn">'+(multi?"Up next":'Solo')+'</div><div class="nm" style="color:'+p.color+'">'+esc(p.name)+'</div></div></div>';
+  if(p.status==='working'&&p.card){const c=p.card;
+    el.innerHTML=who+'<div class="card"><div class="mv" style="color:'+(c.kind==='ace'?'#9b59b6':'#F5A623')+'">'+esc(c.reps+' '+c.move)+'</div><div class="mvsub">'+(c.kind==='ace'?'Ace penalty — do the work, then continue':'Do the reps, then tap done')+'</div><button class="donebtn" id="soloDoneBtn">✓ Done — next</button></div>';
+    const db=$('soloDoneBtn');if(db)db.onclick=soloDone;
+  }else{
+    el.innerHTML=who+'<button class="rollbtn" id="soloRollBtn"'+(soloBusy?' disabled':'')+'>'+(soloBusy?'…rolling':'🎲 Roll')+'</button>'+(multi?'':'<div class="skipnote">Land on a movement, do the reps, roll again — first to the WIN square takes it.</div>');
+    const rb=$('soloRollBtn');if(rb)rb.onclick=soloRoll;
+  }}
+function logSoloRecaps(){
+  if(soloRecapDone)return;soloRecapDone=true;
+  const s=soloSettings||{},gym=(s.gym||null),daily=(s.daily||null);
+  (game.results||game.players).forEach(r=>{const pl=game.players.find(x=>x.id===r.id)||r,hist=pl.hist||[];
+    if(!hist.length)return;const byMove={};let total=0;hist.forEach(e=>{byMove[e.m]=(byMove[e.m]||0)+e.r;total+=e.r;});
+    const summary={byMove,total,count:hist.length,order:hist,solo:true};
+    if(r.place)summary.place=r.place;if(r.finishSec!=null)summary.timeSec=r.finishSec;
+    try{fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:null,name:pl.name||null,deck:null,summary,image_url:null,gym,daily})});}catch(e){}
+  });}
+// Deep-link: /board?solo=1 opens solo setup straight away
+if(new URLSearchParams(location.search).get('solo')==='1'){setTimeout(()=>{try{$('soloBtn').click();}catch(e){}},80);}
 
 // ── Canvas + winding board ──
 function sizeCanvas(){const wrap=$('boardWrap'),gs=$('gameScreen'),focus=gs&&gs.classList.contains('focus');
@@ -623,7 +736,7 @@ function onRoll(pid,dvRaw){
   drawBoard();renderStandings();renderRecent();writeState();
   // cosmetic: walk through each landing in order — forward to a back/skip card, pause, then move.
   vpos[p.id]=from;drawTokens();
-  animateHops(p.id,from,hops,()=>{if(game.hidden)game.hidden.delete(res.pos);drawBoard();drawTokens();if(res.win)playerFinish(p);});
+  animateHops(p.id,from,hops,()=>{if(game.hidden)game.hidden.delete(res.pos);drawBoard();drawTokens();if(res.win)playerFinish(p);if(SOLO)soloAfterRoll();});
 }
 function animateHops(pid,from,hops,done){let prev=from,i=0;
   (function next(){if(i>=hops.length){delete vpos[pid];drawBoard();drawTokens();if(done)done();return;}
@@ -657,6 +770,7 @@ function endGame(reason){
   game.results=computeResults();const top=game.results[0]||{};
   game.winner={id:top.id,name:top.name,avatar:top.avatar,timeSec:top.finishSec||Math.floor((Date.now()-game.startTime)/1000),place:1,cap:(reason==='cap')};
   stopClocks();renderResults(reason);
+  if(SOLO){logSoloRecaps();return;}
   sb.from('rooms').update({status:'finished'}).eq('id',room.id).then(()=>{});writeState();
 }
 function renderResults(reason){
