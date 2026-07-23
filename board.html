@@ -434,9 +434,23 @@ async function enterLobby(){
   setStatus('loading match…');
   try{const{data}=await sb.from('rooms').select('*').eq('code',code).maybeSingle();
     if(!data){setStatus('match '+code+' not found','err');return;}
-    room=data;await enterLobby();
+    room=data;
+    // If the game is already running (e.g. this board dropped and is being reopened), rejoin as a
+    // live renderer instead of the lobby — the server kept the game going the whole time.
+    if(data.status==='playing'&&data.state&&data.state.players){resumeServed();}
+    else await enterLobby();
   }catch(e){setStatus('load failed','err');}
 })();
+function resumeServed(){
+  SERVED=true;SOLO=false;servedEnded=false;capFired=false;vpos={};servedPrev={};game=null;
+  const s=room.settings||{};
+  {const bdef=(W.BOARDS||[]).find(b=>b.id===(s.boardId||'classic'))||(W.BOARDS||[])[0];if(bdef&&BOARDBG.src.indexOf(bdef.file)<0)BOARDBG.src=bdef.file;}
+  show('gameScreen');$('gameCode').textContent=room.code;loadSponsors().then(pickSponsor);
+  $('endResultsBtn').style.display=(((s.finishMode||'all')==='all'))?'':'none';
+  $('capBox').style.display=(s.cap?'':'none');
+  subscribeServed();pullServed();startServedClock();
+  setStatus('rejoined '+room.code,'ok');
+}
 
 function subscribe(){
   if(channel)sb.removeChannel(channel);
