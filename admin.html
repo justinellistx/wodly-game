@@ -210,6 +210,17 @@ async function loadAnalytics(){
   g.push(blk('Busiest hours (Central)',bars(d.by_hour,{labelFn:hourLbl})));
   g.push(blk('Busiest days',bars(d.by_dow,{labelFn:k=>DOW[+k]||k})));
   $('anGrid').innerHTML=g.join('');
+  // Movement pace (avg seconds per rep/cal/10m, from captured movement durations)
+  try{const pr=await sb.rpc('movement_pace');if(!pr.error&&pr.data){const pd=pr.data;
+    const UL={reps:'per rep',cal:'per calorie',meters:'per 10 m'};
+    const units=['reps','cal','meters'].filter(u=>Array.isArray(pd[u])&&pd[u].length);
+    if(units.length){
+      const row=(icon,move,pace,n)=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;"><span style="width:16px">${icon}</span><span style="flex:1;font-weight:600">${esc(move)}</span><span style="color:#fff;font-weight:800">${(+pace).toFixed(1)}s</span><span style="color:#888;font-size:11px;width:36px;text-align:right">${n}×</span></div>`;
+      const html=units.map(u=>{const a=pd[u];const rows=a.map((x,i)=>row(i===0?'⚡':(i===a.length-1&&a.length>1?'🐌':'·'),x.move,x.pace,x.n)).join('');
+        return `<div style="margin-bottom:12px;"><div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">${UL[u]||u}</div>${rows}</div>`;}).join('');
+      $('anGrid').insertAdjacentHTML('beforeend',blk('Movement pace (fastest → slowest)',html));
+    }
+  }}catch(e){}
 }
 $('refreshStats').onclick=loadAnalytics;
 $('periodSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{

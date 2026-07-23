@@ -786,7 +786,7 @@ function onRoll(pid,dvRaw){
   p.lastRoll=dv;p.pos=res.pos;
   p.event=backHit?{type:'back',val:backHit.val,suit:backHit.suit,eid:(game.eid=(game.eid||0)+1)}:skipHit?{type:'skip',suit:skipHit.suit,eid:(game.eid=(game.eid||0)+1)}:null;
   if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
-  if(res.kind==='workout'||res.kind==='ace'){(p.hist=p.hist||[]).push({m:res.card.move,r:W.repScore(res.card.move,res.card.reps,res.card.unit),u:(res.card.unit||'reps')});}
+  if(res.kind==='workout'||res.kind==='ace'){(p.hist=p.hist||[]).push({m:res.card.move,r:W.repScore(res.card.move,res.card.reps,res.card.unit),u:(res.card.unit||'reps'),t0:gnow()});}
   // keep the freshly-revealed destination card face-down until the token actually lands on it
   if(!game.hidden)game.hidden=new Set();
   if((res.kind==='workout'||res.kind==='ace')&&res.fresh)game.hidden.add(res.pos);
@@ -803,6 +803,8 @@ function animateHops(pid,from,hops,done){let prev=from,i=0;
     const to=hops[i++];walkToken(pid,prev,to,()=>{prev=to;drawBoard();drawTokens();
       if(i<hops.length)setTimeout(next,600);else next();});})();}
 function onDone(pid){const p=game.players.find(x=>x.id===pid);if(!p||p.status!=='working')return;
+  // record how long this movement took (card shown -> Done) for pace stats
+  if(p.hist&&p.hist.length){const h=p.hist[p.hist.length-1];if(h&&h.t0!=null&&h.s==null)h.s=Math.max(0,Math.floor((Date.now()-game.startTime)/1000)-h.t0);}
   p.card=null;p.status='idle';renderStandings();writeState();}
 // A player crossed the line: lock them in with a placing + finish time.
 function playerFinish(p){

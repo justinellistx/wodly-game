@@ -37,6 +37,13 @@
   .reps b{font-size:24px;font-weight:900;color:var(--orange);font-variant-numeric:tabular-nums;}
   .reps span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);}
   .empty{color:var(--text3);font-size:14px;text-align:center;padding:34px 10px;line-height:1.6;}
+  .pcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:10px;}
+  .phdr{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+  .prow{display:flex;align-items:center;gap:10px;padding:5px 0;}
+  .pico{font-size:16px;width:20px;text-align:center;}
+  .plab{font-size:12px;color:var(--text3);width:64px;}
+  .pmove{flex:1;font-weight:700;font-size:15px;}
+  .ppace{font-size:13px;color:var(--text2);}.ppace b{font-size:17px;color:#fff;margin-right:2px;}
   .foot{text-align:center;margin-top:22px;font-size:12px;color:var(--text3);}
   .foot a{color:var(--orange);text-decoration:none;font-weight:700;}
   .refreshed{font-size:11px;color:var(--text3);text-align:center;margin-top:10px;}
@@ -54,6 +61,12 @@
   <div class="note">Every movement climbs the board each time someone plays. Rack up reps — they all count here.</div>
 
   <div id="list"><div class="empty">Loading…</div></div>
+
+  <div id="paceWrap" style="display:none;margin-top:30px;">
+    <div class="headline" style="font-size:21px;"><b>⚡ Movement pace</b></div>
+    <div class="note">Average time per rep from real games — the quick movers vs the grind.</div>
+    <div id="pace"></div>
+  </div>
 
   <div class="foot">🔥 <a href="/daily">Today's Daily WOD →</a></div>
   <div class="foot">🏋️ <a href="/gyms">Gym-vs-gym leaderboard →</a></div>
@@ -94,8 +107,26 @@ async function load(){
   }).join('');
   $('refreshed').textContent='Updated '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
 }
-load();
-setInterval(load,30000);
+const UNIT_LBL={reps:{per:'rep',u:'s/rep'},cal:{per:'calorie',u:'s/cal'},meters:{per:'10 m',u:'s/10m'}};
+async function loadPace(){
+  let d=null;try{const r=await sb.rpc('movement_pace');if(!r.error)d=r.data;}catch(e){}
+  const wrap=$('paceWrap'),el=$('pace');if(!el)return;
+  const units=['reps','cal','meters'].filter(u=>d&&Array.isArray(d[u])&&d[u].length);
+  if(!units.length){wrap.style.display='none';return;}
+  wrap.style.display='';
+  el.innerHTML=units.map(u=>{
+    const arr=d[u],fast=arr[0],slow=arr[arr.length-1],lbl=UNIT_LBL[u]||{per:u,u:'s'};
+    const same=arr.length<2;
+    const line=(icon,lab,x)=>`<div class="prow"><span class="pico">${icon}</span><span class="plab">${lab}</span><span class="pmove">${esc(x.move)}</span><span class="ppace"><b>${(+x.pace).toFixed(1)}</b>${lbl.u}</span></div>`;
+    return `<div class="pcard">
+      <div class="phdr">Per ${lbl.per}</div>
+      ${line('⚡','Fastest',fast)}
+      ${same?'':line('🐌','Slowest',slow)}
+    </div>`;
+  }).join('');
+}
+load();loadPace();
+setInterval(()=>{load();loadPace();},30000);
 </script>
 </body>
 </html>
