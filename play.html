@@ -206,7 +206,11 @@ function renderDie(n){const on=PIPS[n]||[];let h='';for(let i=0;i<9;i++)h+=`<spa
 let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='', dblUsed=false, lastState=null, schedInt=null, lastStartTry=0, lastRecap=null, winSponsor=null;
 (async()=>{try{const{data}=await sb.from('sponsors').select('id,name,logo,website_url,social_url,tagline').eq('active',true).order('sort');if(data&&data.length)winSponsor=data[Math.floor(Math.random()*data.length)];}catch(e){}})();
 const MATCH_FN=W.SUPA_URL+'/functions/v1/match';
-function isOnline(){return !!(room&&room.is_public);}
+// Server-authoritative for EVERY room now (in-gym games run on the edge fn too, so a dropped
+// board never freezes players). Only public/scheduled matches auto-start from a phone; private
+// in-gym games still wait for the host to press START on the board.
+function isOnline(){return !!room;}
+function autoStarts(){return !!(room&&(room.is_public||room.scheduled_at));}
 async function callMatch(action,extra){
   for(let i=0;i<4;i++){
     try{const r=await fetch(MATCH_FN,{method:'POST',headers:{'apikey':W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,room_id:room&&room.id,player_id:me&&me.id},extra||{}))});
@@ -410,7 +414,7 @@ function renderState(state){
       <div style="margin-top:16px;"><span class="pill">Room <b>${room.code}</b></span></div></div>`;
     const tryStart=()=>{if(isOnline()&&Date.now()-lastStartTry>3000){lastStartTry=Date.now();callMatch('start').then(()=>pollOnce());}};
     if(sched){const tick=()=>{const el=$('cdown');if(el)el.textContent=fmtCountdown(sched-Date.now());if(sched-Date.now()<=0)tryStart();};tick();schedInt=setInterval(tick,1000);}
-    else if(isOnline()){tryStart();schedInt=setInterval(tryStart,3000);}
+    else if(autoStarts()){tryStart();schedInt=setInterval(tryStart,3000);}
     lastStatus='';return;}
   if(!mp){
     if(isOnline()){if(Date.now()-lastStartTry>2500){lastStartTry=Date.now();callMatch('join').then(()=>pollOnce());}body.innerHTML='<div class="rollwrap" style="padding:24px 0;text-align:center;"><div class="mn">Joining the match…</div><div class="ms">one sec</div></div>';}

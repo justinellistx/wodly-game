@@ -454,9 +454,9 @@ function renderRoster(){const r=$('roster');$('pcount').textContent=players.leng
 
 $('editBtn').onclick=async()=>{if(room){await sb.from('rooms').delete().eq('id',room.id);room=null;}show('setupScreen');setStatus('setup');};
 $('newRoomBtn').onclick=async()=>{if(room)await sb.from('rooms').delete().eq('id',room.id);room=null;$('openLobbyBtn').click();};
-$('quitBtn').onclick=async()=>{stopClocks();if(SOLO){game=null;$('soloControls').style.display='none';show('soloScreen');return;}if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}game=null;show('lobbyScreen');};
-$('endResultsBtn').onclick=()=>{if(!game||game.ended)return;const left=game.players.filter(p=>!p.finished).length;if(left>0&&!confirm(left+' team'+(left>1?'s':'')+" haven't finished. End now and show results?"))return;endGame('manual');};
-$('againBtn').onclick=async()=>{game=null;if(SOLO){$('soloControls').style.display='none';show('soloScreen');return;}if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}await refreshPlayers();renderRoster();show('lobbyScreen');};
+$('quitBtn').onclick=async()=>{stopClocks();if(SOLO){game=null;$('soloControls').style.display='none';show('soloScreen');return;}if(SERVED){SERVED=false;clearInterval(servedPoll);if(channel){sb.removeChannel(channel);channel=null;}}if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}game=null;subscribe();await refreshPlayers();show('lobbyScreen');};
+$('endResultsBtn').onclick=()=>{if(!game||game.ended||servedEnded)return;const left=game.players.filter(p=>!p.finished).length;if(left>0&&!confirm(left+' team'+(left>1?'s':'')+" haven't finished. End now and show results?"))return;if(SERVED){callMatch('end').then(pullServed);}else endGame('manual');};
+$('againBtn').onclick=async()=>{game=null;if(SOLO){$('soloControls').style.display='none';show('soloScreen');return;}if(SERVED){SERVED=false;clearInterval(servedPoll);if(channel){sb.removeChannel(channel);channel=null;}}if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}subscribe();await refreshPlayers();renderRoster();show('lobbyScreen');};
 
 // ── START GAME ──
 // ── Game juice: synthesized SFX + announcer + confetti (board = the big-screen show) ──
@@ -505,26 +505,50 @@ document.addEventListener('pointerdown',function(){try{JUICE.unlock();}catch(e){
 document.addEventListener('click',function(e){try{const t=e.target.closest&&e.target.closest('.ob,.bigbtn,button,.toggle,.thumb,select');if(t&&t.id!=='juiceBtn'&&t.id!=='startBtn')JUICE.click();}catch(_e){}},true);
 if(window.matchMedia&&matchMedia('(pointer:fine)').matches){let _lastHov=null;document.addEventListener('mouseover',function(e){try{const t=e.target.closest&&e.target.closest('.ob,.bigbtn,.thumb');if(t&&t!==_lastHov){_lastHov=t;JUICE.hover();}}catch(_e){}},true);}
 
+// ── START (server-authoritative) — the game engine runs on the edge function, not this tab.
+// The board becomes a live renderer of rooms.state, so if this screen drops/refreshes the game keeps going.
+const MATCH_FN=W.SUPA_URL+'/functions/v1/match';
+let SERVED=false, servedPoll=null, servedEnded=false, servedPrev={};
+async function callMatch(action,extra){try{const r=await fetch(MATCH_FN,{method:'POST',headers:{'apikey':W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,room_id:room&&room.id},extra||{}))});return await r.json();}catch(e){return{error:String(e)};}}
 $('startBtn').onclick=async()=>{
   if(!players.length)return;
+  SERVED=true;SOLO=false;servedEnded=false;capFired=false;vpos={};servedPrev={};game=null;
   const s=room.settings||gatherSettings();
-  const total=W.DECK_SPACES[s.deckSz]||52;
-  game={ players:players.map((p,i)=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[],finished:false,place:null,finishSec:null})),
-    total, diff:s.diff||'easy', mv:s.mv, ace:{reps:s.aceReps,move:s.aceMove}, finishMode:(s.finishMode==='first'?'first':'all'), boardId:s.boardId||'classic',
-    useTimer:!!s.useTimer, turnSec:s.turnSec||60, penSec:s.penSec||45, timeCap:(s.cap?(s.capMin||20)*60:0),
-    deck:W.buildDeck(), landed:{}, log:[], winner:null, results:null, finishedCount:0, ended:false, startTime:Date.now(),
-    seed:(Math.floor(Math.random()*2e9))>>>0, path:null, nodeSize:44 };
-  capFired=false;vpos={};
-  {const bdef=(W.BOARDS||[]).find(b=>b.id===game.boardId)||(W.BOARDS||[])[0];if(bdef&&BOARDBG.src.indexOf(bdef.file)<0)BOARDBG.src=bdef.file;}
-  await sb.from('rooms').update({status:'playing'}).eq('id',room.id);
+  {const bdef=(W.BOARDS||[]).find(b=>b.id===(s.boardId||'classic'))||(W.BOARDS||[])[0];if(bdef&&BOARDBG.src.indexOf(bdef.file)<0)BOARDBG.src=bdef.file;}
   try{JUICE.unlock();JUICE.start();}catch(e){}
   show('gameScreen');$('gameCode').textContent=room.code;loadSponsors().then(pickSponsor);
-  $('endResultsBtn').style.display=(game.finishMode==='all')?'':'none';
-  $('capBox').style.display=game.timeCap>0?'':'none';
-  if(game.timeCap>0)$('capClock').textContent=fmt(game.timeCap);
-  sizeCanvas();drawBoard();drawTokens();renderStandings();renderRecent();startGameClock();
-  await writeState();
+  $('endResultsBtn').style.display=(((s.finishMode||'all')==='all'))?'':'none';
+  $('capBox').style.display=(s.cap?'':'none');
+  await callMatch('start');
+  subscribeServed();await pullServed();startServedClock();
 };
+function subscribeServed(){
+  if(channel)sb.removeChannel(channel);
+  channel=sb.channel('served-'+room.id)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:'id=eq.'+room.id},p=>{if(p.new)onServed(p.new.state);})
+    .subscribe();
+  clearInterval(servedPoll);servedPoll=setInterval(pullServed,2500);
+}
+async function pullServed(){if(!room||!SERVED)return;try{const{data}=await sb.from('rooms').select('state').eq('id',room.id).maybeSingle();if(data)onServed(data.state);}catch(e){}}
+function animateServedMove(pid,from,to){const start=performance.now(),dur=460;vpos[pid]=from;
+  (function f(now){const t=Math.min(1,(now-start)/dur);vpos[pid]=from+(to-from)*t;drawTokens();if(t<1)requestAnimationFrame(f);else{delete vpos[pid];drawTokens();}})(start);}
+function onServed(state){
+  if(!SERVED||!state||!state.players)return;
+  const firstRender=!game;
+  game=state;if(game.nodeSize==null)game.nodeSize=44;
+  const cv=$('boardCanvas');
+  if(firstRender){sizeCanvas();}
+  else if(cv&&cv.width&&(!game.path||game.path.length!==game.total))game.path=genPath(game.total,cv.width,cv.height);
+  state.players.forEach(p=>{const prev=servedPrev[p.id];if(prev!=null&&prev!==p.pos)animateServedMove(p.id,prev,p.pos);servedPrev[p.id]=p.pos;});
+  drawBoard();drawTokens();renderStandings();renderRecent();
+  if(state.phase==='finished'&&!servedEnded){servedEnded=true;stopClocks();clearInterval(servedPoll);renderResults('served');}
+}
+function startServedClock(){clearInterval(gameClockInt);gameClockInt=setInterval(()=>{
+  if(!game||!game.startTime||game.phase==='finished')return;
+  const el=Math.floor((Date.now()-game.startTime)/1000);$('gameClock').textContent=fmt(el);
+  const s=room.settings||{},cap=s.cap?((s.capMin||20)*60):0;
+  if(cap>0){const rem=cap-el;if(rem<=0){$('capClock').textContent='0:00';if(!capFired){capFired=true;callMatch('end').then(pullServed);}}else $('capClock').textContent=fmt(rem);}
+},1000);}
 
 // ── SOLO / PASS-AND-PLAY (one device, no phones, reuses the same engine) ──
 let SOLO=false, soloSettings=null, soloRoster=[], soloSelAvatar=null, soloOrder=[], soloIdx=0, soloBusy=false, soloRecapDone=false;
