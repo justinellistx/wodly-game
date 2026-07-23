@@ -242,7 +242,7 @@ function cardHTML(c){const ace=c.kind==='ace';const col=ace?'#9b59b6':(W.SCOL[c.
     <div class="wc-corner br" style="color:${col}">${esc(label)}<br>${sym}</div>
     ${ace?`<div class="wc-tag" style="color:${col}">Ace Penalty</div>`:''}
     <div class="wc-pip" style="color:${col};border-color:${col}">${ace?'A':sym}</div>
-    <div class="wc-reps">${c.reps}</div>
+    <div class="wc-reps">${c.reps}${c.unit==='meters'?'m':(c.unit==='cal'?' cal':'')}</div>
     <div class="wc-move">${esc(c.move||'')}</div>
     <div class="wc-foot"><span style="color:#E8363D">♥</span><span style="color:#F5A623">♦</span><span style="color:#4CAF50">♣</span><span style="color:#2196F3">♠</span><b>WODLY</b></div>
   </div>`;}

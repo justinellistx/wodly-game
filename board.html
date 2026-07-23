@@ -28,9 +28,10 @@
   .sc.clubs{background:#0a2a0a;border-color:var(--green);}.sc.spades{background:#0a1428;border-color:var(--blue);}
   .sc .si{font-size:22px;margin-bottom:4px;}.sc label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px;font-weight:600;}
   .sc input{width:100%;font-size:14px;padding:8px;background:rgba(0,0,0,.4);border:1px solid #444;border-radius:7px;color:#fff;}
+  .mvunit{margin-top:6px;width:100%;font-size:12px;padding:6px;background:rgba(0,0,0,.4);border:1px solid #444;border-radius:7px;color:#cfcfcf;}
   .ace-card-setup{background:#1a0a1a;border:2px solid var(--purple);border-radius:12px;padding:14px;margin-top:12px;}
   .ace-card-setup .lbl{font-size:11px;color:var(--purple);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
-  .ace-fields{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:end;}
+  .ace-fields{display:grid;grid-template-columns:70px 1fr 80px;gap:8px;align-items:end;}
   .ace-fields label{font-size:11px;color:var(--text2);display:block;margin-bottom:3px;font-weight:600;}
   .ace-fields input{width:100%;font-size:14px;padding:8px;background:rgba(0,0,0,.4);border:1px solid #444;border-radius:7px;color:#fff;}
   .opt-row{display:flex;gap:8px;margin-bottom:14px;}
@@ -201,18 +202,20 @@
         <div class="sec">Workout preset</div>
         <select id="presetSel" style="width:100%;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;"><option value="">Custom — set your own</option></select>
         <div id="presetNote" style="font-size:12px;color:#4CAF50;min-height:15px;margin:7px 0 16px;"></div>
-        <div class="sec">Movements per suit</div>
+        <div class="sec">Movements per suit <span style="text-transform:none;letter-spacing:0;color:var(--text3);font-weight:400;">— pick one or type your own; set its unit</span></div>
+        <datalist id="moveList"></datalist>
         <div class="suit-grid">
-          <div class="sc hearts"><div class="si">♥</div><label style="color:#E8363D">Hearts</label><input id="mv-hearts" placeholder="Push-ups"/></div>
-          <div class="sc diamonds"><div class="si">♦</div><label style="color:#F5A623">Diamonds</label><input id="mv-diamonds" placeholder="Air Squats"/></div>
-          <div class="sc clubs"><div class="si">♣</div><label style="color:#4CAF50">Clubs</label><input id="mv-clubs" placeholder="Burpees"/></div>
-          <div class="sc spades"><div class="si">♠</div><label style="color:#2196F3">Spades</label><input id="mv-spades" placeholder="Sit-ups"/></div>
+          <div class="sc hearts"><div class="si">♥</div><label style="color:#E8363D">Hearts</label><input id="mv-hearts" list="moveList" autocomplete="off" placeholder="Push-ups"/><select id="mvu-hearts" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option></select></div>
+          <div class="sc diamonds"><div class="si">♦</div><label style="color:#F5A623">Diamonds</label><input id="mv-diamonds" list="moveList" autocomplete="off" placeholder="Air Squats"/><select id="mvu-diamonds" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option></select></div>
+          <div class="sc clubs"><div class="si">♣</div><label style="color:#4CAF50">Clubs</label><input id="mv-clubs" list="moveList" autocomplete="off" placeholder="Burpees"/><select id="mvu-clubs" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option></select></div>
+          <div class="sc spades"><div class="si">♠</div><label style="color:#2196F3">Spades</label><input id="mv-spades" list="moveList" autocomplete="off" placeholder="Sit-ups"/><select id="mvu-spades" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option></select></div>
         </div>
         <div class="ace-card-setup">
           <div class="lbl">Ace = penalty</div>
           <div class="ace-fields">
-            <div><label>Reps</label><input id="ace-reps" type="number" min="1" max="200" value="10"/></div>
-            <div><label>Movement</label><input id="ace-move" placeholder="Burpees" value="Burpees"/></div>
+            <div><label>Amount</label><input id="ace-reps" type="number" min="1" max="2000" value="10"/></div>
+            <div><label>Movement</label><input id="ace-move" list="moveList" autocomplete="off" placeholder="Burpees" value="Burpees"/></div>
+            <div><label>Unit</label><select id="ace-unit" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option></select></div>
           </div>
         </div>
       </div>
@@ -385,7 +388,17 @@ function selVal(id){const e=document.querySelector('#'+id+' .ob.sel');return e?e
 function _v(id){const e=$(id);return e?e.value:'';}
 function _set(id,v){if(v==null||v==='')return;const e=$(id);if(e)e.value=v;}
 const SET_KEY='wodly_settings_v1';
-function gatherSettings(){return{mv:{hearts:_v('mv-hearts')||'Push-ups',diamonds:_v('mv-diamonds')||'Air Squats',clubs:_v('mv-clubs')||'Burpees',spades:_v('mv-spades')||'Sit-ups'},aceReps:Math.max(1,parseInt(_v('ace-reps'))||10),aceMove:(_v('ace-move').trim()||'Burpees'),deckSz:selVal('deckRow')||'standard',diff:selVal('diffRow')||'easy',useTimer:$('turnTimerToggle').checked,turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60),penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),cap:$('capToggle').checked,capMin:Math.max(1,parseInt(_v('capInput'))||20),finishMode:selVal('finishRow')||'all',boardId:selBoard||'classic',presetId:(($('presetSel')&&$('presetSel').value)||''),presetName:(function(){var s=$('presetSel'),p=(s&&s.value&&W.PRESETS)?W.PRESETS.find(x=>x.id===s.value):null;return p?p.name:'Custom';})(),source:'gym',gym:(($('gymName')&&$('gymName').value.trim())||null),daily:(window.__dailyKey||null)};}
+function upv(id,def){var e=$(id);var v=e&&e.value?e.value.trim():'';return (v||def).toUpperCase();}
+function gatherSettings(){return{mv:{hearts:upv('mv-hearts','PUSH-UPS'),diamonds:upv('mv-diamonds','AIR SQUATS'),clubs:upv('mv-clubs','BURPEES'),spades:upv('mv-spades','SIT-UPS')},units:{hearts:_v('mvu-hearts')||'reps',diamonds:_v('mvu-diamonds')||'reps',clubs:_v('mvu-clubs')||'reps',spades:_v('mvu-spades')||'reps'},aceReps:Math.max(1,parseInt(_v('ace-reps'))||10),aceMove:upv('ace-move','BURPEES'),aceUnit:_v('ace-unit')||'reps',deckSz:selVal('deckRow')||'standard',diff:selVal('diffRow')||'easy',useTimer:$('turnTimerToggle').checked,turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60),penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),cap:$('capToggle').checked,capMin:Math.max(1,parseInt(_v('capInput'))||20),finishMode:selVal('finishRow')||'all',boardId:selBoard||'classic',presetId:(($('presetSel')&&$('presetSel').value)||''),presetName:(function(){var s=$('presetSel'),p=(s&&s.value&&W.PRESETS)?W.PRESETS.find(x=>x.id===s.value):null;return p?p.name:'Custom';})(),source:'gym',gym:(($('gymName')&&$('gymName').value.trim())||null),daily:(window.__dailyKey||null)};}
+// Movement library: dropdown of known movements + remembered units; new ones register on game start.
+let MOVEUNITS={};
+function unitFor(name){var n=String(name||'').toLowerCase();if(n.startsWith('m ')||n.endsWith(' m')||n.indexOf('meter')>=0||n.indexOf('(m)')>=0||/[0-9]\s*m(\b|$)/.test(n))return 'meters';if(n.indexOf('cal')>=0)return 'cal';return MOVEUNITS[String(name||'').trim().toUpperCase()]||'reps';}
+function syncUnit(inpId,selId){var el=$(inpId),su=$(selId);if(!el||!su)return;su.value=MOVEUNITS[(el.value||'').trim().toUpperCase()]||unitFor(el.value);}
+function syncAllUnits(){syncUnit('mv-hearts','mvu-hearts');syncUnit('mv-diamonds','mvu-diamonds');syncUnit('mv-clubs','mvu-clubs');syncUnit('mv-spades','mvu-spades');syncUnit('ace-move','ace-unit');}
+function registerMovements(s){try{[[s.mv.hearts,s.units.hearts],[s.mv.diamonds,s.units.diamonds],[s.mv.clubs,s.units.clubs],[s.mv.spades,s.units.spades],[s.aceMove,s.aceUnit]].forEach(function(j){if(j[0])sb.rpc('add_movement',{p_name:j[0],p_unit:j[1]||'reps'});});}catch(e){}}
+(async function(){try{const{data}=await sb.rpc('movement_list');const list=$('moveList');if(Array.isArray(data)){data.forEach(function(m){MOVEUNITS[String(m.name).toUpperCase()]=m.unit;});if(list)list.innerHTML=data.map(function(m){return '<option value="'+String(m.name).replace(/"/g,'&quot;')+'">';}).join('');}
+  [['mv-hearts','mvu-hearts'],['mv-diamonds','mvu-diamonds'],['mv-clubs','mvu-clubs'],['mv-spades','mvu-spades'],['ace-move','ace-unit']].forEach(function(p){var el=$(p[0]);if(el)el.addEventListener('change',function(){syncUnit(p[0],p[1]);});});
+}catch(e){}})();
 function loadSettings(){let s;try{s=JSON.parse(localStorage.getItem(SET_KEY)||'null');}catch(e){}if(!s)return;
   if(s.gym)_set('gymName',s.gym);
   if(s.mv){_set('mv-hearts',s.mv.hearts);_set('mv-diamonds',s.mv.diamonds);_set('mv-clubs',s.mv.clubs);_set('mv-spades',s.mv.spades);}
@@ -396,26 +409,28 @@ function loadSettings(){let s;try{s=JSON.parse(localStorage.getItem(SET_KEY)||'n
   if(s.finishMode)document.querySelectorAll('#finishRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.finishMode));
   if(typeof s.useTimer==='boolean'){$('turnTimerToggle').checked=s.useTimer;$('timerSettings').classList.toggle('show',s.useTimer);}
   _set('turnTimerInput',s.turnSec);_set('penTimerInput',s.penSec);
-  if(typeof s.cap==='boolean')$('capToggle').checked=s.cap;_set('capInput',s.capMin);}
+  if(typeof s.cap==='boolean')$('capToggle').checked=s.cap;_set('capInput',s.capMin);
+  if(s.units){if($('mvu-hearts'))$('mvu-hearts').value=s.units.hearts||'reps';if($('mvu-diamonds'))$('mvu-diamonds').value=s.units.diamonds||'reps';if($('mvu-clubs'))$('mvu-clubs').value=s.units.clubs||'reps';if($('mvu-spades'))$('mvu-spades').value=s.units.spades||'reps';}
+  if(s.aceUnit&&$('ace-unit'))$('ace-unit').value=s.aceUnit;}
 loadSettings();
 // Gym dropdown — populate the datalist from known gyms so hosts pick an existing name (consistent spelling) or type a new one
 (async function(){try{const{data}=await sb.rpc('gym_names');const list=$('gymList');if(!list||!Array.isArray(data))return;list.innerHTML=data.map(g=>'<option value="'+String(g).replace(/"/g,'&quot;')+'">').join('');}catch(e){}})();
 // Daily WOD preload — /board?daily=1 loads today's shared workout + tags the game as daily
 (function(){try{const p=new URLSearchParams(location.search);if(p.get('daily')==='1'&&W.dailyWod){const w=W.dailyWod();
   _set('mv-hearts',w.mv.hearts);_set('mv-diamonds',w.mv.diamonds);_set('mv-clubs',w.mv.clubs);_set('mv-spades',w.mv.spades);
-  _set('ace-reps',w.aceReps);_set('ace-move',w.aceMove);window.__dailyKey=w.key;
+  _set('ace-reps',w.aceReps);_set('ace-move',w.aceMove);window.__dailyKey=w.key;setTimeout(syncAllUnits,200);
   const pn=$('presetNote');if(pn)pn.textContent="🔥 Today's Daily WOD: "+w.name+" — everyone's playing this one today";}}catch(e){}})();
 (function(){const sel=$('presetSel');if(!sel||!W.PRESETS)return;
   const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
   Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});
   sel.onchange=()=>{const p=W.PRESETS.find(x=>x.id===sel.value);if(!p){$('presetNote').textContent='';return;}
-    _set('mv-hearts',p.mv.hearts);_set('mv-diamonds',p.mv.diamonds);_set('mv-clubs',p.mv.clubs);_set('mv-spades',p.mv.spades);_set('ace-reps',p.aceReps);_set('ace-move',p.aceMove);
+    _set('mv-hearts',p.mv.hearts);_set('mv-diamonds',p.mv.diamonds);_set('mv-clubs',p.mv.clubs);_set('mv-spades',p.mv.spades);_set('ace-reps',p.aceReps);_set('ace-move',p.aceMove);syncAllUnits();
     $('presetNote').textContent='✓ '+p.name+(p.note?' — '+p.note:'')+' · tweak any movement below if you like';};
 })();
 
 $('openLobbyBtn').onclick=async()=>{
   SOLO=false;
-  const settings=gatherSettings();try{localStorage.setItem(SET_KEY,JSON.stringify(settings));}catch(e){}
+  const settings=gatherSettings();try{localStorage.setItem(SET_KEY,JSON.stringify(settings));}catch(e){}registerMovements(settings);
   setStatus('creating room…');
   for(let a=0;a<6;a++){const code=W.genCode();const{data,error}=await sb.from('rooms').insert({code,status:'lobby',host_id:hostId,settings}).select().single();
     if(!error){room=data;break;} if(error&&!/duplicate|unique/i.test(error.message)){setStatus('create failed: '+error.message,'err');return;}}
@@ -592,10 +607,10 @@ $('soloStart').onclick=startSolo;
 function startSolo(){
   if(!soloRoster.length)return;
   const s=soloSettings||gatherSettings();soloSettings=s;
-  s.gym=(($('soloGym')&&$('soloGym').value.trim())||null);
+  s.gym=(($('soloGym')&&$('soloGym').value.trim())||null);registerMovements(s);
   const total=W.DECK_SPACES[s.deckSz]||52;
   game={ players:soloRoster.map((p,i)=>({id:'L'+i,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[],finished:false,place:null,finishSec:null})),
-    total, diff:s.diff||'easy', mv:s.mv, ace:{reps:s.aceReps,move:s.aceMove}, finishMode:(s.finishMode==='first'?'first':'all'), boardId:s.boardId||'classic',
+    total, diff:s.diff||'easy', mv:s.mv, units:(s.units||{}), ace:{reps:s.aceReps,move:s.aceMove,unit:(s.aceUnit||'reps')}, finishMode:(s.finishMode==='first'?'first':'all'), boardId:s.boardId||'classic',
     useTimer:false, turnSec:s.turnSec||60, penSec:s.penSec||45, timeCap:(s.cap?(s.capMin||20)*60:0),
     deck:W.buildDeck(), landed:{}, log:[], winner:null, results:null, finishedCount:0, ended:false, startTime:Date.now(),
     seed:(Math.floor(Math.random()*2e9))>>>0, path:null, nodeSize:44 };
@@ -627,7 +642,7 @@ function soloSync(){
   el.style.display='';const av=W.AVATARS.find(a=>a.id===p.avatar),multi=game.players.length>1;
   const who='<div class="who">'+(av?'<img src="'+av.img+'" alt="">':'')+'<div style="text-align:left"><div class="turn">'+(multi?"Up next":'Solo')+'</div><div class="nm" style="color:'+p.color+'">'+esc(p.name)+'</div></div></div>';
   if(p.status==='working'&&p.card){const c=p.card;
-    el.innerHTML=who+'<div class="card"><div class="mv" style="color:'+(c.kind==='ace'?'#9b59b6':'#F5A623')+'">'+esc(c.reps+' '+c.move)+'</div><div class="mvsub">'+(c.kind==='ace'?'Ace penalty — do the work, then continue':'Do the reps, then tap done')+'</div><button class="donebtn" id="soloDoneBtn">✓ Done — next</button></div>';
+    el.innerHTML=who+'<div class="card"><div class="mv" style="color:'+(c.kind==='ace'?'#9b59b6':'#F5A623')+'">'+esc(c.reps+unitSuffix(c.unit)+' '+c.move)+'</div><div class="mvsub">'+(c.kind==='ace'?'Ace penalty — do the work, then continue':'Do the reps, then tap done')+'</div><button class="donebtn" id="soloDoneBtn">✓ Done — next</button></div>';
     const db=$('soloDoneBtn');if(db)db.onclick=soloDone;
   }else{
     el.innerHTML=who+'<button class="rollbtn" id="soloRollBtn"'+(soloBusy?' disabled':'')+'>'+(soloBusy?'…rolling':'🎲 Roll')+'</button>'+(multi?'':'<div class="skipnote">Land on a movement, do the reps, roll again — first to the WIN square takes it.</div>');
@@ -760,17 +775,17 @@ function onRoll(pid,dvRaw){
     let lc=game.landed[pos];const wasEmpty=!lc;
     if(!lc){if(!game.deck.length)game.deck=W.buildDeck();const c=game.deck.pop();let kind=W.cardType(c.val);
       if((pos<=4||pos>=total-3)&&kind==='back')kind='workout';   // no go-back trap at the very start or end
-      lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
+      lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],unit:((game.units&&game.units[c.suit])||'reps'),num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
     if(lc.kind==='skip'){if(seen.has(pos)){res={none:true,pos};break;}seen.add(pos);logPush(p,{kind:'skip',suit:lc.suit,label:lc.label,gs:gnow()});skipHit={suit:lc.suit};pos=Math.min(pos+2,total-1);continue;}
     if(lc.kind==='back'){if(seen.has(pos)){res={none:true,pos};break;}seen.add(pos);logPush(p,{kind:'back',suit:lc.suit,label:lc.label,val:lc.val,gs:gnow()});backHit={val:lc.val,suit:lc.suit};pos=Math.max(pos-lc.val,0);continue;}
-    if(lc.kind==='ace'){logPush(p,{kind:'ace',suit:lc.suit,label:'A',reps:game.ace.reps,move:game.ace.move,gs:gnow()});res={kind:'ace',pos,fresh:wasEmpty,card:{kind:'ace',reps:game.ace.reps,move:game.ace.move,suit:lc.suit}};break;}
-    logPush(p,{kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,gs:gnow()});res={kind:'workout',pos,fresh:wasEmpty,card:{kind:'workout',reps:lc.num,move:lc.wkt,label:lc.label,suit:lc.suit}};break;
+    if(lc.kind==='ace'){logPush(p,{kind:'ace',suit:lc.suit,label:'A',reps:game.ace.reps,move:game.ace.move,gs:gnow()});res={kind:'ace',pos,fresh:wasEmpty,card:{kind:'ace',reps:game.ace.reps,move:game.ace.move,unit:(game.ace.unit||'reps'),suit:lc.suit}};break;}
+    logPush(p,{kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,gs:gnow()});res={kind:'workout',pos,fresh:wasEmpty,card:{kind:'workout',reps:lc.num,move:lc.wkt,unit:(lc.unit||'reps'),label:lc.label,suit:lc.suit}};break;
   }
   if(!res)res={none:true,pos:Math.max(0,Math.min(pos,total-1))};
   p.lastRoll=dv;p.pos=res.pos;
   p.event=backHit?{type:'back',val:backHit.val,suit:backHit.suit,eid:(game.eid=(game.eid||0)+1)}:skipHit?{type:'skip',suit:skipHit.suit,eid:(game.eid=(game.eid||0)+1)}:null;
   if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
-  if(res.kind==='workout'||res.kind==='ace'){(p.hist=p.hist||[]).push({m:res.card.move,r:W.repScore(res.card.move,res.card.reps)});}
+  if(res.kind==='workout'||res.kind==='ace'){(p.hist=p.hist||[]).push({m:res.card.move,r:W.repScore(res.card.move,res.card.reps,res.card.unit),u:(res.card.unit||'reps')});}
   // keep the freshly-revealed destination card face-down until the token actually lands on it
   if(!game.hidden)game.hidden=new Set();
   if((res.kind==='workout'||res.kind==='ace')&&res.fresh)game.hidden.add(res.pos);
@@ -833,7 +848,8 @@ function triggerCap(){if(capFired||!game||game.ended)return;capFired=true;
   // mark any not-yet-finished players' standing by position; end with results.
   endGame('cap');}
 
-function cardText(c){if(!c)return null;return c.reps+' '+c.move;}
+function unitSuffix(u){return u==='meters'?'m':(u==='cal'?' cal':'');}
+function cardText(c){if(!c)return null;return c.reps+unitSuffix(c.unit)+' '+c.move;}
 function renderStandings(){const b=$('standBody');if(!game)return;b.innerHTML='';
   // finished players first (by placing), then racers by furthest position.
   const ranked=game.players.slice().sort((a,b)=>{
