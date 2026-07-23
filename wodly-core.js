@@ -24,13 +24,18 @@
 
   // Player-selection characters (image art lives in /assets/characters)
   const AVATARS = [
-    { id:'ninja',   name:'Ninja',   img:'assets/characters/ninja.png',   color:'#2196F3' },
-    { id:'lifter',  name:'Lifter',  img:'assets/characters/lifter.png',  color:'#4CAF50' },
-    { id:'runner',  name:'Runner',  img:'assets/characters/runner.png',  color:'#E8363D' },
-    { id:'gymnast', name:'Gymnast', img:'assets/characters/gymnast.png', color:'#2196F3' },
-    { id:'dragon',  name:'Dragon',  img:'assets/characters/dragon.png',  color:'#F5A623' },
-    { id:'champ',   name:'Champ',   img:'assets/characters/champ.png',   color:'#F5A623' },
-    { id:'coach',   name:'Coach',   img:'assets/characters/coach.png',   color:'#F5A623' }
+    { id:'ninja',        name:'Ninja',           img:'assets/characters/ninja.png',          color:'#2196F3' },
+    { id:'lifter',       name:'Lifter',          img:'assets/characters/lifter.png',         color:'#4CAF50' },
+    { id:'runner',       name:'Runner',          img:'assets/characters/runner.png',         color:'#E8363D' },
+    { id:'gymnast',      name:'Gymnast',         img:'assets/characters/gymnast.png',        color:'#2196F3' },
+    { id:'firebreather', name:'Firebreather',    img:'assets/characters/firebreather.png',   color:'#F5A623' },
+    { id:'champ',        name:'Champ',           img:'assets/characters/champ.png',          color:'#F5A623' },
+    { id:'coach',        name:'Coach',           img:'assets/characters/coach.png',          color:'#F5A623' },
+    { id:'rookie',       name:'Rookie',          img:'assets/characters/rookie.png',         color:'#E8363D' },
+    { id:'cheerleader',  name:'Cheerleader',     img:'assets/characters/cheerleader.png',    color:'#9b59b6' },
+    { id:'sunrise',      name:'Sunrise',         img:'assets/characters/sunrise.png',        color:'#F5A623' },
+    { id:'supplementking', name:'Supplement King', img:'assets/characters/supplementking.png', color:'#4CAF50' },
+    { id:'hybridracer',  name:'Hybrid Racer',    img:'assets/characters/hybridracer.png',    color:'#00BCD4' }
   ];
 
   // Board background themes (square art drawn behind the spiral path). To add one, drop a
