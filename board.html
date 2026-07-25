@@ -29,6 +29,13 @@
   .sc .si{font-size:22px;margin-bottom:4px;}.sc label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px;font-weight:600;}
   .sc input{width:100%;font-size:14px;padding:8px;background:rgba(0,0,0,.4);border:1px solid #444;border-radius:7px;color:#fff;}
   .mvunit{margin-top:6px;width:100%;font-size:12px;padding:6px;background:rgba(0,0,0,.4);border:1px solid #444;border-radius:7px;color:#cfcfcf;}
+  /* Quick Start: advanced options collapsed by default for new users */
+  #setupScreen .adv{display:none;}
+  #setupScreen.adv-open .adv{display:block;}
+  .qhint{background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.35);border-radius:12px;padding:12px 14px;font-size:13.5px;color:#cfe8cf;line-height:1.5;margin:4px 0 14px;}
+  .qhint b{color:#8be08e;}
+  .advtoggle{width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:14px;font-weight:600;padding:13px 15px;cursor:pointer;margin:2px 0 16px;font-family:inherit;}
+  .advtoggle:hover{border-color:#555;color:#fff;}
   .ace-card-setup{background:#1a0a1a;border:2px solid var(--purple);border-radius:12px;padding:14px;margin-top:12px;}
   .ace-card-setup .lbl{font-size:11px;color:var(--purple);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
   .ace-fields{display:grid;grid-template-columns:70px 1fr 80px;gap:8px;align-items:end;}
@@ -118,6 +125,9 @@
   .gcol .sec{margin-top:4px;}
   #gboard{display:flex;flex-direction:column;align-items:center;min-width:0;}
   .boardhint{font-size:11px;color:var(--text3);margin-top:8px;text-align:center;}
+  .legend{font-size:12.5px;color:var(--text2);margin-top:10px;text-align:center;line-height:1.7;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 12px;}
+  .legend b{color:#fff;}
+  #gameScreen.focus .legend{display:none;}
   .gleft table.stand th{padding:4px 6px;font-size:10px;}
   .gleft table.stand td{padding:7px 6px;}
   .gleft .team{gap:7px;}
@@ -202,6 +212,9 @@
         <div class="sec">Workout preset</div>
         <select id="presetSel" style="width:100%;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;"><option value="">Custom — set your own</option></select>
         <div id="presetNote" style="font-size:12px;color:#4CAF50;min-height:15px;margin:7px 0 16px;"></div>
+        <div class="qhint">👋 <b>New here?</b> Pick a workout above (or leave it Custom for a quick bodyweight game), then hit <b>Start</b> — that's it. Want to change the movements, difficulty or timers? Open Advanced below.</div>
+        <button class="advtoggle" id="advToggle">⚙ Advanced options — movements, difficulty, timers, board theme ▾</button>
+        <div class="adv">
         <div class="sec">Movements per suit <span style="text-transform:none;letter-spacing:0;color:var(--text3);font-weight:400;">— pick one or type your own; set its unit</span></div>
         <datalist id="moveList"></datalist>
         <div class="suit-grid">
@@ -218,8 +231,9 @@
             <div><label>Unit</label><select id="ace-unit" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option></select></div>
           </div>
         </div>
+        </div>
       </div>
-      <div>
+      <div class="adv">
         <div class="sec">Deck size</div>
         <div class="opt-row" id="deckRow">
           <button class="ob" data-v="quick"><b>Fast</b><small>1 deck · 52</small></button>
@@ -254,8 +268,8 @@
         </div>
       </div>
     </div>
-    <div class="sec" style="margin-top:18px;">Board theme</div>
-    <div class="board-grid" id="boardRow"></div>
+    <div class="adv"><div class="sec" style="margin-top:18px;">Board theme</div>
+    <div class="board-grid" id="boardRow"></div></div>
     <button class="bigbtn" id="openLobbyBtn">OPEN LOBBY →</button>
     <button class="ghost" id="soloBtn" style="width:100%;margin-top:10px;font-size:15px;padding:14px;">▶ Play solo / pass &amp; play (no phones)</button>
     <div class="foot"><button id="discLink">Health &amp; safety disclaimer</button></div>
@@ -316,6 +330,7 @@
       <div id="gboard">
         <div id="boardWrap"><canvas id="boardCanvas"></canvas><canvas id="tokenCanvas"></canvas></div>
         <div class="boardhint">⤢ Double-click the board to enlarge or exit</div>
+        <div class="legend"><b>How to read the board:</b> land on <span style="color:#E8363D">♥</span><span style="color:#F5A623">♦</span><span style="color:#4CAF50">♣</span><span style="color:#2196F3">♠</span> = do that movement · <span style="color:#9b59b6;font-weight:800">A</span> = penalty reps · <span style="color:#4CAF50;font-weight:800">↑</span> skip ahead · <span style="color:#E8363D;font-weight:800">↓</span> go back · first to the ★ wins</div>
         <div id="soloControls" style="display:none;"></div>
       </div>
       <aside class="gcol gright">
@@ -384,6 +399,8 @@ function paintBoardSel(){document.querySelectorAll('#boardRow .bcard').forEach(e
     d.onclick=()=>{selBoard=b.id;paintBoardSel();};row.appendChild(d);});
   paintBoardSel();})();
 $('turnTimerToggle').addEventListener('change',function(){$('timerSettings').classList.toggle('show',this.checked);});
+// Quick Start: advanced options collapsed by default; toggle reveals them
+$('advToggle').onclick=function(){const s=$('setupScreen');const open=s.classList.toggle('adv-open');this.textContent=open?'⚙ Advanced options — movements, difficulty, timers, board theme ▴':'⚙ Advanced options — movements, difficulty, timers, board theme ▾';};
 function selVal(id){const e=document.querySelector('#'+id+' .ob.sel');return e?e.dataset.v:null;}
 function _v(id){const e=$(id);return e?e.value:'';}
 function _set(id,v){if(v==null||v==='')return;const e=$(id);if(e)e.value=v;}
