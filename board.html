@@ -148,6 +148,12 @@
   #gameScreen.focus #gboard{position:fixed;inset:0;z-index:600;background:rgba(4,4,5,.985);justify-content:center;}
   #gameScreen.focus .boardhint{position:fixed;left:0;right:0;bottom:14px;z-index:601;color:var(--text2);}
   @media(max-width:920px){.gamegrid{grid-template-columns:1fr;}}
+  /* phones/tablets: stack the setup screen into one full-width column */
+  @media(max-width:760px){
+    .setup-grid{grid-template-columns:1fr;gap:0;}
+    .setup-grid > div + div{margin-top:20px;}
+    .wrap{max-width:520px;}
+  }
   /* standings */
   table.stand{width:100%;border-collapse:collapse;}
   table.stand th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-weight:700;padding:6px 10px;}
