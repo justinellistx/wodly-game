@@ -442,7 +442,7 @@ loadSettings();
 (function(){try{const p=new URLSearchParams(location.search);if(p.get('daily')==='1'&&W.dailyWod){const w=W.dailyWod();
   _set('mv-hearts',w.mv.hearts);_set('mv-diamonds',w.mv.diamonds);_set('mv-clubs',w.mv.clubs);_set('mv-spades',w.mv.spades);
   _set('ace-reps',w.aceReps);_set('ace-move',w.aceMove);window.__dailyKey=w.key;setTimeout(syncAllUnits,200);
-  const pn=$('presetNote');if(pn)pn.textContent="🔥 Today's Daily WOD: "+w.name+" — everyone's playing this one today";}}catch(e){}})();
+  const pn=$('presetNote');if(pn)pn.textContent="🔥 Today's Daily Workout: "+w.name+" — everyone's playing this one today";}}catch(e){}})();
 (function(){const sel=$('presetSel');if(!sel||!W.PRESETS)return;
   const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
   Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});

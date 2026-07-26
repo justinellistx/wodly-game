@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>WODLY — Daily WOD</title>
-<meta name="description" content="Today's WODLY daily workout — everyone plays the same WOD. Climb the daily leaderboard.">
+<title>WODLY — Daily Workout</title>
+<meta name="description" content="Today's WODLY daily workout — everyone plays the same workout. Climb the daily leaderboard.">
 <meta name="theme-color" content="#0a0a0b">
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-<meta property="og:title" content="WODLY — Daily WOD">
+<meta property="og:title" content="WODLY — Daily Workout">
 <meta property="og:description" content="One shared workout a day. Play it and climb the daily leaderboard.">
 <meta property="og:image" content="https://wodlygame.com/assets/og-image.png">
 <style>
@@ -46,19 +46,19 @@
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🔥 DAILY WOD</h1>
+    <h1>🔥 DAILY WORKOUT</h1>
     <div class="sub">One workout · everyone · every day</div>
     <a class="back" href="/">← back to home</a>
   </div>
 
   <div class="wod">
-    <div class="lbl">Today's WOD</div>
+    <div class="lbl">Today's workout</div>
     <div class="nm" id="wodName">—</div>
     <div class="date" id="wodDate"></div>
     <div class="moves" id="moves"></div>
     <div class="ace" id="ace"></div>
-    <a class="play" href="/board?daily=1">▶ Play today's WOD</a>
-    <div class="cd">New WOD in <b id="cd">…</b></div>
+    <a class="play" href="/board?daily=1">▶ Play today's workout</a>
+    <div class="cd">New workout in <b id="cd">…</b></div>
   </div>
 
   <div class="sec">Today's leaderboard</div>
@@ -92,7 +92,7 @@ async function loadLb(){
   let data=[];
   try{const r=await sb.rpc('daily_leaderboard',{p_day:wod.key});if(!r.error&&Array.isArray(r.data))data=r.data;}catch(e){}
   const l=$('list');
-  if(!data.length){l.innerHTML='<div class="empty">No finishers yet today.<br>Be the first to post a score on today’s WOD! 🔥</div>';return;}
+  if(!data.length){l.innerHTML='<div class="empty">No finishers yet today.<br>Be the first to post a score on today’s workout! 🔥</div>';return;}
   l.innerHTML=data.map((x,i)=>{const cls=i<3?' top'+(i+1):'';const rank=i<3?MEDAL[i]:(i+1);
     return `<div class="row${cls}"><div class="rank">${rank}</div>
       <div class="who"><div class="n">${esc(x.name)}</div>${x.gym?`<div class="g">${esc(x.gym)}</div>`:''}</div>
