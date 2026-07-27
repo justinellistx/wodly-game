@@ -78,11 +78,17 @@ function pfmt(sec){if(sec==null)return '';const m=Math.floor(sec/60),s=sec%60;re
 const MEDAL=['🥇','🥈','🥉'];
 const SUITS=[['hearts','♥','r'],['diamonds','♦','o'],['clubs','♣','g'],['spades','♠','b']];
 
-const wod=W.dailyWod();
-$('wodName').textContent=wod.name;
-$('wodDate').textContent=new Date().toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});
-$('moves').innerHTML=SUITS.map(([k,sym,c])=>`<div class="mv"><span class="s ${c}">${sym}</span> <span class="mn">${esc(wod.mv[k])}</span></div>`).join('');
-$('ace').textContent='🅰 Ace penalty: '+wod.aceReps+' '+wod.aceMove;
+// Server is the source of truth (admin-managed rotation + pinned dates). Render the local
+// fallback instantly so the page isn't blank, then swap in the server's plan when it arrives.
+let wod=W.dailyWod();
+function renderWod(){
+  $('wodName').textContent=wod.name;
+  $('wodDate').textContent=new Date().toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});
+  $('moves').innerHTML=SUITS.map(([k,sym,c])=>`<div class="mv"><span class="s ${c}">${sym}</span> <span class="mn">${esc(wod.mv[k])}</span></div>`).join('');
+  $('ace').textContent='🅰 Ace penalty: '+wod.aceReps+' '+wod.aceMove;
+}
+renderWod();
+(async function(){try{const r=await sb.rpc('daily_plan');if(!r.error&&r.data&&r.data.name){wod=r.data;renderWod();}}catch(e){}})();
 
 function tickCd(){const now=new Date();const mid=new Date(now);mid.setHours(24,0,0,0);let s=Math.max(0,Math.floor((mid-now)/1000));
   const h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;$('cd').textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(ss<10?'0':'')+ss;}

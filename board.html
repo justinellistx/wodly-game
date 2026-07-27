@@ -438,11 +438,15 @@ function loadSettings(){let s;try{s=JSON.parse(localStorage.getItem(SET_KEY)||'n
 loadSettings();
 // Gym dropdown — populate the datalist from known gyms so hosts pick an existing name (consistent spelling) or type a new one
 (async function(){try{const{data}=await sb.rpc('gym_names');const list=$('gymList');if(!list||!Array.isArray(data))return;list.innerHTML=data.map(g=>'<option value="'+String(g).replace(/"/g,'&quot;')+'">').join('');}catch(e){}})();
-// Daily WOD preload — /board?daily=1 loads today's shared workout + tags the game as daily
-(function(){try{const p=new URLSearchParams(location.search);if(p.get('daily')==='1'&&W.dailyWod){const w=W.dailyWod();
+// Daily Workout preload — /board?daily=1 loads today's shared workout + tags the game as daily.
+// Pulls the server plan (admin rotation + pinned dates); falls back to the local library offline.
+(async function(){try{const p=new URLSearchParams(location.search);if(p.get('daily')!=='1')return;
+  let w=(W.dailyWod?W.dailyWod():null);
+  try{const r=await sb.rpc('daily_plan');if(!r.error&&r.data&&r.data.name)w=r.data;}catch(e){}
+  if(!w)return;
   _set('mv-hearts',w.mv.hearts);_set('mv-diamonds',w.mv.diamonds);_set('mv-clubs',w.mv.clubs);_set('mv-spades',w.mv.spades);
   _set('ace-reps',w.aceReps);_set('ace-move',w.aceMove);window.__dailyKey=w.key;setTimeout(syncAllUnits,200);
-  const pn=$('presetNote');if(pn)pn.textContent="🔥 Today's Daily Workout: "+w.name+" — everyone's playing this one today";}}catch(e){}})();
+  const pn=$('presetNote');if(pn)pn.textContent="🔥 Today's Daily Workout: "+w.name+" — everyone's playing this one today";}catch(e){}})();
 (function(){const sel=$('presetSel');if(!sel||!W.PRESETS)return;
   const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
   Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});

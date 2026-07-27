@@ -87,6 +87,48 @@
     <div class="statgrid" id="statGrid"><div class="nodata">Loading…</div></div>
     <div class="angrid" id="anGrid"></div>
 
+    <!-- DAILY WORKOUTS -->
+    <div class="sectitle" style="margin-top:34px;"><span>🔥 Daily workouts</span><button class="btn ghost" id="dRefresh" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
+    <div class="card">
+      <div style="font-weight:800;font-size:15px;margin-bottom:2px;" id="dFormTitle">Add a daily workout</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Four movements (one per card suit) plus an ace penalty. New workouts join the daily rotation automatically.</div>
+      <label>Workout name</label>
+      <input type="text" id="d-name" placeholder="e.g. Friday Fire">
+      <div class="row" style="margin-top:4px;">
+        <div><label>♥ Hearts movement</label><input type="text" id="d-hearts" list="dMoves" placeholder="e.g. Burpees"></div>
+        <div><label>♦ Diamonds movement</label><input type="text" id="d-diamonds" list="dMoves" placeholder="e.g. Air Squats"></div>
+      </div>
+      <div class="row">
+        <div><label>♣ Clubs movement</label><input type="text" id="d-clubs" list="dMoves" placeholder="e.g. Push-ups"></div>
+        <div><label>♠ Spades movement</label><input type="text" id="d-spades" list="dMoves" placeholder="e.g. Sit-ups"></div>
+      </div>
+      <div class="row">
+        <div style="flex:0 0 150px;min-width:120px;"><label>Ace penalty reps</label><input type="text" id="d-acereps" placeholder="12"></div>
+        <div><label>Ace penalty movement</label><input type="text" id="d-acemove" list="dMoves" placeholder="e.g. Burpees"></div>
+      </div>
+      <datalist id="dMoves"></datalist>
+      <div style="margin-top:16px;display:flex;gap:10px;">
+        <button class="btn" id="dSaveBtn">Add workout</button>
+        <button class="btn ghost" id="dCancelBtn" style="display:none;">Cancel edit</button>
+      </div>
+      <div class="err" id="dErr"></div>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:18px 0 10px;">Rotation library <span id="dCount" style="color:var(--text2);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+    <div class="slist" id="dList"><div style="color:var(--text3)">Loading…</div></div>
+
+    <div class="card" style="margin-top:18px;">
+      <div style="font-weight:800;font-size:15px;margin-bottom:2px;">📌 Pin a workout to a date</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Override the rotation on a specific day — everyone who plays that day gets this exact workout.</div>
+      <div class="row">
+        <div style="flex:0 0 180px;min-width:150px;"><label>Date</label><input type="date" id="d-pindate" style="width:100%;font-size:15px;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:#fff;"></div>
+        <div><label>Workout</label><select id="d-pinsel" style="width:100%;font-size:15px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:#fff;"></select></div>
+      </div>
+      <div style="margin-top:14px;"><button class="btn" id="dPinBtn">Pin date</button></div>
+      <div class="err" id="dPinErr"></div>
+      <div id="dPins" style="margin-top:14px;"></div>
+    </div>
+
     <div class="sectitle" style="margin-top:34px;"><span>Sponsors &amp; deals</span></div>
     <div class="card">
       <div style="font-weight:800;font-size:15px;margin-bottom:6px;" id="formTitle">Add a sponsor</div>
@@ -150,7 +192,68 @@ async function api(action,extra){
 $('enterBtn').onclick=async()=>{
   passcode=$('pass').value.trim();$('gateErr').textContent='';
   const r=await api('verify');
-  if(r&&r.ok){show('panel');loadSponsors();loadAnalytics();loadClicks();}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
+  if(r&&r.ok){show('panel');loadSponsors();loadAnalytics();loadClicks();loadDaily();}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
+};
+
+// ── Daily workouts ──
+let dailyData=[], dEditId=null;
+function dailyMovesDatalist(){
+  const set=new Set();
+  dailyData.forEach(w=>{[w.hearts,w.diamonds,w.clubs,w.spades,w.ace_move].forEach(m=>{if(m)set.add(m);});});
+  $('dMoves').innerHTML=[...set].sort().map(m=>`<option value="${esc(m)}">`).join('');
+}
+async function loadDaily(){
+  const r=await api('daily_list');
+  const list=$('dList');
+  if(!r||r.error||!r.data){list.innerHTML='<div style="color:var(--text3)">Could not load'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
+  dailyData=r.data.workouts||[];
+  const active=dailyData.filter(w=>w.active).length;
+  $('dCount').textContent='· '+active+' active / '+dailyData.length+' in rotation';
+  dailyMovesDatalist();
+  $('d-pinsel').innerHTML=dailyData.map(w=>`<option value="${w.id}">${esc(w.name)}${w.active?'':' (paused)'}</option>`).join('');
+  if(!dailyData.length){list.innerHTML='<div style="color:var(--text3)">No workouts yet. Add one above.</div>';}
+  else{
+    list.innerHTML='';
+    dailyData.forEach(w=>{const d=document.createElement('div');d.className='srow'+(w.active?'':' off');
+      d.innerHTML=`<div class="meta"><b>${esc(w.name)}</b> <span class="pill ${w.active?'on':'off'}">${w.active?'In rotation':'Paused'}</span>
+        <div style="margin-top:6px;color:var(--text2);font-size:13px;">♥ ${esc(w.hearts)} · ♦ ${esc(w.diamonds)} · ♣ ${esc(w.clubs)} · ♠ ${esc(w.spades)}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px;">🅰 ${esc(String(w.ace_reps))} ${esc(w.ace_move)}</div></div>
+      <div class="acts"><button class="btn ghost" data-de="${w.id}">Edit</button><button class="btn ghost" data-dt="${w.id}">${w.active?'Pause':'Activate'}</button><button class="btn danger" data-dd="${w.id}">Delete</button></div>`;
+      list.appendChild(d);});
+    list.querySelectorAll('[data-de]').forEach(b=>b.onclick=()=>dStartEdit(dailyData.find(x=>String(x.id)===b.dataset.de)));
+    list.querySelectorAll('[data-dt]').forEach(b=>b.onclick=async()=>{const w=dailyData.find(x=>String(x.id)===b.dataset.dt);await api('daily_toggle',{id:w.id,active:!w.active});loadDaily();});
+    list.querySelectorAll('[data-dd]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this workout from the rotation?'))return;await api('daily_delete',{id:+b.dataset.dd});loadDaily();});
+  }
+  const sched=r.data.schedule||[];const byId={};dailyData.forEach(w=>byId[w.id]=w.name);
+  $('dPins').innerHTML=sched.length?'<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:6px;">Upcoming pinned dates</div>'+sched.map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--border);font-size:13px;">
+      <span style="width:110px;color:#fff;">${esc(s.day)}</span><span style="flex:1;color:var(--text2);">${esc(byId[s.workout_id]||('#'+s.workout_id))}</span>
+      <button class="btn ghost" data-unpin="${esc(s.day)}" style="padding:4px 10px;font-size:12px;">Unpin</button></div>`).join(''):'<div style="font-size:12px;color:var(--text3);">No dates pinned — the rotation runs automatically.</div>';
+  $('dPins').querySelectorAll('[data-unpin]').forEach(b=>b.onclick=async()=>{await api('daily_unpin',{day:b.dataset.unpin});loadDaily();});
+}
+function dReset(){dEditId=null;['d-name','d-hearts','d-diamonds','d-clubs','d-spades','d-acereps','d-acemove'].forEach(id=>$(id).value='');
+  $('dFormTitle').textContent='Add a daily workout';$('dSaveBtn').textContent='Add workout';$('dCancelBtn').style.display='none';$('dErr').textContent='';}
+function dStartEdit(w){if(!w)return;dEditId=w.id;$('d-name').value=w.name||'';$('d-hearts').value=w.hearts||'';$('d-diamonds').value=w.diamonds||'';$('d-clubs').value=w.clubs||'';$('d-spades').value=w.spades||'';$('d-acereps').value=w.ace_reps!=null?w.ace_reps:'';$('d-acemove').value=w.ace_move||'';
+  $('dFormTitle').textContent='Edit daily workout';$('dSaveBtn').textContent='Save changes';$('dCancelBtn').style.display='inline-block';$('d-name').scrollIntoView({behavior:'smooth',block:'center'});}
+$('dCancelBtn').onclick=dReset;
+$('dSaveBtn').onclick=async()=>{
+  $('dErr').textContent='';
+  const w={name:$('d-name').value.trim(),hearts:$('d-hearts').value.trim(),diamonds:$('d-diamonds').value.trim(),clubs:$('d-clubs').value.trim(),spades:$('d-spades').value.trim(),ace_reps:parseInt($('d-acereps').value,10)||12,ace_move:$('d-acemove').value.trim()||'Burpees'};
+  if(!w.name||!w.hearts||!w.diamonds||!w.clubs||!w.spades){$('dErr').textContent='Fill in the name and all four movements.';return;}
+  $('dSaveBtn').disabled=true;
+  const r=await api(dEditId?'daily_update':'daily_add',dEditId?{id:dEditId,workout:w}:{workout:w});
+  $('dSaveBtn').disabled=false;
+  if(r.error){$('dErr').textContent=r.error;return;}
+  dReset();loadDaily();
+};
+$('dRefresh').onclick=loadDaily;
+$('dPinBtn').onclick=async()=>{
+  $('dPinErr').textContent='';
+  const day=$('d-pindate').value, workout_id=+$('d-pinsel').value;
+  if(!day){$('dPinErr').textContent='Pick a date.';return;}
+  if(!workout_id){$('dPinErr').textContent='Add a workout first, then pick one.';return;}
+  const r=await api('daily_pin',{day,workout_id});
+  if(r.error){$('dPinErr').textContent=r.error;return;}
+  loadDaily();
 };
 
 // ── Sponsor engagement ──

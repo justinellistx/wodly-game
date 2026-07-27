@@ -92,6 +92,8 @@
   }
 
   // ── Daily WOD: one shared, deterministic workout per calendar day ──
+  // Fallback library (used only if the server daily_plan RPC is unreachable). Keep in sync
+  // with the seeded daily_workouts table; admin-added/edited workouts live server-side.
   const DAILY_WODS = [
     { name:'Full Send',    mv:{hearts:'Burpees',diamonds:'Air Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
     { name:'Engine Room',  mv:{hearts:'Mountain Climbers',diamonds:'High Knees',clubs:'Jumping Jacks',spades:'Burpees'}, aceReps:15, aceMove:'Burpees' },
@@ -104,7 +106,25 @@
     { name:'Ab Attack',    mv:{hearts:'Sit-ups',diamonds:'Bicycle Crunches',clubs:'V-ups',spades:'Plank (sec)'}, aceReps:20, aceMove:'Sit-ups' },
     { name:'Sprint & Squat',mv:{hearts:'Air Squats',diamonds:'Mountain Climbers',clubs:'Burpees',spades:'High Knees'}, aceReps:12, aceMove:'Burpees' },
     { name:'Grip & Rip',   mv:{hearts:'Pull-ups',diamonds:'Hollow Rocks',clubs:'Superman',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
-    { name:'Total Torch',  mv:{hearts:'Burpees',diamonds:'Jump Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Burpees' }
+    { name:'Total Torch',  mv:{hearts:'Burpees',diamonds:'Jump Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Iron Grip',    mv:{hearts:'Kettlebell Swings',diamonds:'Goblet Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Barbell Blitz',mv:{hearts:'Deadlifts',diamonds:'Front Squats',clubs:'Push Press',spades:'Air Squats'}, aceReps:10, aceMove:'Burpees' },
+    { name:'Row House',    mv:{hearts:'Row (cal)',diamonds:'Air Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Box Office',   mv:{hearts:'Box Jumps',diamonds:'Step-ups',clubs:'Push-ups',spades:'Mountain Climbers'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Wall Ball Wars',mv:{hearts:'Wall Balls',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Push-ups'}, aceReps:15, aceMove:'Wall Balls' },
+    { name:'Thruster Throwdown',mv:{hearts:'Thrusters',diamonds:'Pull-ups',clubs:'Air Squats',spades:'Push-ups'}, aceReps:12, aceMove:'Thrusters' },
+    { name:'Dumbbell Destroyer',mv:{hearts:'Dumbbell Snatches',diamonds:'Dumbbell Thrusters',clubs:'Goblet Squats',spades:'Push-ups'}, aceReps:12, aceMove:'Devil Press' },
+    { name:'Kettlebell King',mv:{hearts:'Kettlebell Swings',diamonds:'Goblet Squats',clubs:'Kettlebell Deadlifts',spades:'Sit-ups'}, aceReps:15, aceMove:'Kettlebell Swings' },
+    { name:'Pull Party',   mv:{hearts:'Pull-ups',diamonds:'Ring Rows',clubs:'Toes-to-Bar',spades:'Hollow Rocks'}, aceReps:10, aceMove:'Pull-ups' },
+    { name:'Cardio Inferno',mv:{hearts:'Bike (cal)',diamonds:'High Knees',clubs:'Jumping Jacks',spades:'Mountain Climbers'}, aceReps:15, aceMove:'Burpees' },
+    { name:'Ski Patrol',   mv:{hearts:'Ski (cal)',diamonds:'Air Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Hero Heavy',   mv:{hearts:'Deadlifts',diamonds:'Pull-ups',clubs:'Push-ups',spades:'Air Squats'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Row & Go',     mv:{hearts:'Row (m)',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Push-ups'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Farmers Fury', mv:{hearts:'Farmer Carry (m)',diamonds:'Goblet Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Kettlebell Swings' },
+    { name:'Clean Sweep',  mv:{hearts:'Hang Cleans',diamonds:'Front Squats',clubs:'Push Press',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
+    { name:'Devils Dozen', mv:{hearts:'Devil Press',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Mountain Climbers'}, aceReps:12, aceMove:'Devil Press' },
+    { name:'Grinder',      mv:{hearts:'Wall Balls',diamonds:'Box Jumps',clubs:'Kettlebell Swings',spades:'Burpees'}, aceReps:15, aceMove:'Burpees' },
+    { name:'Sunday Funday',mv:{hearts:'Air Squats',diamonds:'Push-ups',clubs:'Sit-ups',spades:'Jumping Jacks'}, aceReps:10, aceMove:'Burpees' }
   ];
   function dailyKey(d){ d=d||new Date(); const m=(''+(d.getMonth()+1)).padStart(2,'0'), day=(''+d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; }
   function dailyIndex(d){ d=d||new Date(); const epochDay=Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000); return ((epochDay%DAILY_WODS.length)+DAILY_WODS.length)%DAILY_WODS.length; }
