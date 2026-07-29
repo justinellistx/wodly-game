@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WODLY Bingo — Play</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--gold:#F5A623;--bg:#0a0a0b;--surface:#161616;--surface2:#1f1f1f;--border:#333;--text:#fff;--text2:#aaa;--text3:#777;}
+  body{font-family:system-ui,sans-serif;background:radial-gradient(circle at 50% -8%,#1d1d22,#0a0a0b 60%);color:#fff;min-height:100vh;max-width:480px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));}
+  .brand{text-align:center;margin-bottom:14px;}
+  .brand h1{font-size:22px;font-weight:900;letter-spacing:3px;}
+  .brand h1 b{color:var(--orange);}
+  .screen{display:none;}.screen.active{display:block;}
+  label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;display:block;margin:14px 0 6px;}
+  input{width:100%;font-size:16px;padding:13px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:#fff;}
+  .btn{display:block;width:100%;margin-top:16px;padding:15px;font-size:16px;font-weight:800;letter-spacing:.5px;background:var(--orange);border:none;border-radius:14px;color:#000;cursor:pointer;font-family:inherit;}
+  .btn:disabled{opacity:.5;}
+  .err{color:var(--red);font-size:13px;margin-top:10px;min-height:16px;text-align:center;}
+  .hint{text-align:center;font-size:13px;color:var(--text2);margin:-4px 0 14px;line-height:1.5;}
+  .avatars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .av{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:6px;cursor:pointer;text-align:center;}
+  .av.on{border-color:var(--orange);}
+  .av img{width:100%;aspect-ratio:1;object-fit:contain;}
+  .av span{font-size:10px;color:var(--text3);display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wait{text-align:center;padding:40px 10px;}
+  .wait .spin{font-size:40px;margin-bottom:14px;}
+  .statusbar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:12px;}
+  .statusbar img{width:30px;height:30px;object-fit:contain;}
+  .statusbar .nm{font-weight:800;flex:1;}
+  .statusbar .pg{font-size:12px;color:var(--gold);font-weight:700;}
+  .bhead{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:5px;}
+  .bhl{text-align:center;font-size:17px;font-weight:900;color:var(--orange);}
+  .bgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+  .bc{aspect-ratio:1;border-radius:9px;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:17px;font-weight:700;color:var(--text2);}
+  .bc.free{background:rgba(245,166,35,.14);color:var(--orange);}
+  .bc.live{border:2px solid var(--orange);background:rgba(245,166,35,.14);}
+  .bc.done{background:rgba(76,175,80,.24);border-color:var(--green);color:#fff;}
+  .bc .rv{font-size:9px;line-height:1.05;color:var(--text2);text-align:center;padding:0 2px;}
+  .bc .rt{font-size:15px;font-weight:800;}
+  .cue{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;}
+  .cue .lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);}
+  .cue .big{font-size:26px;font-weight:900;margin:4px 0 2px;}
+  .cue .big b{color:var(--orange);}
+  .cue .sub{font-size:14px;color:var(--text2);}
+  .win{text-align:center;padding:30px 14px;}
+  .win .big{font-size:44px;font-weight:900;color:var(--gold);letter-spacing:2px;}
+  .win .sub{color:var(--text2);font-size:15px;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="brand"><h1>WODLY <b>BINGO</b></h1></div>
+
+<!-- JOIN -->
+<div id="join" class="screen active">
+  <div class="hint" id="joinHint">Enter your name and pick a hero to join the game.</div>
+  <label>Room code</label>
+  <input id="code" maxlength="6" placeholder="ABCD" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;letter-spacing:3px;font-weight:800;text-align:center;">
+  <label>Your name</label>
+  <input id="pname" maxlength="16" placeholder="Your name" autocomplete="off">
+  <label>Pick your hero</label>
+  <div class="avatars" id="avatars"></div>
+  <button class="btn" id="joinBtn">Join game</button>
+  <div class="err" id="joinErr"></div>
+</div>
+
+<!-- WAITING -->
+<div id="waiting" class="screen">
+  <div class="wait"><div class="spin">⏳</div><div style="font-size:18px;font-weight:800;">You're in!</div>
+    <div style="color:var(--text2);margin-top:8px;">Waiting for the host to start the game…</div></div>
+</div>
+
+<!-- CARD -->
+<div id="card" class="screen">
+  <div class="statusbar"><img id="sbAv"><span class="nm" id="sbName"></span><span class="pg" id="sbProg"></span></div>
+  <div class="bhead" id="bhead"></div>
+  <div class="bgrid" id="bgrid"></div>
+  <div class="cue" id="cue"></div>
+</div>
+
+<!-- WIN -->
+<div id="won" class="screen">
+  <div class="win"><div class="big">BINGO!</div><div class="sub" id="winSub"></div>
+    <button class="btn" onclick="location.reload()" style="max-width:240px;margin:22px auto 0;">Play again</button></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="wodly-core.js"></script>
+<script>
+var W=window.WODLY, sb=W.makeClient(), $=function(id){return document.getElementById(id);};
+var LETTERS=['B','I','N','G','O'];
+function rint(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rint(0,i);var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+var LINES=(function(){var L=[];for(var r=0;r<5;r++){var a=[];for(var c=0;c<5;c++)a.push(r*5+c);L.push(a);}for(var c=0;c<5;c++){var b=[];for(var r=0;r<5;r++)b.push(r*5+c);L.push(b);}L.push([0,6,12,18,24]);L.push([4,8,12,16,20]);return L;})();
+
+var ROOM=null, MYID=null, ME={}, S={diff:1,win:1,moves:[]}, card=[], repMap={}, order=[], idx=0, marks={12:1}, started=false, pollT=null;
+
+// avatars
+(function(){var g=$('avatars');(W.AVATARS||[]).forEach(function(a){var d=document.createElement('div');d.className='av';d.dataset.id=a.id;d.innerHTML='<img src="'+a.img+'" alt=""><span>'+a.name+'</span>';d.onclick=function(){g.querySelectorAll('.av').forEach(function(x){x.classList.remove('on');});d.classList.add('on');ME.avatar=a.id;ME.color=a.color;ME.img=a.img;};g.appendChild(d);});})();
+
+// prefill room code from URL
+(function(){var p=new URLSearchParams(location.search);var c=(p.get('room')||'').toUpperCase();if(c){$('code').value=c;}})();
+
+function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});$(id).classList.add('active');}
+
+$('joinBtn').onclick=async function(){
+  $('joinErr').textContent='';
+  var code=$('code').value.trim().toUpperCase(), name=$('pname').value.trim();
+  if(!code){$('joinErr').textContent='Enter the room code.';return;}
+  if(!name){$('joinErr').textContent='Enter your name.';return;}
+  if(!ME.avatar){$('joinErr').textContent='Pick a hero.';return;}
+  $('joinBtn').disabled=true;
+  try{
+    var r=await sb.from('rooms').select('*').eq('code',code).limit(1);
+    var room=(r.data&&r.data[0])||null;
+    if(!room){$('joinErr').textContent='No game found with that code.';$('joinBtn').disabled=false;return;}
+    if(!room.settings||room.settings.game!=='bingo'){$('joinErr').textContent='That code isn’t a Bingo game.';$('joinBtn').disabled=false;return;}
+    ROOM=room; S.diff=+(room.settings.diff||1); S.win=+(room.settings.win||1); S.moves=(room.settings.moves||['BURPEES','AIR SQUATS','PUSH-UPS','SIT-UPS','KB SWINGS']).map(function(m){return String(m).toUpperCase();});
+    var cid='bp_'+Math.random().toString(36).slice(2);
+    var ins=await sb.from('players').insert({room_id:room.id,client_id:cid,name:name,avatar:ME.avatar,color:ME.color,bingo:{m:{12:1},sq:0,lines:0,done:false,ts:Date.now()}}).select().single();
+    if(ins.error){$('joinErr').textContent=ins.error.message;$('joinBtn').disabled=false;return;}
+    MYID=ins.data.id; ME.name=name;
+    $('sbAv').src=ME.img; $('sbName').textContent=name;
+    if(room.status==='playing'){beginGame();}else{show('waiting');pollStatus();}
+  }catch(e){$('joinErr').textContent='Could not join. Check the code and try again.';$('joinBtn').disabled=false;}
+};
+
+function pollStatus(){
+  if(pollT)clearInterval(pollT);
+  pollT=setInterval(async function(){
+    try{var r=await sb.from('rooms').select('status').eq('id',ROOM.id).single();
+      if(r.data&&r.data.status==='playing'){clearInterval(pollT);beginGame();}
+    }catch(e){}
+  },2000);
+}
+
+function reps(num){return Math.max(1,Math.round((repMap[num]||10)*S.diff));}
+function squares(){var n=0;for(var i=0;i<25;i++){if(i!==12&&marks[i])n++;}return n;}
+function linesN(){var n=0;for(var l=0;l<LINES.length;l++){var all=true;for(var q=0;q<5;q++){if(!marks[LINES[l][q]]){all=false;break;}}if(all)n++;}return n;}
+function won(){return S.win>=25?squares()>=24:linesN()>=S.win;}
+
+function beginGame(){
+  if(started)return; started=true;
+  // build own card + call order + reps
+  card=[];for(var r=0;r<5;r++)card.push([0,0,0,0,0]);
+  for(var c=0;c<5;c++){var lo=c*15+1;var picks=shuffle((function(){var a=[];for(var n=lo;n<lo+15;n++)a.push(n);return a;})()).slice(0,5).sort(function(a,b){return a-b;});for(var r=0;r<5;r++)card[r][c]=picks[r];}
+  var flat=[];for(var r=0;r<5;r++)for(var c=0;c<5;c++)flat.push(card[r][c]);flat[12]='FREE';card=flat;
+  for(var n=1;n<=75;n++)repMap[n]=rint(6,20);
+  order=shuffle((function(){var a=[];for(var i=0;i<25;i++)if(i!==12)a.push(i);return a;})());
+  idx=0;marks={12:1};
+  var h='';for(var i=0;i<5;i++)h+='<div class="bhl">'+LETTERS[i]+'</div>';$('bhead').innerHTML=h;
+  show('card');render();save(false);
+}
+
+function colOf(i){return i%5;}
+function render(){
+  $('sbProg').textContent=S.win>=25?(squares()+'/24'):(linesN()+'/'+S.win+' line'+(S.win>1?'s':''));
+  var g=$('bgrid'),html='';
+  for(var i=0;i<25;i++){
+    var val=card[i],done=marks[i],live=(order[idx]===i),cls='bc',inner='';
+    if(val==='FREE'){cls+=' free';inner='<div class="rt">★</div>';}
+    else if(done){cls+=' done';inner='<div class="rv">'+S.moves[colOf(i)]+'</div><div class="rt">'+reps(val)+'</div>';}
+    else if(live){cls+=' live';inner='<div class="rt">'+reps(val)+'</div><div class="rv">'+S.moves[colOf(i)]+'</div>';}
+    else inner='<div class="rt">'+val+'</div>';
+    html+='<div class="'+cls+'" data-i="'+i+'">'+inner+'</div>';
+  }
+  g.innerHTML=html;
+  g.querySelectorAll('.bc').forEach(function(c){c.onclick=function(){if(+c.dataset.i===order[idx])doNext();};});
+  var nx=order[idx];
+  if(nx!=null){
+    $('cue').innerHTML='<div class="lbl">Your call</div><div class="big"><b>'+LETTERS[colOf(nx)]+' '+card[nx]+'</b></div><div class="sub">'+reps(card[nx])+' '+S.moves[colOf(nx)]+'</div><button class="btn" id="doBtn">Did it ✓</button>';
+    $('doBtn').onclick=doNext;
+  }else{$('cue').innerHTML='<div class="sub">Card complete!</div>';}
+}
+function doNext(){
+  var i=order[idx];if(i==null||marks[i])return;
+  marks[i]=1;idx++;while(idx<order.length&&marks[order[idx]])idx++;
+  var w=won();render();save(w);
+  if(w){$('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares done.';show('won');}
+}
+async function save(done){
+  try{await sb.from('players').update({bingo:{m:marks,sq:squares(),lines:linesN(),done:!!done,ts:Date.now()}}).eq('id',MYID);}catch(e){}
+}
+</script>
+</body>
+</html>

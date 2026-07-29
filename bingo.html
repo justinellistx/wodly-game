@@ -110,9 +110,25 @@
         <button class="btn" id="addP" style="padding:12px 18px;">Add</button>
       </div>
 
-      <button class="btn block" id="startBtn">Start game</button>
+      <button class="btn block" id="startBtn">Start game (this screen)</button>
+      <button class="btn block ghost" id="hostBtn" style="margin-top:10px;">📱 Host for phones →</button>
+      <div style="font-size:12px;color:var(--text3);margin-top:8px;text-align:center;">“This screen” = pass-and-play on one device. “Host for phones” = each player joins on their own phone.</div>
     </div>
     <div class="foot"><a href="/">← back to WODLY</a></div>
+  </div>
+
+  <!-- HOST LOBBY -->
+  <div id="host" class="screen">
+    <div class="card" style="text-align:center;">
+      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);">Join code</div>
+      <div id="hCode" style="font-size:54px;font-weight:900;letter-spacing:10px;color:var(--orange);margin:4px 0;">—</div>
+      <div style="font-size:14px;color:var(--text2);">On each phone, open <b style="color:#fff;">wodlygame.com/bplay</b> and enter this code.</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:6px;" id="hLink"></div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin:22px 0 8px;">Players in (<span id="hCount">0</span>)</div>
+      <div class="plist" id="hPlayers" style="text-align:left;"></div>
+      <button class="btn block" id="hStart" style="margin-top:18px;">Start game</button>
+      <button class="btn block ghost" id="hCancel" style="margin-top:10px;">Cancel</button>
+    </div>
   </div>
 
   <!-- GAME -->
@@ -281,10 +297,60 @@ function finish(p){
   $('winSub').textContent=(S.win>=25?'Blackout — full card':(S.win>1?S.win+' lines':'First line')+' complete')+' · '+squaresFor(p)+' squares done';
   $('overlay').classList.add('on');
 }
-$('winClose').onclick=function(){$('overlay').classList.remove('on');$('game').classList.remove('active');$('setup').classList.add('active');S.players.forEach(function(p){delete p.done;});};
-$('newGame').onclick=function(){$('game').classList.remove('active');$('setup').classList.add('active');S.players.forEach(function(p){delete p.done;});};
+function resetToSetup(){$('overlay').classList.remove('on');$('game').classList.remove('active');$('host').classList.remove('active');$('setup').classList.add('active');clearHostPoll();ONLINE=false;WINSHOWN=false;S.players.forEach(function(p){delete p.done;});}
+$('winClose').onclick=resetToSetup;
+$('newGame').onclick=resetToSetup;
 
 $('muteBtn').onclick=function(){S.mute=!S.mute;$('muteBtn').textContent=S.mute?'🔇 Caller off':'🔊 Caller on';if(S.mute&&window.speechSynthesis)window.speechSynthesis.cancel();};
+
+/* ── Host for phones (online Race) ── */
+var HOST=null, HOSTPOLL=null, HOSTPLAYERS=[], ONLINE=false, WINSHOWN=false;
+function clearHostPoll(){if(HOSTPOLL){clearInterval(HOSTPOLL);HOSTPOLL=null;}}
+function genCode4(){var C='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';for(var i=0;i<4;i++)s+=C[rint(0,C.length-1)];return s;}
+function readMoves(){S.moves=[];S.moveUnits=[];for(var mi=0;mi<5;mi++){var mv=(($('mv'+mi)&&$('mv'+mi).value)||'').trim();if(!mv)mv=shuffle(LIB)[0]||'BURPEES';mv=mv.toUpperCase();S.moves.push(mv);S.moveUnits.push(MOVEUNITS[mv]||'reps');}if(sb)S.moves.forEach(function(m,i){try{sb.rpc('add_movement',{p_name:m,p_unit:S.moveUnits[i]||'reps'});}catch(e){}});}
+$('hostBtn').onclick=async function(){
+  if(!sb){alert('Online play needs a connection.');return;}
+  readMoves();
+  var room=null;
+  for(var a=0;a<6;a++){var code=genCode4();
+    var r=await sb.from('rooms').insert({code:code,status:'lobby',host_id:'bingo-host',is_public:false,title:'WODLY Bingo',settings:{game:'bingo',mode:'race',diff:S.diff,win:S.win,moves:S.moves}}).select().single();
+    if(!r.error){room=r.data;break;} if(r.error&&!/duplicate|unique/i.test(r.error.message||'')){alert(r.error.message);return;}}
+  if(!room){alert('Could not create the game — try again.');return;}
+  HOST=room;WINSHOWN=false;$('hCode').textContent=room.code;$('hLink').textContent='wodlygame.com/bplay?room='+room.code;
+  show('host');pollLobby();
+};
+function pollLobby(){clearHostPoll();HOSTPOLL=setInterval(async function(){
+  try{var r=await sb.from('players').select('id,name,color').eq('room_id',HOST.id).order('created_at');var pl=r.data||[];HOSTPLAYERS=pl;
+    $('hCount').textContent=pl.length;
+    $('hPlayers').innerHTML=pl.length?pl.map(function(p){return '<div class="prow"><span class="pdot" style="background:'+(p.color||'#F5A623')+'"></span><span class="nm">'+(p.name||'Player')+'</span></div>';}).join(''):'<div style="color:var(--text3);font-size:13px;text-align:center;">No one yet — share the code above.</div>';
+  }catch(e){}
+},1500);}
+$('hCancel').onclick=async function(){try{if(HOST)await sb.from('rooms').update({status:'finished'}).eq('id',HOST.id);}catch(e){}resetToSetup();};
+$('hStart').onclick=async function(){
+  if(!HOSTPLAYERS.length&&!confirm('No players have joined yet. Start anyway?'))return;
+  try{await sb.from('rooms').update({status:'playing'}).eq('id',HOST.id);}catch(e){}
+  ONLINE=true;WINSHOWN=false;
+  $('gInfo').textContent='Race · '+({0.6:'Beginner',1:'Rx',1.4:'Elite'}[S.diff])+' · '+(S.win>=25?'Blackout':S.win+' line'+(S.win>1?'s':''))+' · phones';
+  var lg='';for(var i=0;i<5;i++)lg+='<div class="legchip"><b>'+LETTERS[i]+'</b>'+S.moves[i]+'</div>';$('gLegend').innerHTML=lg;
+  $('callbox').style.display='none';
+  $('host').classList.remove('active');$('game').classList.add('active');
+  renderWall(HOSTPLAYERS);pollWall();
+};
+function pollWall(){clearHostPoll();HOSTPOLL=setInterval(async function(){
+  try{var r=await sb.from('players').select('id,name,color,bingo').eq('room_id',HOST.id).order('created_at');renderWall(r.data||[]);}catch(e){}
+},1500);}
+function renderWall(pl){
+  if(!pl.length){$('cards').innerHTML='<div style="text-align:center;color:var(--text3);padding:30px;">Waiting for players to join…</div>';return;}
+  var winner=null;
+  $('cards').innerHTML=pl.map(function(p){
+    var b=p.bingo||{},m=b.m||{},done=!!b.done;if(done&&!winner)winner=p;
+    var head='';for(var i=0;i<5;i++)head+='<div class="bhl">'+LETTERS[i]+'</div>';
+    var cells='';for(var i=0;i<25;i++){var free=i===12,on=m[i]||m[String(i)];cells+='<div class="bc'+(free?' free':(on?' done':''))+'">'+(free?'<div class="rt">★</div>':'')+'</div>';}
+    var pg=S.win>=25?((b.sq||0)+'/24'):((b.lines||0)+'/'+S.win+' line'+(S.win>1?'s':''));
+    return '<div class="pcard'+(done?' win':'')+'"><div class="pchd"><span class="pdot" style="background:'+(p.color||'#F5A623')+'"></span><span class="nm">'+(p.name||'Player')+'</span><span class="pg">'+pg+'</span></div><div class="bhead">'+head+'</div><div class="bgrid">'+cells+'</div></div>';
+  }).join('');
+  if(winner&&!WINSHOWN){WINSHOWN=true;beep(990,.5);speak(winner.name+' bingo!');$('winWho').textContent=winner.name+' wins!';$('winWho').style.color=winner.color||'#F5A623';$('winSub').textContent='First to bingo on the wall!';$('overlay').classList.add('on');}
+}
 
 /* init */
 loadLib();renderPlayers();
