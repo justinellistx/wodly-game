@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WODLY Bingo</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--gold:#F5A623;--bg:#0a0a0b;--surface:#161616;--surface2:#1f1f1f;--border:#333;--text:#fff;--text2:#aaa;--text3:#777;}
+  body{font-family:system-ui,sans-serif;background:radial-gradient(circle at 50% -8%,#1d1d22,#0a0a0b 60%);color:#fff;min-height:100vh;padding:22px 18px 60px;}
+  .wrap{max-width:1200px;margin:0 auto;}
+  .brand{text-align:center;margin-bottom:18px;}
+  .brand h1{font-size:30px;font-weight:900;letter-spacing:5px;}
+  .brand h1 b{color:var(--orange);}
+  .brand .tag{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-top:4px;}
+  .screen{display:none;}.screen.active{display:block;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin:0 auto 16px;max-width:560px;}
+  label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;display:block;margin:16px 0 8px;}
+  .seg{display:flex;gap:8px;flex-wrap:wrap;}
+  .seg button{flex:1;min-width:90px;padding:11px;font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-family:inherit;}
+  .seg button.on{background:var(--orange);border-color:var(--orange);color:#000;}
+  input[type=text]{width:100%;font-size:15px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:#fff;}
+  .btn{padding:14px 22px;font-size:15px;font-weight:800;letter-spacing:.5px;background:var(--orange);border:none;border-radius:12px;color:#000;cursor:pointer;font-family:inherit;}
+  .btn.block{display:block;width:100%;margin-top:20px;}
+  .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text2);}
+  .btn:disabled{opacity:.4;cursor:default;}
+  .legendrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .legchip{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 11px;font-size:13px;}
+  .legchip b{color:var(--orange);font-weight:800;margin-right:4px;}
+  .plist{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .prow{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+  .pdot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+  .prow .nm{flex:1;font-weight:700;}
+  .prow .x{color:var(--text3);cursor:pointer;font-size:18px;background:none;border:none;}
+  .addrow{display:flex;gap:8px;margin-top:10px;}
+  .addrow input{flex:1;}
+  .gamebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+  .gamebar .info{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+  .callbox{text-align:center;margin-bottom:16px;}
+  .callbox .lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);}
+  .callbox .cur{font-size:44px;font-weight:900;color:var(--orange);line-height:1.1;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+  .pcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;}
+  .pcard.win{border:2px solid var(--gold);box-shadow:0 0 24px rgba(245,166,35,.25);}
+  .pchd{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .pchd .nm{font-size:15px;font-weight:800;flex:1;}
+  .pchd .pg{font-size:11px;color:var(--text3);}
+  .bhead{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px;}
+  .bhl{text-align:center;font-size:15px;font-weight:900;color:var(--orange);}
+  .bgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
+  .bc{aspect-ratio:1;border-radius:7px;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:16px;font-weight:700;color:var(--text2);position:relative;}
+  .bc.free{background:rgba(245,166,35,.14);color:var(--orange);}
+  .bc.live{border:2px solid var(--orange);background:rgba(245,166,35,.12);}
+  .bc.done{background:rgba(76,175,80,.22);border-color:var(--green);color:#fff;}
+  .bc .rv{font-size:9px;line-height:1.1;color:var(--text2);text-align:center;padding:0 2px;}
+  .bc .rt{font-size:13px;font-weight:800;}
+  .nextline{margin-top:10px;text-align:center;}
+  .nextline .cue{font-size:13px;color:var(--text2);min-height:18px;}
+  .nextline .cue b{color:var(--orange);}
+  .nextline .btn{margin-top:8px;padding:10px 18px;font-size:14px;width:100%;}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .overlay.on{display:flex;}
+  .winbox{background:var(--surface);border:2px solid var(--gold);border-radius:20px;padding:32px;text-align:center;max-width:400px;}
+  .winbox .big{font-size:40px;font-weight:900;color:var(--gold);letter-spacing:2px;}
+  .winbox .who{font-size:22px;font-weight:800;margin:6px 0 4px;}
+  .winbox .sub{color:var(--text2);font-size:14px;margin-bottom:20px;}
+  .foot{text-align:center;margin-top:22px;font-size:12px;color:var(--text3);}
+  .foot a{color:var(--orange);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><h1>WODLY <b>BINGO</b></h1><div class="tag">Big screen · everyone races their own card</div></div>
+
+  <!-- SETUP -->
+  <div id="setup" class="screen active">
+    <div class="card">
+      <label>Mode</label>
+      <div class="seg" id="modeSeg">
+        <button data-v="race" class="on">Race — your own calls</button>
+        <button data-v="class">Class — one shared caller</button>
+      </div>
+      <div id="modeNote" style="font-size:12px;color:var(--text3);margin-top:8px;">Everyone plays their own card at their own pace. First to a line wins.</div>
+
+      <label>Difficulty</label>
+      <div class="seg" id="diffSeg">
+        <button data-v="0.6">Beginner</button><button data-v="1" class="on">Rx</button><button data-v="1.4">Elite</button>
+      </div>
+
+      <label>Win condition</label>
+      <div class="seg" id="winSeg">
+        <button data-v="1" class="on">First line</button><button data-v="3">3 lines</button><button data-v="25">Blackout</button>
+      </div>
+
+      <label>The 5 movements (B · I · N · G · O)</label>
+      <div class="legendrow" id="legend"></div>
+      <button class="btn ghost" id="shuffleMoves" style="margin-top:10px;padding:9px 16px;font-size:13px;">↻ Shuffle movements</button>
+
+      <label>Players</label>
+      <div class="plist" id="plist"></div>
+      <div class="addrow">
+        <input type="text" id="pname" placeholder="Player name" maxlength="16">
+        <button class="btn" id="addP" style="padding:12px 18px;">Add</button>
+      </div>
+
+      <button class="btn block" id="startBtn">Start game</button>
+    </div>
+    <div class="foot"><a href="/">← back to WODLY</a></div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game" class="screen">
+    <div class="gamebar">
+      <span class="info" id="gInfo"></span>
+      <div class="legendrow" id="gLegend"></div>
+    </div>
+    <div class="callbox" id="callbox" style="display:none;">
+      <div class="lbl">Now calling</div>
+      <div class="cur" id="curCall">—</div>
+      <button class="btn" id="callNext" style="margin-top:8px;">Call next number</button>
+    </div>
+    <div class="cards" id="cards"></div>
+    <div class="foot"><button class="btn ghost" id="newGame" style="padding:9px 16px;font-size:13px;">End game</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"><div class="winbox">
+  <div class="big">BINGO!</div>
+  <div class="who" id="winWho"></div>
+  <div class="sub" id="winSub"></div>
+  <button class="btn" id="winClose">Play again</button>
+</div></div>
+
+<script>
+var $=function(id){return document.getElementById(id);};
+var LETTERS=['B','I','N','G','O'];
+var PCOLS=['#F5A623','#E8363D','#4CAF50','#2196F3','#9b59b6','#00BCD4','#FF8A65','#26C6DA'];
+var POOL=['Burpees','Air Squats','Push-ups','Sit-ups','KB Swings','Wall Balls','Box Jumps','Walking Lunges','Thrusters','Mountain Climbers','Pull-ups','Jumping Jacks','V-ups','Goblet Squats','Russian Twists','Wall Sit (sec)','Push Press','Deadlifts','Ring Rows','High Knees'];
+function rint(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rint(0,i);var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+var S={mode:'race',diff:1,win:1,moves:[],players:[],repMap:{},called:{},current:0,over:false};
+
+var LINES=(function(){var L=[];for(var r=0;r<5;r++){var a=[];for(var c=0;c<5;c++)a.push(r*5+c);L.push(a);}for(var c=0;c<5;c++){var b=[];for(var r=0;r<5;r++)b.push(r*5+c);L.push(b);}L.push([0,6,12,18,24]);L.push([4,8,12,16,20]);return L;})();
+function linesFor(p){var n=0;for(var l=0;l<LINES.length;l++){var all=true;for(var q=0;q<5;q++){if(!p.marks[LINES[l][q]]){all=false;break;}}if(all)n++;}return n;}
+function squaresFor(p){var n=0;for(var i=0;i<25;i++){if(i!==12&&p.marks[i])n++;}return n;}
+function won(p){return S.win>=25?squaresFor(p)>=24:linesFor(p)>=S.win;}
+function reps(num){return Math.max(1,Math.round((S.repMap[num]||10)*S.diff));}
+
+function pickMoves(){S.moves=shuffle(POOL).slice(0,5);renderLegend();}
+function renderLegend(){
+  var html='';for(var i=0;i<5;i++)html+='<div class="legchip"><b>'+LETTERS[i]+'</b>'+S.moves[i]+'</div>';
+  $('legend').innerHTML=html;
+}
+
+function newCard(){
+  var card=[];for(var r=0;r<5;r++)card.push([0,0,0,0,0]);
+  for(var c=0;c<5;c++){var lo=c*15+1;var picks=shuffle((function(){var a=[];for(var n=lo;n<lo+15;n++)a.push(n);return a;})()).slice(0,5).sort(function(a,b){return a-b;});
+    for(var r=0;r<5;r++)card[r][c]=picks[r];}
+  var flat=[];for(var r=0;r<5;r++)for(var c=0;c<5;c++)flat.push(card[r][c]);
+  flat[12]='FREE';
+  return flat;
+}
+
+function beep(freq,dur){try{var ac=beep.ac||(beep.ac=new (window.AudioContext||window.webkitAudioContext)());var o=ac.createOscillator(),g=ac.createGain();o.frequency.value=freq;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.14,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);o.start();o.stop(ac.currentTime+dur);}catch(e){}}
+
+/* ---- setup wiring ---- */
+function segWire(id,cb){$(id).querySelectorAll('button').forEach(function(b){b.onclick=function(){$(id).querySelectorAll('button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');cb(b.dataset.v);};});}
+segWire('modeSeg',function(v){S.mode=v;$('modeNote').textContent=v==='race'?'Everyone plays their own card at their own pace. First to a line wins.':'One shared caller. Same number to everyone; the class moves together. First to a line wins.';});
+segWire('diffSeg',function(v){S.diff=parseFloat(v);});
+segWire('winSeg',function(v){S.win=parseInt(v,10);});
+$('shuffleMoves').onclick=pickMoves;
+
+function renderPlayers(){
+  var html='';S.players.forEach(function(p,i){html+='<div class="prow"><span class="pdot" style="background:'+p.color+'"></span><span class="nm">'+p.name+'</span><button class="x" data-i="'+i+'">×</button></div>';});
+  $('plist').innerHTML=html||'<div style="color:var(--text3);font-size:13px;">Add at least one player.</div>';
+  $('plist').querySelectorAll('.x').forEach(function(b){b.onclick=function(){S.players.splice(+b.dataset.i,1);renderPlayers();};});
+}
+function addPlayer(){var n=$('pname').value.trim();if(!n)return;S.players.push({name:n,color:PCOLS[S.players.length%PCOLS.length]});$('pname').value='';renderPlayers();}
+$('addP').onclick=addPlayer;
+$('pname').addEventListener('keydown',function(e){if(e.key==='Enter')addPlayer();});
+
+/* ---- start ---- */
+$('startBtn').onclick=function(){
+  if(!S.players.length){addPlayer();if(!S.players.length){alert('Add at least one player.');return;}}
+  S.repMap={};for(var n=1;n<=75;n++)S.repMap[n]=rint(6,20);
+  S.called={};S.current=0;S.over=false;
+  S.players.forEach(function(p){p.card=newCard();p.marks={12:1};
+    p.order=shuffle((function(){var a=[];for(var i=0;i<25;i++)if(i!==12)a.push(i);return a;})());
+    p.idx=0;});
+  $('setup').classList.remove('active');$('game').classList.add('active');
+  $('gInfo').textContent=(S.mode==='race'?'Race':'Class')+' · '+({0.6:'Beginner',1:'Rx',1.4:'Elite'}[S.diff])+' · '+(S.win>=25?'Blackout':S.win+' line'+(S.win>1?'s':''));
+  var lg='';for(var i=0;i<5;i++)lg+='<div class="legchip"><b>'+LETTERS[i]+'</b>'+S.moves[i]+'</div>';$('gLegend').innerHTML=lg;
+  $('callbox').style.display=S.mode==='class'?'block':'none';
+  if(S.mode==='class')$('curCall').textContent='—';
+  renderCards();
+};
+
+function cellNum(p,idx){return p.card[idx];}
+function colOf(idx){return idx%5;}
+
+/* In race mode each card shows its own "next call" and a Did-it button.
+   In class mode a shared call lights up matching cells; tap to complete. */
+function renderCards(){
+  var html='';
+  S.players.forEach(function(p,pi){
+    var pg=S.win>=25?(squaresFor(p)+'/24'):(linesFor(p)+'/'+S.win+' line'+(S.win>1?'s':''));
+    var head='';for(var i=0;i<5;i++)head+='<div class="bhl">'+LETTERS[i]+'</div>';
+    var cells='';
+    for(var idx=0;idx<25;idx++){
+      var val=cellNum(p,idx),done=p.marks[idx],cls='bc',inner='';
+      if(val==='FREE'){cls+=' free';inner='<div class="rt">★</div>';}
+      else if(done){cls+=' done';inner='<div class="rv">'+S.moves[colOf(idx)]+'</div><div class="rt">'+reps(val)+'</div>';}
+      else{
+        var live=false;
+        if(S.mode==='race'){live=(p.order[p.idx]===idx);}
+        else{live=!!S.called[val];}
+        if(live){cls+=' live';inner='<div class="rt">'+reps(val)+'</div><div class="rv">'+S.moves[colOf(idx)]+'</div>';}
+        else inner='<div class="rt">'+val+'</div>';
+      }
+      cells+='<div class="'+cls+'" data-p="'+pi+'" data-i="'+idx+'">'+inner+'</div>';
+    }
+    var cue='';
+    if(S.mode==='race'&&!p.done){
+      var nx=p.order[p.idx];
+      if(nx!=null){cue='<div class="cue">Next: <b>'+LETTERS[colOf(nx)]+' '+cellNum(p,nx)+'</b> — '+reps(cellNum(p,nx))+' '+S.moves[colOf(nx)]+'</div><button class="btn" data-doit="'+pi+'">Did it ✓</button>';}
+    }
+    html+='<div class="pcard'+(p.done?' win':'')+'"><div class="pchd"><span class="pdot" style="background:'+p.color+'"></span><span class="nm">'+p.name+'</span><span class="pg">'+pg+'</span></div>'
+      +'<div class="bhead">'+head+'</div><div class="bgrid">'+cells+'</div>'
+      +(S.mode==='race'?'<div class="nextline">'+cue+'</div>':'')+'</div>';
+  });
+  $('cards').innerHTML=html;
+  // class mode: click a live cell to complete it
+  $('cards').querySelectorAll('.bc.live').forEach(function(c){c.onclick=function(){complete(+c.dataset.p,+c.dataset.i);};});
+  // race mode: did-it button advances that player's own call
+  $('cards').querySelectorAll('[data-doit]').forEach(function(b){b.onclick=function(){var pi=+b.dataset.doit;var p=S.players[pi];var idx=p.order[p.idx];complete(pi,idx);};});
+}
+
+function complete(pi,idx){
+  var p=S.players[pi];if(p.marks[idx])return;
+  p.marks[idx]=1;beep(660,.12);
+  if(S.mode==='race'){p.idx++;while(p.idx<p.order.length&&p.marks[p.order[p.idx]])p.idx++;}
+  if(won(p)&&!p.done){p.done=true;finish(p);}
+  renderCards();
+}
+
+function callNext(){
+  var avail=[];for(var n=1;n<=75;n++)if(!S.called[n])avail.push(n);
+  if(!avail.length)return;
+  var num=avail[rint(0,avail.length-1)];S.called[num]=1;S.current=num;beep(880,.14);
+  $('curCall').textContent=LETTERS[Math.floor((num-1)/15)]+' '+num;
+  renderCards();
+}
+$('callNext').onclick=callNext;
+
+function finish(p){
+  S.over=true;beep(990,.5);
+  $('winWho').textContent=p.name+' wins!';
+  $('winWho').style.color=p.color;
+  $('winSub').textContent=(S.win>=25?'Blackout — full card':(S.win>1?S.win+' lines':'First line')+' complete')+' · '+squaresFor(p)+' squares done';
+  $('overlay').classList.add('on');
+}
+$('winClose').onclick=function(){$('overlay').classList.remove('on');$('game').classList.remove('active');$('setup').classList.add('active');S.players.forEach(function(p){delete p.done;});};
+$('newGame').onclick=function(){$('game').classList.remove('active');$('setup').classList.add('active');S.players.forEach(function(p){delete p.done;});};
+
+/* init */
+pickMoves();renderPlayers();
+</script>
+</body>
+</html>
