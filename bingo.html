@@ -29,6 +29,9 @@
   .legendrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
   .legchip{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 11px;font-size:13px;}
   .legchip b{color:var(--orange);font-weight:800;margin-right:4px;}
+  .mvrow{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .mvrow .let{width:28px;height:28px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--orange);flex-shrink:0;}
+  .mvrow input{flex:1;}
   .plist{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
   .prow{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
   .pdot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
@@ -94,9 +97,11 @@
         <button data-v="1" class="on">First line</button><button data-v="3">3 lines</button><button data-v="25">Blackout</button>
       </div>
 
-      <label>The 5 movements (B · I · N · G · O)</label>
-      <div class="legendrow" id="legend"></div>
-      <button class="btn ghost" id="shuffleMoves" style="margin-top:10px;padding:9px 16px;font-size:13px;">↻ Shuffle movements</button>
+      <label>The 5 movements — one per letter</label>
+      <div id="moveInputs"></div>
+      <datalist id="bMoves"></datalist>
+      <button class="btn ghost" id="shuffleMoves" style="margin-top:6px;padding:9px 16px;font-size:13px;">↻ Shuffle from library</button>
+      <div style="font-size:12px;color:var(--text3);margin-top:8px;">Pick from WODLY's movement list or type your own — new movements get saved for next time.</div>
 
       <label>Players</label>
       <div class="plist" id="plist"></div>
@@ -115,6 +120,7 @@
     <div class="gamebar">
       <span class="info" id="gInfo"></span>
       <div class="legendrow" id="gLegend"></div>
+      <button class="btn ghost" id="muteBtn" style="padding:7px 12px;font-size:13px;">🔊 Caller on</button>
     </div>
     <div class="callbox" id="callbox" style="display:none;">
       <div class="lbl">Now calling</div>
@@ -133,6 +139,7 @@
   <button class="btn" id="winClose">Play again</button>
 </div></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 var $=function(id){return document.getElementById(id);};
 var LETTERS=['B','I','N','G','O'];
@@ -141,7 +148,7 @@ var POOL=['Burpees','Air Squats','Push-ups','Sit-ups','KB Swings','Wall Balls','
 function rint(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rint(0,i);var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 
-var S={mode:'race',diff:1,win:1,moves:[],players:[],repMap:{},called:{},current:0,over:false};
+var S={mode:'race',diff:1,win:1,moves:[],moveUnits:[],players:[],repMap:{},called:{},current:0,over:false,mute:false};
 
 var LINES=(function(){var L=[];for(var r=0;r<5;r++){var a=[];for(var c=0;c<5;c++)a.push(r*5+c);L.push(a);}for(var c=0;c<5;c++){var b=[];for(var r=0;r<5;r++)b.push(r*5+c);L.push(b);}L.push([0,6,12,18,24]);L.push([4,8,12,16,20]);return L;})();
 function linesFor(p){var n=0;for(var l=0;l<LINES.length;l++){var all=true;for(var q=0;q<5;q++){if(!p.marks[LINES[l][q]]){all=false;break;}}if(all)n++;}return n;}
@@ -149,10 +156,17 @@ function squaresFor(p){var n=0;for(var i=0;i<25;i++){if(i!==12&&p.marks[i])n++;}
 function won(p){return S.win>=25?squaresFor(p)>=24:linesFor(p)>=S.win;}
 function reps(num){return Math.max(1,Math.round((S.repMap[num]||10)*S.diff));}
 
-function pickMoves(){S.moves=shuffle(POOL).slice(0,5);renderLegend();}
-function renderLegend(){
-  var html='';for(var i=0;i<5;i++)html+='<div class="legchip"><b>'+LETTERS[i]+'</b>'+S.moves[i]+'</div>';
-  $('legend').innerHTML=html;
+var MOVEUNITS={},LIB=POOL.slice(),sb=null;
+try{sb=window.supabase&&supabase.createClient('https://ynznwosssctxbdiauekj.supabase.co','sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq');}catch(e){}
+function speak(t){if(S.mute)return;try{if(window.speechSynthesis){var u=new SpeechSynthesisUtterance(t);u.rate=.95;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}}catch(e){}}
+async function loadLib(){
+  if(sb){try{var r=await sb.rpc('movement_list');if(!r.error&&Array.isArray(r.data)&&r.data.length){LIB=r.data.map(function(m){MOVEUNITS[String(m.name).toUpperCase()]=m.unit;return m.name;});$('bMoves').innerHTML=LIB.map(function(n){return '<option value="'+String(n).replace(/"/g,'&quot;')+'">';}).join('');}}catch(e){}}
+  buildMoveInputs();
+}
+function buildMoveInputs(){
+  var picks=shuffle(LIB).slice(0,5),html='';
+  for(var i=0;i<5;i++)html+='<div class="mvrow"><span class="let">'+LETTERS[i]+'</span><input type="text" id="mv'+i+'" list="bMoves" autocomplete="off" value="'+String(picks[i]||'').replace(/"/g,'&quot;')+'" placeholder="Movement"></div>';
+  $('moveInputs').innerHTML=html;
 }
 
 function newCard(){
@@ -171,7 +185,7 @@ function segWire(id,cb){$(id).querySelectorAll('button').forEach(function(b){b.o
 segWire('modeSeg',function(v){S.mode=v;$('modeNote').textContent=v==='race'?'Everyone plays their own card at their own pace. First to a line wins.':'One shared caller. Same number to everyone; the class moves together. First to a line wins.';});
 segWire('diffSeg',function(v){S.diff=parseFloat(v);});
 segWire('winSeg',function(v){S.win=parseInt(v,10);});
-$('shuffleMoves').onclick=pickMoves;
+$('shuffleMoves').onclick=buildMoveInputs;
 
 function renderPlayers(){
   var html='';S.players.forEach(function(p,i){html+='<div class="prow"><span class="pdot" style="background:'+p.color+'"></span><span class="nm">'+p.name+'</span><button class="x" data-i="'+i+'">×</button></div>';});
@@ -185,6 +199,9 @@ $('pname').addEventListener('keydown',function(e){if(e.key==='Enter')addPlayer()
 /* ---- start ---- */
 $('startBtn').onclick=function(){
   if(!S.players.length){addPlayer();if(!S.players.length){alert('Add at least one player.');return;}}
+  S.moves=[];S.moveUnits=[];
+  for(var mi=0;mi<5;mi++){var mv=(($('mv'+mi)&&$('mv'+mi).value)||'').trim();if(!mv)mv=shuffle(LIB)[0]||'BURPEES';mv=mv.toUpperCase();S.moves.push(mv);S.moveUnits.push(MOVEUNITS[mv]||'reps');}
+  if(sb)S.moves.forEach(function(m,i){try{sb.rpc('add_movement',{p_name:m,p_unit:S.moveUnits[i]||'reps'});}catch(e){}});
   S.repMap={};for(var n=1;n<=75;n++)S.repMap[n]=rint(6,20);
   S.called={};S.current=0;S.over=false;
   S.players.forEach(function(p){p.card=newCard();p.marks={12:1};
@@ -250,13 +267,15 @@ function callNext(){
   var avail=[];for(var n=1;n<=75;n++)if(!S.called[n])avail.push(n);
   if(!avail.length)return;
   var num=avail[rint(0,avail.length-1)];S.called[num]=1;S.current=num;beep(880,.14);
-  $('curCall').textContent=LETTERS[Math.floor((num-1)/15)]+' '+num;
+  var letter=LETTERS[Math.floor((num-1)/15)];
+  $('curCall').textContent=letter+' '+num;
+  speak(letter+', '+num);
   renderCards();
 }
 $('callNext').onclick=callNext;
 
 function finish(p){
-  S.over=true;beep(990,.5);
+  S.over=true;beep(990,.5);speak(p.name+' bingo!');
   $('winWho').textContent=p.name+' wins!';
   $('winWho').style.color=p.color;
   $('winSub').textContent=(S.win>=25?'Blackout — full card':(S.win>1?S.win+' lines':'First line')+' complete')+' · '+squaresFor(p)+' squares done';
@@ -265,8 +284,10 @@ function finish(p){
 $('winClose').onclick=function(){$('overlay').classList.remove('on');$('game').classList.remove('active');$('setup').classList.add('active');S.players.forEach(function(p){delete p.done;});};
 $('newGame').onclick=function(){$('game').classList.remove('active');$('setup').classList.add('active');S.players.forEach(function(p){delete p.done;});};
 
+$('muteBtn').onclick=function(){S.mute=!S.mute;$('muteBtn').textContent=S.mute?'🔇 Caller off':'🔊 Caller on';if(S.mute&&window.speechSynthesis)window.speechSynthesis.cancel();};
+
 /* init */
-pickMoves();renderPlayers();
+loadLib();renderPlayers();
 </script>
 </body>
 </html>
