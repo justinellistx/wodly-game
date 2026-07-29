@@ -102,7 +102,7 @@ function rint(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rint(0,i);var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 var LINES=(function(){var L=[];for(var r=0;r<5;r++){var a=[];for(var c=0;c<5;c++)a.push(r*5+c);L.push(a);}for(var c=0;c<5;c++){var b=[];for(var r=0;r<5;r++)b.push(r*5+c);L.push(b);}L.push([0,6,12,18,24]);L.push([4,8,12,16,20]);return L;})();
 
-var ROOM=null, MYID=null, ME={}, S={diff:1,win:1,moves:[]}, card=[], repMap={}, order=[], idx=0, marks={12:1}, started=false, pollT=null;
+var ROOM=null, MYID=null, ME={}, S={diff:1,win:1,moves:[]}, card=[], repMap={}, order=[], idx=0, marks={12:1}, started=false, pollT=null, byMove={}, totalReps=0;
 
 // avatars
 (function(){var g=$('avatars');(W.AVATARS||[]).forEach(function(a){var d=document.createElement('div');d.className='av';d.dataset.id=a.id;d.innerHTML='<img src="'+a.img+'" alt=""><span>'+a.name+'</span>';d.onclick=function(){g.querySelectorAll('.av').forEach(function(x){x.classList.remove('on');});d.classList.add('on');ME.avatar=a.id;ME.color=a.color;ME.img=a.img;};g.appendChild(d);});})();
@@ -184,12 +184,13 @@ function render(){
 }
 function doNext(){
   var i=order[idx];if(i==null||marks[i])return;
-  marks[i]=1;idx++;while(idx<order.length&&marks[order[idx]])idx++;
+  marks[i]=1;var mv=S.moves[i%5];if(mv){var rr=reps(card[i]);byMove[mv]=(byMove[mv]||0)+rr;totalReps+=rr;}
+  idx++;while(idx<order.length&&marks[order[idx]])idx++;
   var w=won();render();save(w);
   if(w){$('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares done.';show('won');}
 }
 async function save(done){
-  try{await sb.from('players').update({bingo:{m:marks,sq:squares(),lines:linesN(),done:!!done,ts:Date.now()}}).eq('id',MYID);}catch(e){}
+  try{await sb.from('players').update({bingo:{m:marks,sq:squares(),lines:linesN(),done:!!done,byMove:byMove,total:totalReps,ts:Date.now()}}).eq('id',MYID);}catch(e){}
 }
 </script>
 </body>

@@ -171,6 +171,8 @@
 var $=function(id){return document.getElementById(id);};
 function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});$(id).classList.add('active');}
 function ballHTML(letter,num){return '<div class="ballwrap"><div class="ball pop"><div class="ball-inner"><div class="ball-let">'+letter+'</div><div class="ball-num">'+num+'</div></div></div></div>';}
+var PUB='sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq', LOGGED=false;
+function logRecap(name,summary){try{fetch('https://ynznwosssctxbdiauekj.supabase.co/rest/v1/recaps',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:name||'Player',summary:summary,gym:null,daily:null})});}catch(e){}}
 var LETTERS=['B','I','N','G','O'];
 var PCOLS=['#F5A623','#E8363D','#4CAF50','#2196F3','#9b59b6','#00BCD4','#FF8A65','#26C6DA'];
 var POOL=['Burpees','Air Squats','Push-ups','Sit-ups','KB Swings','Wall Balls','Box Jumps','Walking Lunges','Thrusters','Mountain Climbers','Pull-ups','Jumping Jacks','V-ups','Goblet Squats','Russian Twists','Wall Sit (sec)','Push Press','Deadlifts','Ring Rows','High Knees'];
@@ -303,14 +305,16 @@ function callNext(){
 }
 $('callNext').onclick=callNext;
 
+function byMoveFor(pl){var bm={};for(var i=0;i<25;i++){if(i===12||!pl.marks[i])continue;var mv=S.moves[i%5];if(mv)bm[mv]=(bm[mv]||0)+reps(pl.card[i]);}return bm;}
 function finish(p){
   S.over=true;beep(990,.5);speak(p.name+' bingo!');
   $('winWho').textContent=p.name+' wins!';
   $('winWho').style.color=p.color;
   $('winSub').textContent=(S.win>=25?'Blackout — full card':(S.win>1?S.win+' lines':'First line')+' complete')+' · '+squaresFor(p)+' squares done';
   $('overlay').classList.add('on');
+  if(!ONLINE&&!LOGGED){LOGGED=true;S.players.forEach(function(pl){var bm=byMoveFor(pl),tot=0;for(var k in bm)tot+=bm[k];if(tot>0)logRecap(pl.name,{byMove:bm,total:tot,count:squaresFor(pl),place:(pl===p)?1:null,game:'bingo'});});}
 }
-function resetToSetup(){$('overlay').classList.remove('on');$('game').classList.remove('active');$('host').classList.remove('active');$('setup').classList.add('active');clearHostPoll();ONLINE=false;WINSHOWN=false;S.players.forEach(function(p){delete p.done;});}
+function resetToSetup(){$('overlay').classList.remove('on');$('game').classList.remove('active');$('host').classList.remove('active');$('setup').classList.add('active');clearHostPoll();ONLINE=false;WINSHOWN=false;LOGGED=false;S.players.forEach(function(p){delete p.done;});}
 $('winClose').onclick=resetToSetup;
 $('newGame').onclick=resetToSetup;
 
@@ -364,7 +368,9 @@ function renderWall(pl){
     var pg=S.win>=25?((b.sq||0)+'/24'):((b.lines||0)+'/'+S.win+' line'+(S.win>1?'s':''));
     return '<div class="pcard'+(done?' win':'')+'"><div class="pchd"><span class="pdot" style="background:'+(p.color||'#F5A623')+'"></span><span class="nm">'+(p.name||'Player')+'</span><span class="pg">'+pg+'</span></div><div class="bhead">'+head+'</div><div class="bgrid">'+cells+'</div></div>';
   }).join('');
-  if(winner&&!WINSHOWN){WINSHOWN=true;beep(990,.5);speak(winner.name+' bingo!');$('winWho').textContent=winner.name+' wins!';$('winWho').style.color=winner.color||'#F5A623';$('winSub').textContent='First to bingo on the wall!';$('overlay').classList.add('on');}
+  if(winner&&!WINSHOWN){WINSHOWN=true;beep(990,.5);speak(winner.name+' bingo!');$('winWho').textContent=winner.name+' wins!';$('winWho').style.color=winner.color||'#F5A623';$('winSub').textContent='First to bingo on the wall!';$('overlay').classList.add('on');
+    pl.forEach(function(p){var b=p.bingo||{},bm=b.byMove||{},tot=b.total||0;if(tot>0)logRecap(p.name,{byMove:bm,total:tot,count:b.sq||0,place:(p.id===winner.id)?1:null,game:'bingo'});});
+    try{if(HOST)sb.from('rooms').update({status:'finished'}).eq('id',HOST.id);}catch(e){}}
 }
 
 /* init */
