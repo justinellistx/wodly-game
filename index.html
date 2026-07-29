@@ -120,6 +120,32 @@
            aria-label="WODLY feature preview"></video>
   </div>
 
+  <style>
+    @keyframes bgoGlow{0%,100%{box-shadow:0 0 20px rgba(245,166,35,.22);}50%{box-shadow:0 0 36px rgba(245,166,35,.55);}}
+    @keyframes bgoPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+    @keyframes bgoBob{0%,100%{transform:translateY(0) rotate(-7deg);}50%{transform:translateY(-5px) rotate(7deg);}}
+    @keyframes bgoShine{0%{background-position:-140% 0;}100%{background-position:240% 0;}}
+    .bgo-promo{display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;background:linear-gradient(135deg,#2c1c04,#3c2707 55%,#191002);border:1.5px solid rgba(245,166,35,.6);border-radius:18px;padding:15px 17px;margin-bottom:14px;text-decoration:none;animation:bgoGlow 2.4s ease-in-out infinite;}
+    .bgo-ball{flex-shrink:0;width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ffe0a0,#F5A623 52%,#c47f12);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(0,0,0,.45),inset 0 -6px 10px rgba(0,0,0,.22),inset 0 5px 8px rgba(255,255,255,.4);animation:bgoBob 2.2s ease-in-out infinite;}
+    .bgo-ball i{width:33px;height:33px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:900;color:#111;font-size:17px;}
+    .bgo-txt{flex:1;min-width:0;}
+    .bgo-new{display:inline-block;font-size:10px;font-weight:900;letter-spacing:1.5px;color:#111;background:var(--gold);padding:2px 9px;border-radius:20px;animation:bgoPulse 1.5s ease-in-out infinite;}
+    .bgo-h{color:#fff;font-weight:900;font-size:19px;margin:5px 0 1px;}
+    .bgo-h b{color:var(--gold);}
+    .bgo-s{color:var(--text2);font-size:12.5px;line-height:1.4;}
+    .bgo-cta{flex-shrink:0;font-weight:900;font-size:14px;color:#000;background:linear-gradient(90deg,#F5A623,#fff0cf,#F5A623);background-size:220% 100%;padding:10px 15px;border-radius:12px;white-space:nowrap;animation:bgoShine 2.6s linear infinite;}
+    @media(max-width:520px){.bgo-cta{display:none;}}
+  </style>
+  <a class="bgo-promo" href="/bingo">
+    <div class="bgo-ball"><i>B</i></div>
+    <div class="bgo-txt">
+      <span class="bgo-new">✨ BRAND NEW</span>
+      <div class="bgo-h">Fitness <b>Bingo</b></div>
+      <div class="bgo-s">Bingo meets the gym — everyone races their own card, first to a line wins. Try it now →</div>
+    </div>
+    <span class="bgo-cta">Try it →</span>
+  </a>
+
   <a href="/daily" style="display:block;text-align:center;background:linear-gradient(150deg,#2a1e07,#140e04);border:1px solid rgba(245,166,35,.5);border-radius:16px;padding:13px;margin-bottom:14px;text-decoration:none;box-shadow:0 0 20px rgba(245,166,35,.12);">
     <span style="color:var(--gold);font-weight:800;font-size:15px;">🔥 Today's Daily Workout</span>
     <span style="display:block;color:var(--text2);font-size:12.5px;margin-top:2px;">The workout everyone's doing today — play it & climb the daily board →</span>
