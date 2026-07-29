@@ -45,6 +45,13 @@
   .cue .big{font-size:26px;font-weight:900;margin:4px 0 2px;}
   .cue .big b{color:var(--orange);}
   .cue .sub{font-size:14px;color:var(--text2);}
+  .ballwrap{display:flex;justify-content:center;margin:8px 0;}
+  .ball{width:118px;height:118px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ffe0a0,#F5A623 52%,#c47f12);box-shadow:0 10px 22px rgba(0,0,0,.5),inset 0 -9px 16px rgba(0,0,0,.22),inset 0 7px 11px rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;}
+  .ball-inner{width:72px;height:72px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;box-shadow:inset 0 2px 5px rgba(0,0,0,.18);}
+  .ball-let{font-size:14px;font-weight:900;color:#c47f12;letter-spacing:1px;}
+  .ball-num{font-size:30px;font-weight:900;color:#111;margin-top:1px;}
+  .ball.pop{animation:ballPop .6s cubic-bezier(.2,.85,.3,1.25);}
+  @keyframes ballPop{0%{transform:scale(.2) rotate(-170deg);opacity:0;}55%{transform:scale(1.15) rotate(12deg);opacity:1;}78%{transform:scale(.95) rotate(-5deg);}100%{transform:scale(1) rotate(0);}}
   .win{text-align:center;padding:30px 14px;}
   .win .big{font-size:44px;font-weight:900;color:var(--gold);letter-spacing:2px;}
   .win .sub{color:var(--text2);font-size:15px;margin-top:8px;}
@@ -104,6 +111,7 @@ var ROOM=null, MYID=null, ME={}, S={diff:1,win:1,moves:[]}, card=[], repMap={}, 
 (function(){var p=new URLSearchParams(location.search);var c=(p.get('room')||'').toUpperCase();if(c){$('code').value=c;}})();
 
 function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});$(id).classList.add('active');}
+function ballHTML(letter,num){return '<div class="ballwrap"><div class="ball pop"><div class="ball-inner"><div class="ball-let">'+letter+'</div><div class="ball-num">'+num+'</div></div></div></div>';}
 
 $('joinBtn').onclick=async function(){
   $('joinErr').textContent='';
@@ -170,7 +178,7 @@ function render(){
   g.querySelectorAll('.bc').forEach(function(c){c.onclick=function(){if(+c.dataset.i===order[idx])doNext();};});
   var nx=order[idx];
   if(nx!=null){
-    $('cue').innerHTML='<div class="lbl">Your call</div><div class="big"><b>'+LETTERS[colOf(nx)]+' '+card[nx]+'</b></div><div class="sub">'+reps(card[nx])+' '+S.moves[colOf(nx)]+'</div><button class="btn" id="doBtn">Did it ✓</button>';
+    $('cue').innerHTML='<div class="lbl">Your call</div>'+ballHTML(LETTERS[colOf(nx)],card[nx])+'<div class="sub" style="margin-top:6px;">'+reps(card[nx])+' '+S.moves[colOf(nx)]+'</div><button class="btn" id="doBtn">Did it ✓</button>';
     $('doBtn').onclick=doNext;
   }else{$('cue').innerHTML='<div class="sub">Card complete!</div>';}
 }

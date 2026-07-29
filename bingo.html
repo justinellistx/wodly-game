@@ -72,6 +72,13 @@
   .foot{text-align:center;margin-top:22px;font-size:12px;color:var(--text3);}
   .foot a{color:var(--orange);text-decoration:none;}
   #qr{background:#fff;padding:12px;border-radius:14px;width:186px;height:186px;display:flex;align-items:center;justify-content:center;margin:16px auto 4px;}
+  .ballwrap{display:flex;justify-content:center;margin:8px 0;perspective:500px;}
+  .ball{width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ffe0a0,#F5A623 52%,#c47f12);box-shadow:0 10px 24px rgba(0,0,0,.5),inset 0 -10px 18px rgba(0,0,0,.22),inset 0 7px 12px rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;}
+  .ball-inner{width:78px;height:78px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;box-shadow:inset 0 2px 5px rgba(0,0,0,.18);}
+  .ball-let{font-size:15px;font-weight:900;color:#c47f12;letter-spacing:1px;}
+  .ball-num{font-size:32px;font-weight:900;color:#111;margin-top:1px;}
+  .ball.pop{animation:ballPop .6s cubic-bezier(.2,.85,.3,1.25);}
+  @keyframes ballPop{0%{transform:scale(.2) rotate(-170deg);opacity:0;}55%{transform:scale(1.15) rotate(12deg);opacity:1;}78%{transform:scale(.95) rotate(-5deg);}100%{transform:scale(1) rotate(0);}}
 </style>
 </head>
 <body>
@@ -163,6 +170,7 @@
 <script>
 var $=function(id){return document.getElementById(id);};
 function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});$(id).classList.add('active');}
+function ballHTML(letter,num){return '<div class="ballwrap"><div class="ball pop"><div class="ball-inner"><div class="ball-let">'+letter+'</div><div class="ball-num">'+num+'</div></div></div></div>';}
 var LETTERS=['B','I','N','G','O'];
 var PCOLS=['#F5A623','#E8363D','#4CAF50','#2196F3','#9b59b6','#00BCD4','#FF8A65','#26C6DA'];
 var POOL=['Burpees','Air Squats','Push-ups','Sit-ups','KB Swings','Wall Balls','Box Jumps','Walking Lunges','Thrusters','Mountain Climbers','Pull-ups','Jumping Jacks','V-ups','Goblet Squats','Russian Twists','Wall Sit (sec)','Push Press','Deadlifts','Ring Rows','High Knees'];
@@ -289,7 +297,7 @@ function callNext(){
   if(!avail.length)return;
   var num=avail[rint(0,avail.length-1)];S.called[num]=1;S.current=num;beep(880,.14);
   var letter=LETTERS[Math.floor((num-1)/15)];
-  $('curCall').textContent=letter+' '+num;
+  $('curCall').innerHTML=ballHTML(letter,num);
   speak(letter+', '+num);
   renderCards();
 }
