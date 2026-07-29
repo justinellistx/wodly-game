@@ -35,6 +35,15 @@
   .badge.open{background:rgba(33,150,243,.16);color:#7fc0ff;}
   .join{flex-shrink:0;padding:11px 18px;font-size:14px;font-weight:800;background:transparent;border:2px solid var(--orange);border-radius:12px;color:var(--orange);cursor:pointer;text-decoration:none;}
   .empty{color:var(--text3);font-size:14px;text-align:center;padding:24px;}
+  .matchwrap{margin-bottom:12px;}
+  .matchwrap .match{margin-bottom:0;}
+  .dtoggle{background:none;border:none;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer;margin-top:7px;padding:0;font-family:inherit;}
+  .details{display:none;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-top:8px;}
+  .details.open{display:block;}
+  .details .mv{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:12px;}
+  .details .mv .s{font-size:14px;color:var(--text);}
+  .dk{font-size:12px;color:var(--text3);line-height:1.6;}
+  .dk b{color:var(--text2);font-weight:700;}
   .toggle{background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;width:100%;}
   .note{font-size:11px;color:var(--text3);text-align:center;margin-top:18px;line-height:1.5;}
 </style>
@@ -123,7 +132,19 @@ $('createBtn').onclick=async()=>{
 function fmtCountdown(ms){if(ms<=0)return 'now';const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sec=s%60;
   if(d>0)return d+'d '+h+'h '+m+'m';if(h>0)return h+'h '+m+'m';return m+'m '+sec+'s';}
 
-let rooms=[], counts={};
+let rooms=[], counts={}, expanded={};
+const FIN_LBL={all:'Everyone finishes',first:'First to finish wins'};
+const SUIT=[['hearts','♥','#E8363D'],['diamonds','♦','#F5A623'],['clubs','♣','#4CAF50'],['spades','♠','#2196F3']];
+function buildDetails(r){
+  const s=r.settings||{}, mv=s.mv||{}, u=s.units||{};
+  const rows=SUIT.map(([k,sym,col])=>`<div class="s"><span style="color:${col};font-weight:800">${sym}</span> ${esc(mv[k]||'—')}${u[k]&&u[k]!=='reps'?' <span style="color:var(--text3)">('+esc(u[k])+')</span>':''}</div>`).join('');
+  const board=(W.BOARDS&&s.boardId)?((W.BOARDS.find(b=>b.id===s.boardId)||{}).name||''):'';
+  const preset=(s.presetName&&s.presetName!=='Custom')?s.presetName:'Custom';
+  return `<div class="mv">${rows}</div>
+    <div class="dk">🅰 Ace penalty: <b>${esc(String(s.aceReps||10))} ${esc(s.aceMove||'Burpees')}</b></div>
+    <div class="dk">${DECK_LBL[s.deckSz]||'Standard'} deck · ${DIFF_LBL[s.diff]||'Rx'} · ${FIN_LBL[s.finishMode]||'Everyone finishes'}${board?' · '+esc(board)+' board':''}</div>
+    <div class="dk">Preset: <b>${esc(preset)}</b></div>`;
+}
 async function load(){
   try{
     const{data}=await sb.from('rooms').select('*').eq('is_public',true).in('status',['lobby','playing']).order('scheduled_at',{nullsFirst:false});
@@ -145,15 +166,20 @@ function render(){
     const deck=r.settings&&r.settings.deckSz?DECK_LBL[r.settings.deckSz]:'';
     const diff=r.settings&&r.settings.diff?DIFF_LBL[r.settings.diff]:'';
     const n=counts[r.id]||0;
+    const isOpen=!!expanded[r.code];
+    const wrap=document.createElement('div');wrap.className='matchwrap';
     const d=document.createElement('div');d.className='match';
     d.innerHTML=`<div class="info">
         <div class="ttl">${esc(r.title||'WODLY match')}</div>
         <div class="meta">${esc(r.host_name||'Host')} · ${deck}${diff?' · '+diff:''} · ${n} joined</div>
         ${live?'<div class="when"><b>In progress</b></div>':(sched?`<div class="when">${whenStr} · <b class="cd" data-t="${sched}">…</b></div>`:'<div class="when">Waiting for host</div>')}
+        <button class="dtoggle" type="button">${isOpen?'▴ Hide workout':'▾ Workout details'}</button>
       </div>
       ${badge}
       <a class="join" href="play?room=${encodeURIComponent(r.code)}">${live?'Watch / Join':'Join'}</a>`;
-    l.appendChild(d);
+    const det=document.createElement('div');det.className='details'+(isOpen?' open':'');det.innerHTML=buildDetails(r);
+    d.querySelector('.dtoggle').onclick=()=>{const nowOpen=!det.classList.contains('open');det.classList.toggle('open',nowOpen);expanded[r.code]=nowOpen;d.querySelector('.dtoggle').innerHTML=nowOpen?'▴ Hide workout':'▾ Workout details';};
+    wrap.appendChild(d);wrap.appendChild(det);l.appendChild(wrap);
   });
   tickAll();
 }
