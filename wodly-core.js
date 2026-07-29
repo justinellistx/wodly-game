@@ -130,10 +130,46 @@
   function dailyIndex(d){ d=d||new Date(); const epochDay=Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000); return ((epochDay%DAILY_WODS.length)+DAILY_WODS.length)%DAILY_WODS.length; }
   function dailyWod(d){ d=d||new Date(); const w=DAILY_WODS[dailyIndex(d)]; return { key:dailyKey(d), name:w.name, mv:w.mv, aceReps:w.aceReps, aceMove:w.aceMove }; }
 
+  // ── Data-driven "smart" workouts, generated from what the community has logged ──
+  // Returns up to 4 preset objects (same shape as PRESETS) built live from movement_pace
+  // (fastest/slowest) and movement_leaderboard (most/least logged). Pass a Supabase client.
+  async function smartPresets(sb){
+    try{
+      var res = await Promise.all([sb.rpc('movement_pace'), sb.rpc('movement_leaderboard'), sb.rpc('movement_list')]);
+      var pace=(res[0]&&res[0].data)||{}, lb=(res[1]&&res[1].data)||[], mlist=(res[2]&&res[2].data)||[];
+      var umap={}; (mlist||[]).forEach(function(m){ umap[String(m.name).toUpperCase()]=m.unit; });
+      var unitOf=function(n){ return umap[String(n).toUpperCase()]||'reps'; };
+      var DEF=['BURPEES','AIR SQUATS','PUSH-UPS','SIT-UPS','MOUNTAIN CLIMBERS'];
+      var pad=function(a){ a=a.filter(Boolean); var i=0; while(a.length<4&&i<DEF.length){ if(a.indexOf(DEF[i])<0)a.push(DEF[i]); i++; } return a.slice(0,4); };
+      var mk=function(id,name,note,names,aceReps,aceMove){
+        names=pad(names.map(function(n){return String(n).toUpperCase();}));
+        var suits=['hearts','diamonds','clubs','spades'], mv={}, units={};
+        suits.forEach(function(s,i){ mv[s]=names[i]; units[s]=unitOf(names[i]); });
+        return { id:id, name:name, cat:'⚡ From the community data', note:note, mv:mv, units:units, aceReps:aceReps, aceMove:String(aceMove).toUpperCase(), aceUnit:unitOf(aceMove) };
+      };
+      var out=[], reps=(pace&&pace.reps)||[];
+      if(reps.length>=4){
+        var fast=reps.slice(0,4).map(function(x){return x.move;});
+        var slow=reps.slice(-4).reverse().map(function(x){return x.move;});
+        out.push(mk('smart:fast','Lightning Fast','The quickest-moving movements we track', fast, 15, fast[0]));
+        out.push(mk('smart:grind','The Grinder','The slowest, most grueling movements', slow, 8, slow[0]));
+      }
+      var byUse=(lb||[]).filter(function(x){return x&&x.m;});
+      if(byUse.length>=4){
+        var pop=byUse.slice(0,4).map(function(x){return x.m;});
+        var used=byUse.filter(function(x){return (+x.reps||0)>0;});
+        var rare=used.slice(-4).reverse().map(function(x){return x.m;});
+        out.push(mk('smart:pop','Crowd Favorite','The most-logged movements in the community', pop, 12, pop[0]));
+        if(rare.length) out.push(mk('smart:rare','Hidden Gems','Rarely-programmed movements — give them some love', rare, 12, rare[0]));
+      }
+      return out;
+    }catch(e){ return []; }
+  }
+
   global.WODLY = {
     SUPA_URL, SUPA_KEY, makeClient,
     BRAND, SUITS, SYM, SCOL, FACE_LABELS, DECK_SPACES, DIFF_MULT, PCOLS, AVATARS, PRESETS, BOARDS,
-    DAILY_WODS, dailyKey, dailyWod,
+    DAILY_WODS, dailyKey, dailyWod, smartPresets,
     cardType, getReps, isMeters, repScore, buildDeck, genCode, clientId
   };
 })(typeof window !== 'undefined' ? window : globalThis);

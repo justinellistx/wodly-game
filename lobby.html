@@ -184,13 +184,17 @@ function render(){
   tickAll();
 }
 function tickAll(){document.querySelectorAll('.cd').forEach(el=>{const t=+el.dataset.t;el.textContent=fmtCountdown(t-Date.now());});}
-(function(){const sel=$('presetSel');if(!sel||!W.PRESETS)return;
+(function(){const sel=$('presetSel');if(!sel)return;
+  const SMART={};
   (function(){const bs=$('f-board');if(bs&&W.BOARDS)W.BOARDS.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.name;bs.appendChild(o);});})();
-  const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
-  Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});
-  sel.onchange=()=>{const p=W.PRESETS.find(x=>x.id===sel.value),note=$('presetNote');if(!p){note.textContent='';return;}
-    $('m-hearts').value=p.mv.hearts;$('m-diamonds').value=p.mv.diamonds;$('m-clubs').value=p.mv.clubs;$('m-spades').value=p.mv.spades;$('m-acereps').value=p.aceReps;$('m-acemove').value=p.aceMove;
-    note.textContent='✓ '+p.name+(p.note?' — '+p.note:'');};
+  function applyP(p){$('m-hearts').value=p.mv.hearts;$('m-diamonds').value=p.mv.diamonds;$('m-clubs').value=p.mv.clubs;$('m-spades').value=p.mv.spades;$('m-acereps').value=p.aceReps;$('m-acemove').value=p.aceMove;$('presetNote').textContent='✓ '+p.name+(p.note?' — '+p.note:'');}
+  if(W.PRESETS){const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
+    Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});}
+  sel.onchange=()=>{const v=sel.value;if(!v){$('presetNote').textContent='';return;}const p=SMART[v]||(W.PRESETS&&W.PRESETS.find(x=>x.id===v));if(p)applyP(p);};
+  (async function(){try{if(!W.smartPresets)return;const sp=await W.smartPresets(sb);if(!sp||!sp.length)return;
+    const og=document.createElement('optgroup');og.label='⚡ From the community data';
+    sp.forEach(p=>{SMART[p.id]=p;const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});
+    sel.insertBefore(og,sel.children[1]||null);}catch(e){}})();
 })();
 setInterval(tickAll,1000);
 setInterval(load,15000);

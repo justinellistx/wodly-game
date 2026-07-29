@@ -447,12 +447,21 @@ loadSettings();
   _set('mv-hearts',w.mv.hearts);_set('mv-diamonds',w.mv.diamonds);_set('mv-clubs',w.mv.clubs);_set('mv-spades',w.mv.spades);
   _set('ace-reps',w.aceReps);_set('ace-move',w.aceMove);window.__dailyKey=w.key;setTimeout(syncAllUnits,200);
   const pn=$('presetNote');if(pn)pn.textContent="🔥 Today's Daily Workout: "+w.name+" — everyone's playing this one today";}catch(e){}})();
-(function(){const sel=$('presetSel');if(!sel||!W.PRESETS)return;
-  const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
-  Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});
-  sel.onchange=()=>{const p=W.PRESETS.find(x=>x.id===sel.value);if(!p){$('presetNote').textContent='';return;}
-    _set('mv-hearts',p.mv.hearts);_set('mv-diamonds',p.mv.diamonds);_set('mv-clubs',p.mv.clubs);_set('mv-spades',p.mv.spades);_set('ace-reps',p.aceReps);_set('ace-move',p.aceMove);syncAllUnits();
-    $('presetNote').textContent='✓ '+p.name+(p.note?' — '+p.note:'')+' · tweak any movement below if you like';};
+(function(){const sel=$('presetSel');if(!sel)return;
+  const SMART={};
+  function applyPreset(p){
+    _set('mv-hearts',p.mv.hearts);_set('mv-diamonds',p.mv.diamonds);_set('mv-clubs',p.mv.clubs);_set('mv-spades',p.mv.spades);_set('ace-reps',p.aceReps);_set('ace-move',p.aceMove);
+    if(p.units){if($('mvu-hearts'))$('mvu-hearts').value=p.units.hearts||'reps';if($('mvu-diamonds'))$('mvu-diamonds').value=p.units.diamonds||'reps';if($('mvu-clubs'))$('mvu-clubs').value=p.units.clubs||'reps';if($('mvu-spades'))$('mvu-spades').value=p.units.spades||'reps';if($('ace-unit')&&p.aceUnit)$('ace-unit').value=p.aceUnit;}
+    else syncAllUnits();
+    $('presetNote').textContent='✓ '+p.name+(p.note?' — '+p.note:'')+' · tweak any movement below if you like';
+  }
+  if(W.PRESETS){const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
+    Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});}
+  sel.onchange=()=>{const v=sel.value;if(!v){$('presetNote').textContent='';return;}const p=SMART[v]||(W.PRESETS&&W.PRESETS.find(x=>x.id===v));if(p)applyPreset(p);};
+  (async function(){try{if(!W.smartPresets)return;const sp=await W.smartPresets(sb);if(!sp||!sp.length)return;
+    const og=document.createElement('optgroup');og.label='⚡ From the community data';
+    sp.forEach(p=>{SMART[p.id]=p;const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});
+    sel.insertBefore(og,sel.children[1]||null);}catch(e){}})();
 })();
 
 $('openLobbyBtn').onclick=async()=>{
