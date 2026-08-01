@@ -60,6 +60,12 @@
   .cue{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;}
   .cue .lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);}
   .cue .sub{font-size:14px;color:var(--text2);}
+  .spbar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:9px 13px;margin-bottom:12px;text-decoration:none;color:inherit;}
+  .spbar img{height:26px;max-width:92px;object-fit:contain;}
+  .spbar .spl{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);}
+  .spbar .spn{font-size:14px;font-weight:800;color:#fff;}
+  .spbar .spdeal{font-size:11px;font-weight:700;color:var(--orange);background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.35);border-radius:999px;padding:2px 9px;}
+  .spbar .spgo{margin-left:auto;font-size:12px;font-weight:800;color:var(--orange);white-space:nowrap;}
   .ballwrap{display:flex;justify-content:center;margin:8px 0;}
   .ballimg{width:132px;height:132px;background:url('assets/bingo/ball.png') center/contain no-repeat;position:relative;display:flex;align-items:center;justify-content:center;}
   .ballimg.pop{animation:ballPop .6s cubic-bezier(.2,.85,.3,1.25);}
@@ -127,6 +133,7 @@
 <!-- CARD -->
 <div id="card" class="screen">
   <div class="statusbar"><img id="sbAv"><span class="nm" id="sbName"></span><span class="pg" id="sbProg"></span></div>
+  <a id="spBar" class="spbar" style="display:none;" target="_blank" rel="noopener"></a>
   <div class="bhead" id="bhead"></div>
   <div class="bgrid" id="bgrid"></div>
   <div class="cue" id="cue"></div>
@@ -161,6 +168,10 @@ var LINES=(function(){var L=[];for(var r=0;r<5;r++){var a=[];for(var c=0;c<5;c++
 
 var ROOM=null, MYID=null, ME={}, SOLO=false, CLASSMODE=false, S={diff:1,win:1,moves:[]}, card=[], repMap={}, order=[], idx=0, marks={12:1}, started=false, pollT=null, statePoll=null, byMove={}, totalReps=0, LIB=DEFMOVES.slice(), lastLive=-1, calledSet={}, current=0, ownWon=false;
 var wlog=[], moveStart=0, pacedIdx=-1, callTs={};
+var SPONSOR=null, SPONSORS=[];
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+(async function(){try{var r=await sb.from('sponsors').select('id,name,logo,website_url,social_url,tagline').eq('active',true).order('sort').order('created_at');SPONSORS=(r&&r.data)||[];if(!SPONSOR&&SPONSORS.length&&started){SPONSOR=(ROOM&&ROOM.settings&&ROOM.settings.sponsor)||SPONSORS[Math.floor(Math.random()*SPONSORS.length)];renderBSponsor();}}catch(e){}})();
+function renderBSponsor(){var bar=$('spBar');if(!bar)return;var s=SPONSOR;if(!s){bar.style.display='none';return;}var dest=s.website_url||s.social_url||'';var link=(dest&&s.id)?('https://wodlygame.com/go?s='+s.id+'&src=bingo-phone'):dest;bar.href=link||'#';if(link)bar.target='_blank';else bar.removeAttribute('target');bar.innerHTML=(s.logo?'<img src="'+s.logo+'" alt="">':'')+'<span class="spl">Presented by</span><span class="spn">'+esc(s.name||'')+'</span>'+(s.tagline?'<span class="spdeal">'+esc(s.tagline)+'</span>':'')+(link?'<span class="spgo">Visit →</span>':'');bar.style.display='flex';}
 
 var SOLOGYM=null;
 function logRecap(name,summary,gym){try{fetch('https://ynznwosssctxbdiauekj.supabase.co/rest/v1/recaps',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:name||'You',summary:summary,gym:gym||null,daily:null})});}catch(e){}}
@@ -241,6 +252,7 @@ function beginGame(){
   order=CLASSMODE?[]:shuffle((function(){var a=[];for(var i=0;i<25;i++)if(i!==12)a.push(i);return a;})());
   idx=0;marks={12:1};lastLive=-1;calledSet={};current=0;ownWon=false;wlog=[];moveStart=0;pacedIdx=-1;callTs={};
   var h='';for(var i=0;i<5;i++)h+='<img src="'+HDR[i]+'" alt="'+LETTERS[i]+'">';$('bhead').innerHTML=h;
+  SPONSOR=(ROOM&&ROOM.settings&&ROOM.settings.sponsor)||(SPONSORS.length?SPONSORS[Math.floor(Math.random()*SPONSORS.length)]:null);renderBSponsor();
   show('card');render();save(false);
   if(CLASSMODE)startStatePoll();
 }
@@ -306,7 +318,7 @@ async function doBingoSub(){
   var B='https://ynznwosssctxbdiauekj.supabase.co';
   try{
     var r=await fetch(B+'/rest/v1/subscribers',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:ME.name||null,source:'bingo-recap',consent:true})});
-    if(lastSummary)fetch(B+'/functions/v1/send-recap',{method:'POST',headers:{apikey:PUB,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:ME.name||null,image_url:null,summary:lastSummary,sponsor:null})});
+    if(lastSummary)fetch(B+'/functions/v1/send-recap',{method:'POST',headers:{apikey:PUB,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:ME.name||null,image_url:null,summary:lastSummary,sponsor:(SPONSOR?{id:SPONSOR.id||null,name:SPONSOR.name,website_url:SPONSOR.website_url||SPONSOR.social_url||null,tagline:SPONSOR.tagline||null}:null)})});
     if(r.ok){msg.textContent='Sent! Check your inbox ✓';msg.className='submsg ok';}
     else if(r.status===409){msg.textContent="You're subscribed — recap sent ✓";msg.className='submsg ok';}
     else{msg.textContent='Could not send — try again later.';msg.className='submsg err';$('bSubBtn').disabled=false;}
