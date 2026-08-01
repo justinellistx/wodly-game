@@ -63,6 +63,33 @@
   .solo{background:linear-gradient(150deg,#17111f,#0d0a12);border:2px solid #9b59b6;box-shadow:0 0 20px rgba(155,89,182,.16);}
   .solo .ttl{color:#fff;}.solo .sub{color:var(--text2);}
   .solo .tag{background:rgba(155,89,182,.16);color:#c9a0e0;border:1px solid rgba(155,89,182,.4);}
+  /* unified option cards — Bingo-promo style */
+  .opt{display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;border-radius:18px;padding:15px 17px;margin-bottom:14px;text-decoration:none;border:1.5px solid;transition:transform .12s;}
+  .opt:active{transform:scale(.985);}
+  .opt-em{flex-shrink:0;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 6px 14px rgba(0,0,0,.45),inset 0 -6px 10px rgba(0,0,0,.28),inset 0 5px 8px rgba(255,255,255,.28);}
+  .opt-em span{filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));}
+  .opt-txt{flex:1;min-width:0;}
+  .opt-tag{display:inline-block;font-size:9.5px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;padding:2px 9px;border-radius:20px;}
+  .opt-h{color:#fff;font-weight:900;font-size:19px;margin:5px 0 2px;}
+  .opt-s{color:var(--text2);font-size:12.5px;line-height:1.4;}
+  .opt-cta{flex-shrink:0;font-weight:900;font-size:15px;color:#111;padding:10px 14px;border-radius:12px;white-space:nowrap;background-size:220% 100%;}
+  @media(max-width:520px){.opt-cta{display:none;}}
+  .opt.start{background:linear-gradient(135deg,#2c1c04,#3c2707 55%,#191002);border-color:rgba(245,166,35,.6);box-shadow:0 0 24px rgba(245,166,35,.16);}
+  .opt.start .opt-em{background:radial-gradient(circle at 34% 28%,#ffe0a0,#F5A623 52%,#c47f12);}
+  .opt.start .opt-tag{background:var(--gold);color:#111;}
+  .opt.start .opt-cta{background:linear-gradient(90deg,#F5A623,#fff0cf,#F5A623);}
+  .opt.solo{background:linear-gradient(135deg,#1e132b,#281640 55%,#120b1c);border-color:rgba(155,89,182,.6);box-shadow:0 0 24px rgba(155,89,182,.16);}
+  .opt.solo .opt-em{background:radial-gradient(circle at 34% 28%,#e6c9f5,#9b59b6 52%,#6a2f86);}
+  .opt.solo .opt-tag{background:#c9a0e0;color:#20112b;}
+  .opt.solo .opt-cta{background:linear-gradient(90deg,#b06fd0,#f0e0fa,#b06fd0);}
+  .opt.join{background:linear-gradient(135deg,#0e1622,#132338 55%,#0a0f18);border-color:rgba(33,150,243,.6);box-shadow:0 0 24px rgba(33,150,243,.16);}
+  .opt.join .opt-em{background:radial-gradient(circle at 34% 28%,#bfe0ff,#2196F3 52%,#125a9c);}
+  .opt.join .opt-tag{background:#8cc6ff;color:#0a1c2e;}
+  .opt.join .opt-cta{background:linear-gradient(90deg,#3aa0f5,#d4ecff,#3aa0f5);}
+  .opt.online{background:linear-gradient(135deg,#0c1a12,#123420 55%,#0a0f0c);border-color:rgba(76,175,80,.6);box-shadow:0 0 24px rgba(76,175,80,.16);}
+  .opt.online .opt-em{background:radial-gradient(circle at 34% 28%,#c6f0c9,#4CAF50 52%,#2b7d2f);}
+  .opt.online .opt-tag{background:#9be0a0;color:#0d2410;}
+  .opt.online .opt-cta{background:linear-gradient(90deg,#5cc063,#d4f5d6,#5cc063);}
   .foot{margin-top:16px;}
   .foot button{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit;}
   .foot .footlink{color:var(--text3);font-size:11px;text-decoration:underline;}
@@ -136,6 +163,48 @@
     .bgo-cta{flex-shrink:0;font-weight:900;font-size:14px;color:#000;background:linear-gradient(90deg,#F5A623,#fff0cf,#F5A623);background-size:220% 100%;padding:10px 15px;border-radius:12px;white-space:nowrap;animation:bgoShine 2.6s linear infinite;}
     @media(max-width:520px){.bgo-cta{display:none;}}
   </style>
+  <a href="/daily" style="display:block;text-align:center;background:linear-gradient(150deg,#2a1e07,#140e04);border:1px solid rgba(245,166,35,.5);border-radius:16px;padding:13px;margin-bottom:14px;text-decoration:none;box-shadow:0 0 20px rgba(245,166,35,.12);">
+    <span style="color:var(--gold);font-weight:800;font-size:15px;">🔥 Today's Daily Workout</span>
+    <span style="display:block;color:var(--text2);font-size:12.5px;margin-top:2px;">The workout everyone's doing today — play it & climb the daily board →</span>
+  </a>
+
+  <a class="opt start" href="board">
+    <div class="opt-em"><span>▶️</span></div>
+    <div class="opt-txt">
+      <span class="opt-tag">Big screen</span>
+      <div class="opt-h">Start a game</div>
+      <div class="opt-s">This screen becomes the board — players join from their phones. One player or a whole class.</div>
+    </div>
+    <span class="opt-cta">Start →</span>
+  </a>
+  <a class="opt solo" href="board?solo=1">
+    <div class="opt-em"><span>🎲</span></div>
+    <div class="opt-txt">
+      <span class="opt-tag">1 device</span>
+      <div class="opt-h">Play solo</div>
+      <div class="opt-s">Just you — set up a workout and play right here. Pass &amp; play with friends too.</div>
+    </div>
+    <span class="opt-cta">Play →</span>
+  </a>
+  <a class="opt join" href="play">
+    <div class="opt-em"><span>📲</span></div>
+    <div class="opt-txt">
+      <span class="opt-tag">Your phone</span>
+      <div class="opt-h">Join a game</div>
+      <div class="opt-s">Enter the room code shown on the board and jump in.</div>
+    </div>
+    <span class="opt-cta">Join →</span>
+  </a>
+  <a class="opt online" href="lobby">
+    <div class="opt-em"><span>🌐</span></div>
+    <div class="opt-txt">
+      <span class="opt-tag">Worldwide</span>
+      <div class="opt-h">Play online</div>
+      <div class="opt-s">Public lobby — schedule a match or join players anywhere.</div>
+    </div>
+    <span class="opt-cta">Go →</span>
+  </a>
+
   <a class="bgo-promo" href="/bingo">
     <div class="bgo-ball"><i>B</i></div>
     <div class="bgo-txt">
@@ -144,33 +213,6 @@
       <div class="bgo-s">Bingo meets the gym — everyone races their own card, first to a line wins. Try it now →</div>
     </div>
     <span class="bgo-cta">Try it →</span>
-  </a>
-
-  <a href="/daily" style="display:block;text-align:center;background:linear-gradient(150deg,#2a1e07,#140e04);border:1px solid rgba(245,166,35,.5);border-radius:16px;padding:13px;margin-bottom:14px;text-decoration:none;box-shadow:0 0 20px rgba(245,166,35,.12);">
-    <span style="color:var(--gold);font-weight:800;font-size:15px;">🔥 Today's Daily Workout</span>
-    <span style="display:block;color:var(--text2);font-size:12.5px;margin-top:2px;">The workout everyone's doing today — play it & climb the daily board →</span>
-  </a>
-
-  <a class="choice start" href="board">
-    <span class="tag">Big screen</span>
-    <div class="ttl">▶ Start a game</div>
-    <div class="sub">This screen becomes the board. Players join from their phones — one player or a whole class.</div>
-  </a>
-  <a class="choice solo" href="board?solo=1">
-    <span class="tag">1 device</span>
-    <div class="ttl">🎲 Play solo</div>
-    <div class="sub">Just you — set up a workout and play right here, no second screen. Pass &amp; play with friends too.</div>
-  </a>
-  <a class="choice join" href="play">
-    <span class="tag">Your phone</span>
-    <div class="ttl">📲 Join a game</div>
-    <div class="sub">Enter the room code shown on the board.</div>
-    <span class="pips"><span class="h">♥</span><span class="d">♦</span><span class="c">♣</span><span class="s">♠</span></span>
-  </a>
-  <a class="choice online" href="lobby">
-    <span class="tag">Worldwide</span>
-    <div class="ttl">🌐 Play online</div>
-    <div class="sub">Public lobby — schedule a match or join one with players anywhere.</div>
   </a>
 
   <div style="display:flex;gap:18px;justify-content:center;margin:4px 0 18px;flex-wrap:wrap;">
