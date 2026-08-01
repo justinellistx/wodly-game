@@ -52,13 +52,22 @@
   .pchd .pg{font-size:11px;color:var(--text3);}
   .bhead{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px;}
   .bhl{text-align:center;font-size:15px;font-weight:900;color:var(--orange);}
+  .bhead img{width:100%;aspect-ratio:1;object-fit:contain;}
   .bgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
-  .bc{aspect-ratio:1;border-radius:7px;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:16px;font-weight:700;color:var(--text2);position:relative;}
-  .bc.free{background:rgba(245,166,35,.14);color:var(--orange);}
-  .bc.live{border:2px solid var(--orange);background:rgba(245,166,35,.12);}
-  .bc.done{background:rgba(76,175,80,.22);border-color:var(--green);color:#fff;}
-  .bc .rv{font-size:9px;line-height:1.1;color:var(--text2);text-align:center;padding:0 2px;}
-  .bc .rt{font-size:13px;font-weight:800;}
+  .bc{aspect-ratio:1;border-radius:8px;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;background-size:cover;background-position:center;background-color:#161616;}
+  .bc.face{background-image:url('assets/bingo/cell-front.png');}
+  .bc.back{background-image:url('assets/bingo/cell-back.png');}
+  .bc.freecell{background-image:url('assets/bingo/cell-free.png');background-color:transparent;}
+  .bc.live{box-shadow:0 0 0 2px var(--orange),0 0 10px rgba(245,166,35,.5);cursor:pointer;}
+  .bc .num{position:relative;z-index:1;font-size:16px;font-weight:900;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.75);}
+  .bc .rt{position:relative;z-index:1;font-size:14px;font-weight:900;color:#3a2500;}
+  .bc .rv{position:relative;z-index:1;font-size:7px;line-height:1.05;font-weight:800;color:#5a3d08;text-align:center;padding:0 2px;text-transform:uppercase;}
+  .daub{position:absolute;inset:12%;z-index:3;background:var(--orange);-webkit-mask:url('assets/bingo/daub.png') center/contain no-repeat;mask:url('assets/bingo/daub.png') center/contain no-repeat;opacity:.92;}
+  .ballimg{width:150px;height:150px;background:url('assets/bingo/ball.png') center/contain no-repeat;position:relative;display:flex;align-items:center;justify-content:center;margin:0 auto;}
+  .ballimg.pop{animation:ballPop .6s cubic-bezier(.2,.85,.3,1.25);}
+  .ballimg .bl{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;}
+  .ballimg .bl .l{font-size:14px;font-weight:900;color:#c47f12;letter-spacing:1px;}
+  .ballimg .bl .n{font-size:34px;font-weight:900;color:#111;}
   .nextline{margin-top:10px;text-align:center;}
   .nextline .cue{font-size:13px;color:var(--text2);min-height:18px;}
   .nextline .cue b{color:var(--orange);}
@@ -159,8 +168,8 @@
 </div>
 
 <div class="overlay" id="overlay"><div class="winbox">
-  <div class="big">BINGO!</div>
-  <div class="who" id="winWho"></div>
+  <img src="assets/bingo/bingo-stamp.png" alt="Bingo!" style="width:82%;max-width:300px;">
+  <div class="who" id="winWho" style="margin-top:8px;"></div>
   <div class="sub" id="winSub"></div>
   <button class="btn" id="winClose">Play again</button>
 </div></div>
@@ -170,7 +179,9 @@
 <script>
 var $=function(id){return document.getElementById(id);};
 function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});$(id).classList.add('active');}
-function ballHTML(letter,num){return '<div class="ballwrap"><div class="ball pop"><div class="ball-inner"><div class="ball-let">'+letter+'</div><div class="ball-num">'+num+'</div></div></div></div>';}
+function ballHTML(letter,num){return '<div class="ballwrap"><div class="ballimg pop"><div class="bl"><span class="l">'+letter+'</span><span class="n">'+num+'</span></div></div></div>';}
+var HDR=['assets/bingo/hdr-b.png','assets/bingo/hdr-i.png','assets/bingo/hdr-n.png','assets/bingo/hdr-g.png','assets/bingo/hdr-o.png'];
+function headHTML(){var h='';for(var i=0;i<5;i++)h+='<img src="'+HDR[i]+'" alt="'+LETTERS[i]+'">';return h;}
 var PUB='sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq', LOGGED=false;
 function logRecap(name,summary){try{fetch('https://ynznwosssctxbdiauekj.supabase.co/rest/v1/recaps',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:name||'Player',summary:summary,gym:null,daily:null})});}catch(e){}}
 var LETTERS=['B','I','N','G','O'];
@@ -255,20 +266,20 @@ function renderCards(){
   var html='';
   S.players.forEach(function(p,pi){
     var pg=S.win>=25?(squaresFor(p)+'/24'):(linesFor(p)+'/'+S.win+' line'+(S.win>1?'s':''));
-    var head='';for(var i=0;i<5;i++)head+='<div class="bhl">'+LETTERS[i]+'</div>';
+    var head=headHTML();
     var cells='';
     for(var idx=0;idx<25;idx++){
-      var val=cellNum(p,idx),done=p.marks[idx],cls='bc',inner='';
-      if(val==='FREE'){cls+=' free';inner='<div class="rt">★</div>';}
-      else if(done){cls+=' done';inner='<div class="rv">'+S.moves[colOf(idx)]+'</div><div class="rt">'+reps(val)+'</div>';}
+      var val=cellNum(p,idx),done=p.marks[idx],cls='bc',inner='',daub='';
+      if(val==='FREE'){cls+=' freecell';}
+      else if(done){cls+=' back';inner='<div class="rt">'+reps(val)+'</div><div class="rv">'+S.moves[colOf(idx)]+'</div>';daub='<div class="daub" style="background:'+p.color+'"></div>';}
       else{
         var live=false;
         if(S.mode==='race'){live=(p.order[p.idx]===idx);}
         else{live=!!S.called[val];}
-        if(live){cls+=' live';inner='<div class="rt">'+reps(val)+'</div><div class="rv">'+S.moves[colOf(idx)]+'</div>';}
-        else inner='<div class="rt">'+val+'</div>';
+        if(live){cls+=' back live';inner='<div class="rt">'+reps(val)+'</div><div class="rv">'+S.moves[colOf(idx)]+'</div>';}
+        else{cls+=' face';inner='<div class="num">'+val+'</div>';}
       }
-      cells+='<div class="'+cls+'" data-p="'+pi+'" data-i="'+idx+'">'+inner+'</div>';
+      cells+='<div class="'+cls+'" data-p="'+pi+'" data-i="'+idx+'">'+inner+daub+'</div>';
     }
     var cue='';
     if(S.mode==='race'&&!p.done){
@@ -363,8 +374,11 @@ function renderWall(pl){
   var winner=null;
   $('cards').innerHTML=pl.map(function(p){
     var b=p.bingo||{},m=b.m||{},done=!!b.done;if(done&&!winner)winner=p;
-    var head='';for(var i=0;i<5;i++)head+='<div class="bhl">'+LETTERS[i]+'</div>';
-    var cells='';for(var i=0;i<25;i++){var free=i===12,on=m[i]||m[String(i)];cells+='<div class="bc'+(free?' free':(on?' done':''))+'">'+(free?'<div class="rt">★</div>':'')+'</div>';}
+    var head=headHTML();
+    var cells='';for(var i=0;i<25;i++){var free=i===12,on=m[i]||m[String(i)];
+      if(free)cells+='<div class="bc freecell"></div>';
+      else if(on)cells+='<div class="bc back"><div class="daub" style="background:'+(p.color||'#F5A623')+'"></div></div>';
+      else cells+='<div class="bc face"></div>';}
     var pg=S.win>=25?((b.sq||0)+'/24'):((b.lines||0)+'/'+S.win+' line'+(S.win>1?'s':''));
     return '<div class="pcard'+(done?' win':'')+'"><div class="pchd"><span class="pdot" style="background:'+(p.color||'#F5A623')+'"></span><span class="nm">'+(p.name||'Player')+'</span><span class="pg">'+pg+'</span></div><div class="bhead">'+head+'</div><div class="bgrid">'+cells+'</div></div>';
   }).join('');

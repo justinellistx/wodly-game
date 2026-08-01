@@ -27,6 +27,9 @@
   .av.on{border-color:var(--orange);}
   .av img{width:100%;aspect-ratio:1;object-fit:contain;}
   .av span{font-size:10px;color:var(--text3);display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .swatches{display:flex;gap:9px;flex-wrap:wrap;}
+  .sw{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);cursor:pointer;}
+  .sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--orange);}
   .seg{display:flex;gap:8px;}
   .seg button{flex:1;padding:11px;font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-family:inherit;cursor:pointer;}
   .seg button.on{background:var(--orange);border-color:var(--orange);color:#000;}
@@ -81,6 +84,8 @@
   <input id="pname" maxlength="16" placeholder="Your name" autocomplete="off">
   <label>Pick your hero</label>
   <div class="avatars" id="avatars"></div>
+  <label>Your daub color</label>
+  <div class="swatches" id="swJoin"></div>
   <button class="btn" id="joinBtn">Join game</button>
   <div class="err" id="joinErr"></div>
   <div class="or">— or —</div>
@@ -94,6 +99,8 @@
   <div class="seg" id="sDiff"><button data-v="0.6">Beginner</button><button data-v="1" class="on">Rx</button><button data-v="1.4">Elite</button></div>
   <label>Win when</label>
   <div class="seg" id="sWin"><button data-v="1" class="on">First line</button><button data-v="3">3 lines</button><button data-v="25">Blackout</button></div>
+  <label>Your daub color</label>
+  <div class="swatches" id="swSolo"></div>
   <button class="btn" id="soloStart">Start solo game</button>
   <button class="btn ghost" id="soloBack" style="margin-top:10px;">← Back</button>
   <div class="err" id="soloErr"></div>
@@ -137,8 +144,13 @@ function logRecap(name,summary){try{fetch('https://ynznwosssctxbdiauekj.supabase
 // movement library (for solo auto-pick)
 (async function(){try{var r=await sb.rpc('movement_list');if(!r.error&&Array.isArray(r.data)&&r.data.length)LIB=r.data.map(function(m){return m.name;});}catch(e){}})();
 
+// daub color picker
+var DAUBCOLS=['#F5A623','#E8363D','#4CAF50','#2196F3','#9b59b6','#00BCD4','#FF5722','#FFFFFF'];
+function setDaub(col){ME.color=col;document.documentElement.style.setProperty('--daub',col);document.querySelectorAll('.swatches .sw').forEach(function(x){x.classList.toggle('on',x.dataset.col===col);});}
+(function(){['swJoin','swSolo'].forEach(function(id){var c=$(id);if(!c)return;DAUBCOLS.forEach(function(col){var s=document.createElement('div');s.className='sw';s.style.background=col;s.dataset.col=col;s.onclick=function(){setDaub(col);};c.appendChild(s);});});})();
+
 // avatars
-(function(){var g=$('avatars');(W.AVATARS||[]).forEach(function(a){var d=document.createElement('div');d.className='av';d.dataset.id=a.id;d.innerHTML='<img src="'+a.img+'" alt=""><span>'+a.name+'</span>';d.onclick=function(){g.querySelectorAll('.av').forEach(function(x){x.classList.remove('on');});d.classList.add('on');ME.avatar=a.id;ME.color=a.color;ME.img=a.img;document.documentElement.style.setProperty('--daub',a.color);};g.appendChild(d);});})();
+(function(){var g=$('avatars');(W.AVATARS||[]).forEach(function(a){var d=document.createElement('div');d.className='av';d.dataset.id=a.id;d.innerHTML='<img src="'+a.img+'" alt=""><span>'+a.name+'</span>';d.onclick=function(){g.querySelectorAll('.av').forEach(function(x){x.classList.remove('on');});d.classList.add('on');ME.avatar=a.id;ME.img=a.img;setDaub(a.color);};g.appendChild(d);});})();
 
 (function(){var p=new URLSearchParams(location.search);var c=(p.get('room')||'').toUpperCase();if(c){$('code').value=c;}if(p.get('solo')==='1'){setTimeout(function(){$('soloBtn').click();},50);}})();
 
