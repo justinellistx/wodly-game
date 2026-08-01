@@ -114,6 +114,10 @@
         <button data-v="1" class="on">First line</button><button data-v="3">3 lines</button><button data-v="25">Blackout</button>
       </div>
 
+      <label>Gym / box name (optional — counts toward the gym leaderboard)</label>
+      <input type="text" id="gymName" list="gymList" placeholder="e.g. CrossFit Willis" maxlength="40" autocomplete="off">
+      <datalist id="gymList"></datalist>
+
       <label>The 5 movements — one per letter</label>
       <div id="moveInputs"></div>
       <datalist id="bMoves"></datalist>
@@ -183,7 +187,7 @@ function ballHTML(letter,num){return '<div class="ballwrap"><div class="ballimg 
 var HDR=['assets/bingo/hdr-b.png','assets/bingo/hdr-i.png','assets/bingo/hdr-n.png','assets/bingo/hdr-g.png','assets/bingo/hdr-o.png'];
 function headHTML(){var h='';for(var i=0;i<5;i++)h+='<img src="'+HDR[i]+'" alt="'+LETTERS[i]+'">';return h;}
 var PUB='sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq', LOGGED=false;
-function logRecap(name,summary){try{fetch('https://ynznwosssctxbdiauekj.supabase.co/rest/v1/recaps',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:name||'Player',summary:summary,gym:null,daily:null})});}catch(e){}}
+function logRecap(name,summary,gym){try{fetch('https://ynznwosssctxbdiauekj.supabase.co/rest/v1/recaps',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:name||'Player',summary:summary,gym:gym||null,daily:null})});}catch(e){}}
 var LETTERS=['B','I','N','G','O'];
 var PCOLS=['#F5A623','#E8363D','#4CAF50','#2196F3','#9b59b6','#00BCD4','#FF8A65','#26C6DA'];
 var POOL=['Burpees','Air Squats','Push-ups','Sit-ups','KB Swings','Wall Balls','Box Jumps','Walking Lunges','Thrusters','Mountain Climbers','Pull-ups','Jumping Jacks','V-ups','Goblet Squats','Russian Twists','Wall Sit (sec)','Push Press','Deadlifts','Ring Rows','High Knees'];
@@ -241,6 +245,7 @@ $('pname').addEventListener('keydown',function(e){if(e.key==='Enter')addPlayer()
 /* ---- start ---- */
 $('startBtn').onclick=function(){
   if(!S.players.length){addPlayer();if(!S.players.length){alert('Add at least one player.');return;}}
+  S.gym=($('gymName')&&$('gymName').value.trim())||null;
   S.moves=[];S.moveUnits=[];
   for(var mi=0;mi<5;mi++){var mv=(($('mv'+mi)&&$('mv'+mi).value)||'').trim();if(!mv)mv=shuffle(LIB)[0]||'BURPEES';mv=mv.toUpperCase();S.moves.push(mv);S.moveUnits.push(MOVEUNITS[mv]||'reps');}
   if(sb)S.moves.forEach(function(m,i){try{sb.rpc('add_movement',{p_name:m,p_unit:S.moveUnits[i]||'reps'});}catch(e){}});
@@ -324,7 +329,7 @@ function finish(p){
   $('winWho').style.color=p.color;
   $('winSub').textContent=(S.win>=25?'Blackout — full card':(S.win>1?S.win+' lines':'First line')+' complete')+' · '+squaresFor(p)+' squares done';
   $('overlay').classList.add('on');
-  if(!ONLINE&&!LOGGED){LOGGED=true;S.players.forEach(function(pl){var bm=byMoveFor(pl),tot=0;for(var k in bm)tot+=bm[k];if(tot>0)logRecap(pl.name,{byMove:bm,total:tot,count:squaresFor(pl),place:(pl===p)?1:null,game:'bingo'});});}
+  if(!ONLINE&&!LOGGED){LOGGED=true;S.players.forEach(function(pl){var bm=byMoveFor(pl),tot=0;for(var k in bm)tot+=bm[k];if(tot>0)logRecap(pl.name,{byMove:bm,total:tot,count:squaresFor(pl),place:(pl===p)?1:null,game:'bingo'},S.gym);});}
 }
 function resetToSetup(){$('overlay').classList.remove('on');$('game').classList.remove('active');$('host').classList.remove('active');$('setup').classList.add('active');clearHostPoll();ONLINE=false;WINSHOWN=false;LOGGED=false;S.players.forEach(function(p){delete p.done;});}
 $('winClose').onclick=resetToSetup;
@@ -347,10 +352,11 @@ function readMoves(){S.moves=[];S.moveUnits=[];for(var mi=0;mi<5;mi++){var mv=((
 $('hostBtn').onclick=async function(){
   if(!sb){alert('Online play needs a connection.');return;}
   readMoves();
+  S.gym=($('gymName')&&$('gymName').value.trim())||null;
   var rmap={};for(var n=1;n<=75;n++)rmap[n]=rint(6,20);
   var room=null;
   for(var a=0;a<6;a++){var code=genCode4();
-    var r=await sb.from('rooms').insert({code:code,status:'lobby',host_id:'bingo-host',is_public:false,title:'WODLY Bingo',settings:{game:'bingo',mode:S.mode,diff:S.diff,win:S.win,moves:S.moves,repMap:rmap}}).select().single();
+    var r=await sb.from('rooms').insert({code:code,status:'lobby',host_id:'bingo-host',is_public:false,title:'WODLY Bingo',settings:{game:'bingo',mode:S.mode,diff:S.diff,win:S.win,moves:S.moves,repMap:rmap,gym:S.gym}}).select().single();
     if(!r.error){room=r.data;break;} if(r.error&&!/duplicate|unique/i.test(r.error.message||'')){alert(r.error.message);return;}}
   if(!room){alert('Could not create the game — try again.');return;}
   HOST=room;WINSHOWN=false;$('hCode').textContent=room.code;$('hLink').textContent='wodlygame.com/bplay?room='+room.code;
@@ -395,12 +401,14 @@ function renderWall(pl){
     return '<div class="pcard'+(done?' win':'')+'"><div class="pchd"><span class="pdot" style="background:'+(p.color||'#F5A623')+'"></span><span class="nm">'+(p.name||'Player')+'</span><span class="pg">'+pg+'</span></div><div class="bhead">'+head+'</div><div class="bgrid">'+cells+'</div></div>';
   }).join('');
   if(winner&&!WINSHOWN){WINSHOWN=true;beep(990,.5);speak(winner.name+' bingo!');$('winWho').textContent=winner.name+' wins!';$('winWho').style.color=winner.color||'#F5A623';$('winSub').textContent='First to bingo on the wall!';$('overlay').classList.add('on');
-    pl.forEach(function(p){var b=p.bingo||{},bm=b.byMove||{},tot=b.total||0;if(tot>0)logRecap(p.name,{byMove:bm,total:tot,count:b.sq||0,place:(p.id===winner.id)?1:null,game:'bingo'});});
+    var gGym=(HOST&&HOST.settings&&HOST.settings.gym)||null;
+    pl.forEach(function(p){var b=p.bingo||{},bm=b.byMove||{},tot=b.total||0;if(tot>0)logRecap(p.name,{byMove:bm,total:tot,count:b.sq||0,place:(p.id===winner.id)?1:null,game:'bingo'},gGym);});
     try{if(HOST)sb.from('rooms').update({status:'finished'}).eq('id',HOST.id);}catch(e){}}
 }
 
 /* init */
 loadLib();renderPlayers();
+(async function(){try{var r=await sb.rpc('gym_names');var l=$('gymList');if(l&&r&&Array.isArray(r.data))l.innerHTML=r.data.map(function(g){return '<option value="'+String(g).replace(/"/g,'&quot;')+'">';}).join('');}catch(e){}})();
 </script>
 </body>
 </html>

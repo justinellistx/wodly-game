@@ -101,6 +101,9 @@
   <div class="seg" id="sWin"><button data-v="1" class="on">First line</button><button data-v="3">3 lines</button><button data-v="25">Blackout</button></div>
   <label>Your daub color</label>
   <div class="swatches" id="swSolo"></div>
+  <label>Gym / box name (optional)</label>
+  <input id="soloGym" list="gymList" maxlength="40" placeholder="e.g. CrossFit Willis" autocomplete="off">
+  <datalist id="gymList"></datalist>
   <button class="btn" id="soloStart">Start solo game</button>
   <button class="btn ghost" id="soloBack" style="margin-top:10px;">← Back</button>
   <div class="err" id="soloErr"></div>
@@ -139,7 +142,9 @@ var LINES=(function(){var L=[];for(var r=0;r<5;r++){var a=[];for(var c=0;c<5;c++
 
 var ROOM=null, MYID=null, ME={}, SOLO=false, CLASSMODE=false, S={diff:1,win:1,moves:[]}, card=[], repMap={}, order=[], idx=0, marks={12:1}, started=false, pollT=null, statePoll=null, byMove={}, totalReps=0, LIB=DEFMOVES.slice(), lastLive=-1, calledSet={}, current=0, ownWon=false;
 
-function logRecap(name,summary){try{fetch('https://ynznwosssctxbdiauekj.supabase.co/rest/v1/recaps',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:name||'You',summary:summary,gym:null,daily:null})});}catch(e){}}
+var SOLOGYM=null;
+function logRecap(name,summary,gym){try{fetch('https://ynznwosssctxbdiauekj.supabase.co/rest/v1/recaps',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:name||'You',summary:summary,gym:gym||null,daily:null})});}catch(e){}}
+(async function(){try{var r=await sb.rpc('gym_names');var l=$('gymList');if(l&&r&&Array.isArray(r.data))l.innerHTML=r.data.map(function(g){return '<option value="'+String(g).replace(/"/g,'&quot;')+'">';}).join('');}catch(e){}})();
 
 // movement library (for solo auto-pick)
 (async function(){try{var r=await sb.rpc('movement_list');if(!r.error&&Array.isArray(r.data)&&r.data.length)LIB=r.data.map(function(m){return m.name;});}catch(e){}})();
@@ -189,6 +194,7 @@ $('soloBtn').onclick=function(){if(!ME.avatar){var first=document.querySelector(
 $('soloBack').onclick=function(){show('join');};
 $('soloStart').onclick=function(){
   SOLO=true; MYID=null;
+  SOLOGYM=($('soloGym')&&$('soloGym').value.trim())||null;
   ME.name=($('pname').value.trim())||'You';
   if(!ME.img){var a=(W.AVATARS||[])[0];if(a){ME.img=a.img;ME.color=a.color;document.documentElement.style.setProperty('--daub',a.color);}}
   S.moves=shuffle(LIB).slice(0,5).map(function(m){return String(m).toUpperCase();});
@@ -268,7 +274,7 @@ function onCell(i){
 }
 function markCell(i){if(i==null||marks[i]||i===12)return false;marks[i]=1;var mv=S.moves[i%5];if(mv){var rr=reps(card[i]);byMove[mv]=(byMove[mv]||0)+rr;totalReps+=rr;}return true;}
 function afterMark(){var w=won();render();save(w);if(w)winScreen();}
-function winScreen(){ownWon=true;if(statePoll)clearInterval(statePoll);if(SOLO)logRecap(ME.name,{byMove:byMove,total:totalReps,count:squares(),place:1,game:'bingo'});$('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares · '+totalReps+' reps.';show('won');}
+function winScreen(){ownWon=true;if(statePoll)clearInterval(statePoll);if(SOLO)logRecap(ME.name,{byMove:byMove,total:totalReps,count:squares(),place:1,game:'bingo'},SOLOGYM);$('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares · '+totalReps+' reps.';show('won');}
 
 async function save(done){
   if(SOLO||!MYID)return;
