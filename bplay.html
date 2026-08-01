@@ -70,6 +70,15 @@
   .win{text-align:center;padding:24px 14px;}
   .win img{width:80%;max-width:300px;}
   .win .sub{color:var(--text2);font-size:15px;margin-top:10px;}
+  .subwrap{max-width:340px;margin:20px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:left;}
+  .subttl{font-weight:800;font-size:15px;color:#fff;}
+  .subsub{font-size:13px;color:var(--text2);margin:6px 0 12px;line-height:1.4;}
+  .subwrap input[type=email]{margin-bottom:10px;}
+  .subconsent{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--text3);margin-top:10px;line-height:1.4;}
+  .subconsent input{width:auto;margin:2px 0 0;padding:0;}
+  .subconsent a{color:var(--orange);}
+  .submsg{font-size:13px;margin-top:8px;text-align:center;min-height:16px;}
+  .submsg.ok{color:var(--green);} .submsg.err{color:var(--red);}
 </style>
 </head>
 <body>
@@ -126,7 +135,15 @@
 <!-- WIN -->
 <div id="won" class="screen">
   <div class="win"><img src="assets/bingo/bingo-stamp.png" alt="Bingo!"><div class="sub" id="winSub"></div>
-    <button class="btn" onclick="location.reload()" style="max-width:240px;margin:22px auto 0;">Play again</button></div>
+    <div class="subwrap">
+      <div class="subttl">📧 Email me my workout</div>
+      <div class="subsub">Get today's reps &amp; movements sent to your inbox, plus alerts for new games. No spam.</div>
+      <input id="bEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
+      <button class="btn" id="bSubBtn" style="margin-top:0;">Email it to me</button>
+      <label class="subconsent"><input type="checkbox" id="bConsent"> I agree to receive occasional WODLY emails. <a href="/privacy" target="_blank">Privacy</a></label>
+      <div class="submsg" id="bSubMsg"></div>
+    </div>
+    <button class="btn ghost" onclick="location.reload()" style="max-width:240px;margin:16px auto 0;">Play again</button></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -274,7 +291,22 @@ function onCell(i){
 }
 function markCell(i){if(i==null||marks[i]||i===12)return false;marks[i]=1;var mv=S.moves[i%5];if(mv){var rr=reps(card[i]);byMove[mv]=(byMove[mv]||0)+rr;totalReps+=rr;}return true;}
 function afterMark(){var w=won();render();save(w);if(w)winScreen();}
-function winScreen(){ownWon=true;if(statePoll)clearInterval(statePoll);if(SOLO)logRecap(ME.name,{byMove:byMove,total:totalReps,count:squares(),place:1,game:'bingo'},SOLOGYM);$('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares · '+totalReps+' reps.';show('won');}
+var lastSummary=null;
+function winScreen(){ownWon=true;if(statePoll)clearInterval(statePoll);lastSummary={byMove:byMove,total:totalReps,count:squares(),place:1,game:'bingo'};if(SOLO)logRecap(ME.name,lastSummary,SOLOGYM);$('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares · '+totalReps+' reps.';var b=$('bSubBtn');if(b)b.onclick=doBingoSub;show('won');}
+async function doBingoSub(){
+  var em=(($('bEmail')||{}).value||'').trim(),msg=$('bSubMsg');if(!msg)return;
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='Enter a valid email.';msg.className='submsg err';return;}
+  if($('bConsent')&&!$('bConsent').checked){msg.textContent='Please check the consent box.';msg.className='submsg err';return;}
+  $('bSubBtn').disabled=true;msg.textContent='Sending…';msg.className='submsg';
+  var B='https://ynznwosssctxbdiauekj.supabase.co';
+  try{
+    var r=await fetch(B+'/rest/v1/subscribers',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:ME.name||null,source:'bingo-recap',consent:true})});
+    if(lastSummary)fetch(B+'/functions/v1/send-recap',{method:'POST',headers:{apikey:PUB,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:ME.name||null,image_url:null,summary:lastSummary,sponsor:null})});
+    if(r.ok){msg.textContent='Sent! Check your inbox ✓';msg.className='submsg ok';}
+    else if(r.status===409){msg.textContent="You're subscribed — recap sent ✓";msg.className='submsg ok';}
+    else{msg.textContent='Could not send — try again later.';msg.className='submsg err';$('bSubBtn').disabled=false;}
+  }catch(e){msg.textContent='Could not send — try again later.';msg.className='submsg err';$('bSubBtn').disabled=false;}
+}
 
 async function save(done){
   if(SOLO||!MYID)return;
