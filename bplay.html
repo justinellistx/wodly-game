@@ -160,6 +160,7 @@ function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rint(0,i);va
 var LINES=(function(){var L=[];for(var r=0;r<5;r++){var a=[];for(var c=0;c<5;c++)a.push(r*5+c);L.push(a);}for(var c=0;c<5;c++){var b=[];for(var r=0;r<5;r++)b.push(r*5+c);L.push(b);}L.push([0,6,12,18,24]);L.push([4,8,12,16,20]);return L;})();
 
 var ROOM=null, MYID=null, ME={}, SOLO=false, CLASSMODE=false, S={diff:1,win:1,moves:[]}, card=[], repMap={}, order=[], idx=0, marks={12:1}, started=false, pollT=null, statePoll=null, byMove={}, totalReps=0, LIB=DEFMOVES.slice(), lastLive=-1, calledSet={}, current=0, ownWon=false;
+var wlog=[], moveStart=0, pacedIdx=-1, callTs={};
 
 var SOLOGYM=null;
 function logRecap(name,summary,gym){try{fetch('https://ynznwosssctxbdiauekj.supabase.co/rest/v1/recaps',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:name||'You',summary:summary,gym:gym||null,daily:null})});}catch(e){}}
@@ -238,7 +239,7 @@ function beginGame(){
   var sr=(ROOM&&ROOM.settings&&ROOM.settings.repMap)||null;
   for(var n=1;n<=75;n++)repMap[n]=(sr&&sr[n])?sr[n]:rint(6,20);
   order=CLASSMODE?[]:shuffle((function(){var a=[];for(var i=0;i<25;i++)if(i!==12)a.push(i);return a;})());
-  idx=0;marks={12:1};lastLive=-1;calledSet={};current=0;ownWon=false;
+  idx=0;marks={12:1};lastLive=-1;calledSet={};current=0;ownWon=false;wlog=[];moveStart=0;pacedIdx=-1;callTs={};
   var h='';for(var i=0;i<5;i++)h+='<img src="'+HDR[i]+'" alt="'+LETTERS[i]+'">';$('bhead').innerHTML=h;
   show('card');render();save(false);
   if(CLASSMODE)startStatePoll();
@@ -250,7 +251,7 @@ function startStatePoll(){
     try{var r=await sb.from('rooms').select('state,status').eq('id',ROOM.id).single();if(!r.data)return;
       if(r.data.status==='finished'&&!ownWon){clearInterval(statePoll);$('winSub').textContent='Game over — great work! '+squares()+' squares · '+totalReps+' reps.';show('won');return;}
       var st=r.data.state||{},called=st.called||[],changed=(called.length!==Object.keys(calledSet).length);
-      calledSet={};called.forEach(function(n){calledSet[n]=1;});
+      calledSet={};called.forEach(function(n){calledSet[n]=1;if(!callTs[n])callTs[n]=Date.now();});
       if(st.current&&st.current!==current){current=st.current;changed=true;}
       if(changed)render();
     }catch(e){}
@@ -274,6 +275,7 @@ function render(){
 }
 function renderRaceCue(){
   var nx=order[idx];
+  if(nx!=null&&idx!==pacedIdx){pacedIdx=idx;moveStart=Date.now();}
   if(nx!=null){$('cue').innerHTML='<div class="lbl">Your call</div>'+ballHTML(LETTERS[colOf(nx)],card[nx])+'<div class="sub" style="margin-top:6px;">'+reps(card[nx])+' '+S.moves[colOf(nx)]+'</div><button class="btn" id="doBtn">Did it ✓</button>';$('doBtn').onclick=function(){onCell(order[idx]);};}
   else{$('cue').innerHTML='<div class="sub">Card complete! 💪</div>';}
 }
@@ -291,11 +293,11 @@ function onCell(i){
   if(!CLASSMODE){idx++;while(idx<order.length&&marks[order[idx]])idx++;}
   afterMark();
 }
-function markCell(i){if(i==null||marks[i]||i===12)return false;marks[i]=1;var mv=S.moves[i%5];if(mv){var rr=reps(card[i]);byMove[mv]=(byMove[mv]||0)+rr;totalReps+=rr;}return true;}
+function markCell(i){if(i==null||marks[i]||i===12)return false;marks[i]=1;var mv=S.moves[i%5];if(mv){var rr=reps(card[i]);byMove[mv]=(byMove[mv]||0)+rr;totalReps+=rr;var st=CLASSMODE?(callTs[card[i]]||Date.now()):(moveStart||Date.now());var sec=Math.min(600,Math.max(1,Math.round((Date.now()-st)/1000)));wlog.push({m:mv,r:rr,s:sec,u:'reps'});}return true;}
 function afterMark(){var w=won();render();save(w);if(w)winScreen();}
 var lastSummary=null;
-function winScreen(){ownWon=true;if(statePoll)clearInterval(statePoll);lastSummary={byMove:byMove,total:totalReps,count:squares(),place:1,game:'bingo'};if(SOLO)logRecap(ME.name,lastSummary,SOLOGYM);var im=$('winImg');if(im)im.style.display='';var t=$('winTitle');if(t)t.style.display='none';var bk=$('backBtn');if(bk)bk.style.display='none';$('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares · '+totalReps+' reps.';var b=$('bSubBtn');if(b)b.onclick=doBingoSub;show('won');}
-function showRecap(){lastSummary={byMove:byMove,total:totalReps,count:squares(),place:null,game:'bingo'};var im=$('winImg');if(im)im.style.display='none';var t=$('winTitle');if(t){t.style.display='block';t.textContent='💪 Nice work!';}var bk=$('backBtn');if(bk)bk.style.display=ownWon?'none':'block';$('winSub').textContent=squares()+' squares · '+totalReps+' reps'+(ownWon?'.':' so far.');var b=$('bSubBtn');if(b)b.onclick=doBingoSub;show('won');}
+function winScreen(){ownWon=true;if(statePoll)clearInterval(statePoll);lastSummary={byMove:byMove,total:totalReps,count:squares(),place:1,game:'bingo',order:wlog.slice()};if(SOLO)logRecap(ME.name,lastSummary,SOLOGYM);var im=$('winImg');if(im)im.style.display='';var t=$('winTitle');if(t)t.style.display='none';var bk=$('backBtn');if(bk)bk.style.display='none';$('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares · '+totalReps+' reps.';var b=$('bSubBtn');if(b)b.onclick=doBingoSub;show('won');}
+function showRecap(){lastSummary={byMove:byMove,total:totalReps,count:squares(),place:null,game:'bingo',order:wlog.slice()};var im=$('winImg');if(im)im.style.display='none';var t=$('winTitle');if(t){t.style.display='block';t.textContent='💪 Nice work!';}var bk=$('backBtn');if(bk)bk.style.display=ownWon?'none':'block';$('winSub').textContent=squares()+' squares · '+totalReps+' reps'+(ownWon?'.':' so far.');var b=$('bSubBtn');if(b)b.onclick=doBingoSub;show('won');}
 async function doBingoSub(){
   var em=(($('bEmail')||{}).value||'').trim(),msg=$('bSubMsg');if(!msg)return;
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='Enter a valid email.';msg.className='submsg err';return;}
@@ -313,7 +315,7 @@ async function doBingoSub(){
 
 async function save(done){
   if(SOLO||!MYID)return;
-  try{await sb.from('players').update({bingo:{m:marks,sq:squares(),lines:linesN(),done:!!done,byMove:byMove,total:totalReps,ts:Date.now()}}).eq('id',MYID);}catch(e){}
+  try{await sb.from('players').update({bingo:{m:marks,sq:squares(),lines:linesN(),done:!!done,byMove:byMove,total:totalReps,wl:wlog,ts:Date.now()}}).eq('id',MYID);}catch(e){}
 }
 </script>
 </body>

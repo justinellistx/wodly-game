@@ -402,7 +402,7 @@ function renderWall(pl){
   }).join('');
   if(winner&&!WINSHOWN){WINSHOWN=true;beep(990,.5);speak(winner.name+' bingo!');$('winWho').textContent=winner.name+' wins!';$('winWho').style.color=winner.color||'#F5A623';$('winSub').textContent='First to bingo on the wall!';$('overlay').classList.add('on');
     var gGym=(HOST&&HOST.settings&&HOST.settings.gym)||null;
-    pl.forEach(function(p){var b=p.bingo||{},bm=b.byMove||{},tot=b.total||0;if(tot>0)logRecap(p.name,{byMove:bm,total:tot,count:b.sq||0,place:(p.id===winner.id)?1:null,game:'bingo'},gGym);});
+    pl.forEach(function(p){var b=p.bingo||{},bm=b.byMove||{},tot=b.total||0;if(tot>0)logRecap(p.name,{byMove:bm,total:tot,count:b.sq||0,place:(p.id===winner.id)?1:null,game:'bingo',order:(b.wl||[])},gGym);});
     try{if(HOST)sb.from('rooms').update({status:'finished'}).eq('id',HOST.id);}catch(e){}}
 }
 
