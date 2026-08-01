@@ -253,6 +253,7 @@ $('startBtn').onclick=function(){
   $('gInfo').textContent=(S.mode==='race'?'Race':'Class')+' · '+({0.6:'Beginner',1:'Rx',1.4:'Elite'}[S.diff])+' · '+(S.win>=25?'Blackout':S.win+' line'+(S.win>1?'s':''));
   var lg='';for(var i=0;i<5;i++)lg+='<div class="legchip"><b>'+LETTERS[i]+'</b>'+S.moves[i]+'</div>';$('gLegend').innerHTML=lg;
   $('callbox').style.display=S.mode==='class'?'block':'none';
+  $('callNext').onclick=callNext;
   if(S.mode==='class')$('curCall').textContent='—';
   renderCards();
 };
@@ -332,16 +333,24 @@ $('newGame').onclick=resetToSetup;
 $('muteBtn').onclick=function(){S.mute=!S.mute;$('muteBtn').textContent=S.mute?'🔇 Caller off':'🔊 Caller on';if(S.mute&&window.speechSynthesis)window.speechSynthesis.cancel();};
 
 /* ── Host for phones (online Race) ── */
-var HOST=null, HOSTPOLL=null, HOSTPLAYERS=[], ONLINE=false, WINSHOWN=false;
+var HOST=null, HOSTPOLL=null, HOSTPLAYERS=[], ONLINE=false, WINSHOWN=false, CALLED=[];
+async function callNextOnline(){
+  var avail=[];for(var n=1;n<=75;n++)if(CALLED.indexOf(n)<0)avail.push(n);
+  if(!avail.length)return;
+  var num=avail[rint(0,avail.length-1)];CALLED.push(num);var letter=LETTERS[Math.floor((num-1)/15)];
+  $('curCall').innerHTML=ballHTML(letter,num);speak(letter+', '+num);beep(880,.14);
+  try{await sb.from('rooms').update({state:{called:CALLED,current:num,ts:Date.now()}}).eq('id',HOST.id);}catch(e){}
+}
 function clearHostPoll(){if(HOSTPOLL){clearInterval(HOSTPOLL);HOSTPOLL=null;}}
 function genCode4(){var C='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';for(var i=0;i<4;i++)s+=C[rint(0,C.length-1)];return s;}
 function readMoves(){S.moves=[];S.moveUnits=[];for(var mi=0;mi<5;mi++){var mv=(($('mv'+mi)&&$('mv'+mi).value)||'').trim();if(!mv)mv=shuffle(LIB)[0]||'BURPEES';mv=mv.toUpperCase();S.moves.push(mv);S.moveUnits.push(MOVEUNITS[mv]||'reps');}if(sb)S.moves.forEach(function(m,i){try{sb.rpc('add_movement',{p_name:m,p_unit:S.moveUnits[i]||'reps'});}catch(e){}});}
 $('hostBtn').onclick=async function(){
   if(!sb){alert('Online play needs a connection.');return;}
   readMoves();
+  var rmap={};for(var n=1;n<=75;n++)rmap[n]=rint(6,20);
   var room=null;
   for(var a=0;a<6;a++){var code=genCode4();
-    var r=await sb.from('rooms').insert({code:code,status:'lobby',host_id:'bingo-host',is_public:false,title:'WODLY Bingo',settings:{game:'bingo',mode:'race',diff:S.diff,win:S.win,moves:S.moves}}).select().single();
+    var r=await sb.from('rooms').insert({code:code,status:'lobby',host_id:'bingo-host',is_public:false,title:'WODLY Bingo',settings:{game:'bingo',mode:S.mode,diff:S.diff,win:S.win,moves:S.moves,repMap:rmap}}).select().single();
     if(!r.error){room=r.data;break;} if(r.error&&!/duplicate|unique/i.test(r.error.message||'')){alert(r.error.message);return;}}
   if(!room){alert('Could not create the game — try again.');return;}
   HOST=room;WINSHOWN=false;$('hCode').textContent=room.code;$('hLink').textContent='wodlygame.com/bplay?room='+room.code;
@@ -358,11 +367,14 @@ function pollLobby(){clearHostPoll();HOSTPOLL=setInterval(async function(){
 $('hCancel').onclick=async function(){try{if(HOST)await sb.from('rooms').update({status:'finished'}).eq('id',HOST.id);}catch(e){}resetToSetup();};
 $('hStart').onclick=async function(){
   if(!HOSTPLAYERS.length&&!confirm('No players have joined yet. Start anyway?'))return;
-  try{await sb.from('rooms').update({status:'playing'}).eq('id',HOST.id);}catch(e){}
+  var isClass=(HOST.settings&&HOST.settings.mode==='class');
+  CALLED=[];var upd={status:'playing'};if(isClass)upd.state={called:[],current:0,ts:Date.now()};
+  try{await sb.from('rooms').update(upd).eq('id',HOST.id);}catch(e){}
   ONLINE=true;WINSHOWN=false;
-  $('gInfo').textContent='Race · '+({0.6:'Beginner',1:'Rx',1.4:'Elite'}[S.diff])+' · '+(S.win>=25?'Blackout':S.win+' line'+(S.win>1?'s':''))+' · phones';
+  $('gInfo').textContent=(isClass?'Class':'Race')+' · '+({0.6:'Beginner',1:'Rx',1.4:'Elite'}[S.diff])+' · '+(S.win>=25?'Blackout':S.win+' line'+(S.win>1?'s':''))+' · phones';
   var lg='';for(var i=0;i<5;i++)lg+='<div class="legchip"><b>'+LETTERS[i]+'</b>'+S.moves[i]+'</div>';$('gLegend').innerHTML=lg;
-  $('callbox').style.display='none';
+  if(isClass){$('callbox').style.display='block';$('curCall').innerHTML='<div style="color:var(--text3);font-size:15px;">Tap “Call next number” to start</div>';$('callNext').onclick=callNextOnline;}
+  else{$('callbox').style.display='none';}
   $('host').classList.remove('active');$('game').classList.add('active');
   renderWall(HOSTPLAYERS);pollWall();
 };

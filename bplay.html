@@ -137,7 +137,7 @@ function rint(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rint(0,i);var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 var LINES=(function(){var L=[];for(var r=0;r<5;r++){var a=[];for(var c=0;c<5;c++)a.push(r*5+c);L.push(a);}for(var c=0;c<5;c++){var b=[];for(var r=0;r<5;r++)b.push(r*5+c);L.push(b);}L.push([0,6,12,18,24]);L.push([4,8,12,16,20]);return L;})();
 
-var ROOM=null, MYID=null, ME={}, SOLO=false, S={diff:1,win:1,moves:[]}, card=[], repMap={}, order=[], idx=0, marks={12:1}, started=false, pollT=null, byMove={}, totalReps=0, LIB=DEFMOVES.slice(), lastLive=-1;
+var ROOM=null, MYID=null, ME={}, SOLO=false, CLASSMODE=false, S={diff:1,win:1,moves:[]}, card=[], repMap={}, order=[], idx=0, marks={12:1}, started=false, pollT=null, statePoll=null, byMove={}, totalReps=0, LIB=DEFMOVES.slice(), lastLive=-1, calledSet={}, current=0, ownWon=false;
 
 function logRecap(name,summary){try{fetch('https://ynznwosssctxbdiauekj.supabase.co/rest/v1/recaps',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:name||'You',summary:summary,gym:null,daily:null})});}catch(e){}}
 
@@ -171,7 +171,7 @@ $('joinBtn').onclick=async function(){
     var room=(r.data&&r.data[0])||null;
     if(!room){$('joinErr').textContent='No game found with that code.';$('joinBtn').disabled=false;return;}
     if(!room.settings||room.settings.game!=='bingo'){$('joinErr').textContent='That code isn’t a Bingo game.';$('joinBtn').disabled=false;return;}
-    ROOM=room; S.diff=+(room.settings.diff||1); S.win=+(room.settings.win||1); S.moves=(room.settings.moves||DEFMOVES).map(function(m){return String(m).toUpperCase();});
+    ROOM=room; S.diff=+(room.settings.diff||1); S.win=+(room.settings.win||1); S.moves=(room.settings.moves||DEFMOVES).map(function(m){return String(m).toUpperCase();}); CLASSMODE=(room.settings.mode==='class');
     var cid='bp_'+Math.random().toString(36).slice(2);
     var ins=await sb.from('players').insert({room_id:room.id,client_id:cid,name:name,avatar:ME.avatar,color:ME.color,bingo:{m:{12:1},sq:0,lines:0,done:false,ts:Date.now()}}).select().single();
     if(ins.error){$('joinErr').textContent=ins.error.message;$('joinBtn').disabled=false;return;}
@@ -202,48 +202,74 @@ function squares(){var n=0;for(var i=0;i<25;i++){if(i!==12&&marks[i])n++;}return
 function linesN(){var n=0;for(var l=0;l<LINES.length;l++){var all=true;for(var q=0;q<5;q++){if(!marks[LINES[l][q]]){all=false;break;}}if(all)n++;}return n;}
 function won(){return S.win>=25?squares()>=24:linesN()>=S.win;}
 
+function colOf(i){return i%5;}
+function repsMoveHTML(i){return '<div class="crt">'+reps(card[i])+'</div><div class="crv">'+S.moves[i%5]+'</div>';}
+
 function beginGame(){
   if(started)return; started=true;
   var cardg=[];for(var r=0;r<5;r++)cardg.push([0,0,0,0,0]);
   for(var c=0;c<5;c++){var lo=c*15+1;var picks=shuffle((function(){var a=[];for(var n=lo;n<lo+15;n++)a.push(n);return a;})()).slice(0,5).sort(function(a,b){return a-b;});for(var r=0;r<5;r++)cardg[r][c]=picks[r];}
   card=[];for(var r=0;r<5;r++)for(var c=0;c<5;c++)card.push(cardg[r][c]);card[12]='FREE';
-  for(var n=1;n<=75;n++)repMap[n]=rint(6,20);
-  order=shuffle((function(){var a=[];for(var i=0;i<25;i++)if(i!==12)a.push(i);return a;})());
-  idx=0;marks={12:1};lastLive=-1;
+  var sr=(ROOM&&ROOM.settings&&ROOM.settings.repMap)||null;
+  for(var n=1;n<=75;n++)repMap[n]=(sr&&sr[n])?sr[n]:rint(6,20);
+  order=CLASSMODE?[]:shuffle((function(){var a=[];for(var i=0;i<25;i++)if(i!==12)a.push(i);return a;})());
+  idx=0;marks={12:1};lastLive=-1;calledSet={};current=0;ownWon=false;
   var h='';for(var i=0;i<5;i++)h+='<img src="'+HDR[i]+'" alt="'+LETTERS[i]+'">';$('bhead').innerHTML=h;
   show('card');render();save(false);
+  if(CLASSMODE)startStatePoll();
 }
 
-function colOf(i){return i%5;}
+function startStatePoll(){
+  if(statePoll)clearInterval(statePoll);
+  statePoll=setInterval(async function(){
+    try{var r=await sb.from('rooms').select('state,status').eq('id',ROOM.id).single();if(!r.data)return;
+      if(r.data.status==='finished'&&!ownWon){clearInterval(statePoll);$('winSub').textContent='Game over — great work! '+squares()+' squares · '+totalReps+' reps.';show('won');return;}
+      var st=r.data.state||{},called=st.called||[],changed=(called.length!==Object.keys(calledSet).length);
+      calledSet={};called.forEach(function(n){calledSet[n]=1;});
+      if(st.current&&st.current!==current){current=st.current;changed=true;}
+      if(changed)render();
+    }catch(e){}
+  },1300);
+}
+
 function render(){
   $('sbProg').textContent=S.win>=25?(squares()+'/24'):(linesN()+'/'+S.win+' line'+(S.win>1?'s':''));
-  var g=$('bgrid'),html='',liveIdx=order[idx];
+  var g=$('bgrid'),html='',liveIdx=CLASSMODE?-1:order[idx];
   for(var i=0;i<25;i++){
-    var val=card[i],done=marks[i],live=(liveIdx===i),cls='bc',inner='',daub='';
+    var val=card[i],done=marks[i],cls='bc',inner='',daub='';
     if(val==='FREE'){cls+=' freecell';}
-    else if(done){cls+=' back';inner='<div class="crt">'+reps(val)+'</div><div class="crv">'+S.moves[colOf(i)]+'</div>';daub='<div class="daub"></div>';}
-    else if(live){cls+=' back live'+(liveIdx!==lastLive?' flip':'');inner='<div class="crt">'+reps(val)+'</div><div class="crv">'+S.moves[colOf(i)]+'</div>';}
+    else if(done){cls+=' back';inner=repsMoveHTML(i);daub='<div class="daub"></div>';}
+    else if(CLASSMODE?calledSet[val]:(liveIdx===i)){cls+=' back live'+((!CLASSMODE&&liveIdx!==lastLive)?' flip':'');inner=repsMoveHTML(i);}
     else{cls+=' face';inner='<div class="cnum">'+val+'</div>';}
     html+='<div class="'+cls+'" data-i="'+i+'">'+inner+daub+'</div>';
   }
-  g.innerHTML=html;lastLive=liveIdx;
-  g.querySelectorAll('.bc.live').forEach(function(c){c.onclick=function(){doNext();};});
+  g.innerHTML=html;if(!CLASSMODE)lastLive=liveIdx;
+  g.querySelectorAll('.bc.live').forEach(function(c){c.onclick=function(){onCell(+c.dataset.i);};});
+  if(CLASSMODE)renderClassCue();else renderRaceCue();
+}
+function renderRaceCue(){
   var nx=order[idx];
-  if(nx!=null){
-    $('cue').innerHTML='<div class="lbl">Your call</div>'+ballHTML(LETTERS[colOf(nx)],card[nx])+'<div class="sub" style="margin-top:6px;">'+reps(card[nx])+' '+S.moves[colOf(nx)]+'</div><button class="btn" id="doBtn">Did it ✓</button>';
-    $('doBtn').onclick=doNext;
-  }else{$('cue').innerHTML='<div class="sub">Card complete! 💪</div>';}
+  if(nx!=null){$('cue').innerHTML='<div class="lbl">Your call</div>'+ballHTML(LETTERS[colOf(nx)],card[nx])+'<div class="sub" style="margin-top:6px;">'+reps(card[nx])+' '+S.moves[colOf(nx)]+'</div><button class="btn" id="doBtn">Did it ✓</button>';$('doBtn').onclick=function(){onCell(order[idx]);};}
+  else{$('cue').innerHTML='<div class="sub">Card complete! 💪</div>';}
 }
-function doNext(){
-  var i=order[idx];if(i==null||marks[i])return;
-  marks[i]=1;var mv=S.moves[i%5];if(mv){var rr=reps(card[i]);byMove[mv]=(byMove[mv]||0)+rr;totalReps+=rr;}
-  idx++;while(idx<order.length&&marks[order[idx]])idx++;
-  var w=won();render();save(w);
-  if(w){
-    if(SOLO)logRecap(ME.name,{byMove:byMove,total:totalReps,count:squares(),place:1,game:'bingo'});
-    $('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares · '+totalReps+' reps.';show('won');
-  }
+function renderClassCue(){
+  if(!current){$('cue').innerHTML='<div class="lbl">Waiting for the caller…</div><div class="sub" style="margin-top:6px;">The big screen calls the numbers.</div>';return;}
+  var letter=LETTERS[Math.floor((current-1)/15)],ci=-1;for(var i=0;i<25;i++){if(card[i]===current){ci=i;break;}}
+  var msg=ci<0?'<div class="sub" style="margin-top:6px;">Not on your card — hang tight.</div>':(marks[ci]?'<div class="sub" style="margin-top:6px;color:var(--green);">Already daubed ✓</div>':'<div class="sub" style="margin-top:6px;color:var(--orange);font-weight:800;">On your card! Do '+reps(current)+' '+S.moves[ci%5]+', then tap it to daub.</div>');
+  $('cue').innerHTML='<div class="lbl">Now calling</div>'+ballHTML(letter,current)+msg;
 }
+function onCell(i){
+  if(i==null||marks[i]||i===12)return;
+  if(CLASSMODE){if(!calledSet[card[i]])return;}
+  else{if(order[idx]!==i)return;}
+  if(!markCell(i))return;
+  if(!CLASSMODE){idx++;while(idx<order.length&&marks[order[idx]])idx++;}
+  afterMark();
+}
+function markCell(i){if(i==null||marks[i]||i===12)return false;marks[i]=1;var mv=S.moves[i%5];if(mv){var rr=reps(card[i]);byMove[mv]=(byMove[mv]||0)+rr;totalReps+=rr;}return true;}
+function afterMark(){var w=won();render();save(w);if(w)winScreen();}
+function winScreen(){ownWon=true;if(statePoll)clearInterval(statePoll);if(SOLO)logRecap(ME.name,{byMove:byMove,total:totalReps,count:squares(),place:1,game:'bingo'});$('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares · '+totalReps+' reps.';show('won');}
+
 async function save(done){
   if(SOLO||!MYID)return;
   try{await sb.from('players').update({bingo:{m:marks,sq:squares(),lines:linesN(),done:!!done,byMove:byMove,total:totalReps,ts:Date.now()}}).eq('id',MYID);}catch(e){}
