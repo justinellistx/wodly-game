@@ -37,6 +37,16 @@
   .pill.on{background:rgba(76,175,80,.2);color:var(--green);}.pill.off{background:rgba(120,120,120,.2);color:var(--text3);}
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
   .sectitle{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:28px 0 12px;display:flex;justify-content:space-between;align-items:center;}
+  details.sec{border:1px solid var(--border);border-radius:12px;margin:0 0 12px;background:rgba(255,255,255,.02);}
+  details.sec>summary.sechead{list-style:none;cursor:pointer;padding:15px 16px;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;color:#fff;user-select:none;}
+  details.sec>summary.sechead::-webkit-details-marker{display:none;}
+  details.sec>summary.sechead .chev{margin-left:auto;color:var(--text3);font-size:13px;transition:transform .18s;}
+  details.sec[open]>summary.sechead .chev{transform:rotate(90deg);}
+  details.sec>summary.sechead:hover{background:rgba(255,255,255,.03);border-radius:12px;}
+  details.sec[open]>summary.sechead{border-bottom:1px solid var(--border);border-radius:12px 12px 0 0;}
+  .sec-body{padding:14px 16px 18px;}
+  .sec-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .sec-sub{color:var(--text3);font-weight:600;font-size:12px;text-transform:none;letter-spacing:0;}
   .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:8px;}
   .stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
   .stat b{display:block;font-size:30px;font-weight:900;line-height:1.1;}
@@ -75,21 +85,18 @@
   <div id="panel" class="screen">
     <div class="topbar"><div><h1>WODLY</h1><div class="sub" style="margin-bottom:0;">Admin</div></div><button class="btn ghost" id="lockBtn">Lock</button></div>
 
-    <!-- ANALYTICS -->
-    <div class="sectitle"><span>📊 Analytics</span>
-      <span style="display:flex;gap:6px;align-items:center;">
-        <span class="seg" id="periodSeg">
-          <button data-d="" class="on">All</button><button data-d="90">90d</button><button data-d="30">30d</button><button data-d="7">7d</button>
-        </span>
+    <details class="sec" id="secAnalytics"><summary class="sechead">📊 Analytics<span class="chev">▸</span></summary><div class="sec-body">
+      <div class="sec-tools">
+        <span class="seg" id="periodSeg"><button data-d="" class="on">All</button><button data-d="90">90d</button><button data-d="30">30d</button><button data-d="7">7d</button></span>
         <button class="btn ghost" id="dlStats" style="padding:6px 12px;font-size:12px;">⬇ CSV</button>
         <button class="btn ghost" id="refreshStats" style="padding:6px 12px;font-size:12px;">Refresh</button>
-      </span>
-    </div>
+      </div>
     <div class="statgrid" id="statGrid"><div class="nodata">Loading…</div></div>
     <div class="angrid" id="anGrid"></div>
 
-    <!-- DAILY WORKOUTS -->
-    <div class="sectitle" style="margin-top:34px;"><span>🔥 Daily workouts</span><button class="btn ghost" id="dRefresh" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
+    </div></details>
+    <details class="sec" id="secDaily"><summary class="sechead">🔥 Daily workouts<span class="chev">▸</span></summary><div class="sec-body">
+      <div class="sec-tools"><button class="btn ghost" id="dRefresh" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
     <div class="card">
       <div style="font-weight:800;font-size:15px;margin-bottom:2px;" id="dFormTitle">Add a daily workout</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Four movements (one per card suit) plus an ace penalty. New workouts join the daily rotation automatically.</div>
@@ -130,7 +137,8 @@
       <div id="dPins" style="margin-top:14px;"></div>
     </div>
 
-    <div class="sectitle" style="margin-top:34px;"><span>Sponsors &amp; deals</span></div>
+    </div></details>
+    <details class="sec" id="secSponsors"><summary class="sechead">🏷️ Sponsors &amp; deals<span class="chev">▸</span></summary><div class="sec-body">
     <div class="card">
       <div style="font-weight:800;font-size:15px;margin-bottom:6px;" id="formTitle">Add a sponsor</div>
       <div class="row">
@@ -161,30 +169,36 @@
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:18px 0 10px;">Sponsors</div>
     <div class="slist" id="slist"><div style="color:var(--text3)">Loading…</div></div>
 
-    <div class="sectitle" style="margin-top:26px;"><span>📈 Sponsor engagement</span><button class="btn ghost" id="loadClicks" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
+    </div></details>
+    <details class="sec" id="secEngagement"><summary class="sechead">📈 Sponsor engagement<span class="chev">▸</span></summary><div class="sec-body">
+      <div class="sec-tools"><button class="btn ghost" id="loadClicks" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
     <div id="clicksBox"><div class="nodata">Loading…</div></div>
 
-    <div class="sectitle" style="margin-top:26px;"><span>📅 Daily workout — sponsor presence</span><button class="btn ghost" id="loadReport" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
+    </div></details>
+    <details class="sec" id="secPresence"><summary class="sechead">📅 Daily workout — sponsor presence<span class="chev">▸</span></summary><div class="sec-body">
+      <div class="sec-tools"><button class="btn ghost" id="loadReport" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
     <div id="reportBox"><div class="nodata">Loading…</div></div>
 
-    <div class="sectitle" style="margin-top:26px;"><span>🧾 Sponsor media kit</span>
-      <span style="display:flex;gap:6px;flex-wrap:wrap;">
+    </div></details>
+    <details class="sec" id="secMediaKit"><summary class="sechead">🧾 Sponsor media kit<span class="chev">▸</span></summary><div class="sec-body">
+      <div class="sec-tools">
         <button class="btn ghost mkp" data-days="7" style="padding:6px 10px;font-size:12px;">7d</button>
         <button class="btn ghost mkp" data-days="30" style="padding:6px 10px;font-size:12px;">30d</button>
         <button class="btn ghost mkp" data-days="90" style="padding:6px 10px;font-size:12px;">90d</button>
         <button class="btn ghost mkp" data-days="0" style="padding:6px 10px;font-size:12px;">All</button>
         <button class="btn" id="mkCsv" style="padding:6px 12px;font-size:12px;">⬇ CSV</button>
-      </span>
-    </div>
+      </div>
     <div style="font-size:11px;color:var(--text3);margin:-4px 0 10px;">Reach &amp; screen-time per sponsor — the numbers you hand a prospect.</div>
     <div id="mkBox"><div class="nodata">Loading…</div></div>
 
-    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:28px 0 10px;">Email subscribers <span id="subsCount" style="color:var(--text2);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+    </div></details>
+    <details class="sec" id="secSubs"><summary class="sechead">✉️ Email subscribers <span id="subsCount" class="sec-sub"></span><span class="chev">▸</span></summary><div class="sec-body">
     <div style="display:flex;gap:10px;margin-bottom:12px;">
       <button class="btn ghost" id="loadSubs">Load subscribers</button>
       <button class="btn" id="dlSubs" style="display:none;">Download CSV</button>
     </div>
     <div id="subsList" style="font-size:13px;color:var(--text3);"></div>
+    </div></details>
   </div>
 </div>
 
@@ -208,8 +222,11 @@ async function api(action,extra){
 $('enterBtn').onclick=async()=>{
   passcode=$('pass').value.trim();$('gateErr').textContent='';
   const r=await api('verify');
-  if(r&&r.ok){show('panel');loadSponsors();loadAnalytics();loadClicks();loadDailyReport();loadMediaKit(30);loadDaily();}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
+  if(r&&r.ok){show('panel');}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
 };
+// Collapsible sections: lazy-load each section's data the first time it's opened.
+const SEC_LOADERS={secAnalytics:function(){loadAnalytics();},secDaily:function(){loadDaily();},secSponsors:function(){loadSponsors();},secEngagement:function(){loadClicks();},secPresence:function(){loadDailyReport();},secMediaKit:function(){loadMediaKit(30);}};
+Object.keys(SEC_LOADERS).forEach(function(id){var d=$(id);if(!d)return;d.addEventListener('toggle',function(){if(d.open&&!d.dataset.loaded){d.dataset.loaded='1';try{SEC_LOADERS[id]();}catch(e){}}});});
 
 // ── Daily workouts ──
 let dailyData=[], dEditId=null;
