@@ -496,7 +496,7 @@ function resumeServed(){
   SERVED=true;SOLO=false;servedEnded=false;capFired=false;vpos={};servedPrev={};game=null;
   const s=room.settings||{};
   {const bdef=(W.BOARDS||[]).find(b=>b.id===(s.boardId||'classic'))||(W.BOARDS||[])[0];if(bdef&&BOARDBG.src.indexOf(bdef.file)<0)BOARDBG.src=bdef.file;}
-  show('gameScreen');$('gameCode').textContent=room.code;loadSponsors().then(function(){pickSponsor();logImpression();});
+  show('gameScreen');$('gameCode').textContent=room.code;loadSponsors().then(function(){pickSponsor();startImpr();});
   $('endResultsBtn').style.display=(((s.finishMode||'all')==='all'))?'':'none';
   $('capBox').style.display=(s.cap?'':'none');
   subscribeServed();pullServed();startServedClock();
@@ -581,7 +581,7 @@ $('startBtn').onclick=async()=>{
   const s=room.settings||gatherSettings();
   {const bdef=(W.BOARDS||[]).find(b=>b.id===(s.boardId||'classic'))||(W.BOARDS||[])[0];if(bdef&&BOARDBG.src.indexOf(bdef.file)<0)BOARDBG.src=bdef.file;}
   try{JUICE.unlock();JUICE.start();}catch(e){}
-  show('gameScreen');$('gameCode').textContent=room.code;loadSponsors().then(function(){pickSponsor();logImpression();});
+  show('gameScreen');$('gameCode').textContent=room.code;loadSponsors().then(function(){pickSponsor();startImpr();});
   $('endResultsBtn').style.display=(((s.finishMode||'all')==='all'))?'':'none';
   $('capBox').style.display=(s.cap?'':'none');
   await callMatch('start');
@@ -654,7 +654,7 @@ function startSolo(){
   {const bdef=(W.BOARDS||[]).find(b=>b.id===game.boardId)||(W.BOARDS||[])[0];if(bdef&&BOARDBG.src.indexOf(bdef.file)<0)BOARDBG.src=bdef.file;}
   try{JUICE.unlock();JUICE.start();}catch(e){}
   show('gameScreen');const gc=$('gameCode');if(gc)gc.textContent='SOLO';
-  loadSponsors().then(function(){pickSponsor();logImpression();});
+  loadSponsors().then(function(){pickSponsor();startImpr();});
   $('endResultsBtn').style.display=(game.finishMode==='all'&&game.players.length>1)?'':'none';
   $('capBox').style.display=game.timeCap>0?'':'none';if(game.timeCap>0)$('capClock').textContent=fmt(game.timeCap);
   $('soloControls').style.display='';
@@ -932,8 +932,12 @@ async function writeState(){if(!room||!game)return;
   try{await sb.from('rooms').update({state}).eq('id',room.id);}catch(e){}}
 
 // ── Sponsors ──
-let sponsors=[], chosenSponsor=null, imprKey=null;
-function logImpression(){if(!chosenSponsor)return;const k=((room&&room.code)||'solo')+'|'+chosenSponsor.id;if(k===imprKey)return;imprKey=k;try{sb.from('sponsor_impressions').insert({sponsor_id:chosenSponsor.id,source:'board',daily:(window.__dailyKey||null)});}catch(e){}}
+let sponsors=[], chosenSponsor=null, imprSession=null, imprTimer=null, imprGym=null;
+const deviceId=(function(){try{let d=localStorage.getItem('wodly_device');if(!d){d=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(String(Date.now())+Math.random());localStorage.setItem('wodly_device',d);}return d;}catch(e){return null;}})();
+function imprHeadcount(){try{if(typeof players!=='undefined'&&players&&players.length)return players.length;}catch(e){}try{if(game&&game.players)return game.players.length;}catch(e){}return 0;}
+function imprLive(){if(!chosenSponsor)return false;const gs=$('gameScreen');if(!gs||!gs.classList.contains('active'))return false;try{if(typeof SERVED!=='undefined'&&SERVED)return !servedEnded;}catch(e){}try{if(game)return !game.ended;}catch(e){}return false;}
+function imprTick(){if(!imprLive()||!imprSession)return;try{sb.from('sponsor_impressions').insert({sponsor_id:chosenSponsor.id,source:'board',daily:(window.__dailyKey||null),session:imprSession,gym:imprGym,device:deviceId,players:imprHeadcount()});}catch(e){}}
+function startImpr(){if(!chosenSponsor)return;imprSession=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(String(Date.now())+Math.random());imprGym=($('gymName')&&$('gymName').value.trim())||null;imprTick();if(!imprTimer)imprTimer=setInterval(imprTick,60000);}
 function spShuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 async function loadSponsors(){try{const{data}=await sb.from('sponsors').select('*').eq('active',true).order('sort').order('created_at');sponsors=data||[];}catch(e){sponsors=[];}}
 // Even-but-random: each new game features ONE sponsor. A shuffle "bag" (saved on this

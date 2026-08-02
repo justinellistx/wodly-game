@@ -55,6 +55,7 @@
   .seg{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:9px;overflow:hidden;}
   .seg button{background:none;border:none;color:var(--text2);font-size:12px;font-weight:700;padding:6px 11px;cursor:pointer;font-family:inherit;}
   .seg button.on{background:var(--orange);color:#000;}
+  .mkp.on{background:var(--orange);color:#000;border-color:var(--orange);}
 </style>
 </head>
 <body>
@@ -166,6 +167,18 @@
     <div class="sectitle" style="margin-top:26px;"><span>📅 Daily workout — sponsor presence</span><button class="btn ghost" id="loadReport" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
     <div id="reportBox"><div class="nodata">Loading…</div></div>
 
+    <div class="sectitle" style="margin-top:26px;"><span>🧾 Sponsor media kit</span>
+      <span style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn ghost mkp" data-days="7" style="padding:6px 10px;font-size:12px;">7d</button>
+        <button class="btn ghost mkp" data-days="30" style="padding:6px 10px;font-size:12px;">30d</button>
+        <button class="btn ghost mkp" data-days="90" style="padding:6px 10px;font-size:12px;">90d</button>
+        <button class="btn ghost mkp" data-days="0" style="padding:6px 10px;font-size:12px;">All</button>
+        <button class="btn" id="mkCsv" style="padding:6px 12px;font-size:12px;">⬇ CSV</button>
+      </span>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin:-4px 0 10px;">Reach &amp; screen-time per sponsor — the numbers you hand a prospect.</div>
+    <div id="mkBox"><div class="nodata">Loading…</div></div>
+
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:28px 0 10px;">Email subscribers <span id="subsCount" style="color:var(--text2);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
     <div style="display:flex;gap:10px;margin-bottom:12px;">
       <button class="btn ghost" id="loadSubs">Load subscribers</button>
@@ -195,7 +208,7 @@ async function api(action,extra){
 $('enterBtn').onclick=async()=>{
   passcode=$('pass').value.trim();$('gateErr').textContent='';
   const r=await api('verify');
-  if(r&&r.ok){show('panel');loadSponsors();loadAnalytics();loadClicks();loadDailyReport();loadDaily();}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
+  if(r&&r.ok){show('panel');loadSponsors();loadAnalytics();loadClicks();loadDailyReport();loadMediaKit(30);loadDaily();}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
 };
 
 // ── Daily workouts ──
@@ -292,6 +305,33 @@ async function loadDailyReport(){
   box.innerHTML=html;
 }
 $('loadReport').onclick=loadDailyReport;
+
+// ── Sponsor media kit ──
+let mkData=[], mkDays=30;
+function fmtDur(sec){sec=+sec||0;const h=Math.floor(sec/3600),m=Math.round((sec%3600)/60);if(h>0)return h+'h '+(m>0?m+'m':'');if(m>0)return m+'m';return (sec>0?sec+'s':'0');}
+async function loadMediaKit(days){
+  if(typeof days==='number')mkDays=days;
+  const box=$('mkBox');box.innerHTML='<div class="nodata">Loading…</div>';
+  document.querySelectorAll('.mkp').forEach(b=>b.classList.toggle('on',(+b.dataset.days)===mkDays));
+  const r=await api('media_kit',{days:mkDays});
+  if(!r||r.error||!r.data){box.innerHTML='<div class="nodata">Could not load'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
+  mkData=r.data||[];
+  const any=mkData.some(s=>(s.games||0)>0);
+  if(!any){box.innerHTML='<div class="nodata">No sponsor exposure logged in this period yet — it fills in as games are played on the board &amp; Bingo.</div>';return;}
+  box.innerHTML='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="color:var(--text3);text-align:left;">'
+    +'<th style="padding:6px 8px;">Sponsor</th><th style="padding:6px 8px;text-align:right;">Games</th><th style="padding:6px 8px;text-align:right;">Screen time</th><th style="padding:6px 8px;text-align:right;">Athlete-views</th><th style="padding:6px 8px;text-align:right;">Locations</th><th style="padding:6px 8px;text-align:right;">Scans</th><th style="padding:6px 8px;text-align:right;">Scans/game</th></tr></thead><tbody>'
+    +mkData.map(s=>{const cpg=(s.games>0)?(s.clicks/s.games).toFixed(2):'0';return `<tr style="border-top:1px solid var(--border);"><td style="padding:7px 8px;font-weight:700;">${esc(s.name)}${s.active?'':' <span class="pill off">Hidden</span>'}</td><td style="padding:7px 8px;text-align:right;">${s.games||0}</td><td style="padding:7px 8px;text-align:right;font-weight:800;">${fmtDur(s.screen_sec)}</td><td style="padding:7px 8px;text-align:right;">${s.athlete_views||0}</td><td style="padding:7px 8px;text-align:right;">${s.locations||0}</td><td style="padding:7px 8px;text-align:right;">${s.clicks||0}</td><td style="padding:7px 8px;text-align:right;color:var(--orange);font-weight:800;">${cpg}</td></tr>`;}).join('')
+    +'</tbody></table></div>';
+}
+document.querySelectorAll('.mkp').forEach(b=>b.onclick=()=>loadMediaKit(+b.dataset.days));
+$('mkCsv').onclick=()=>{
+  if(!mkData.length){alert('Nothing to export yet.');return;}
+  const label=(mkDays>0?mkDays+'d':'all-time');
+  const hdr=['Sponsor','Games','ScreenTimeSeconds','AthleteViews','Locations','Devices','Scans','Period'];
+  const rows=mkData.map(s=>[s.name,s.games||0,s.screen_sec||0,s.athlete_views||0,s.locations||0,s.devices||0,s.clicks||0,label]);
+  const csv=[hdr].concat(rows).map(r=>r.map(v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wodly-sponsor-mediakit-'+label+'.csv';document.body.appendChild(a);a.click();a.remove();
+};
 
 // ── Analytics ──
 const B_NAME={classic:'Classic',arena:'Arena',box:'The Box',vintage:'Vintage',july4th:'July 4th'};
