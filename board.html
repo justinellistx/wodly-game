@@ -958,7 +958,7 @@ function pickSponsor(){
 function renderSponsor(){const el=$('sponsor');if(!el)return;const s=chosenSponsor;if(!s){el.style.display='none';return;}
   el.style.display='flex';
   const hasDest=s.website_url||s.social_url;
-  const qtarget=hasDest?(s.id?('https://wodlygame.com/go?s='+s.id+'&src=board'):hasDest):'';
+  const qtarget=hasDest?(s.id?('https://wodlygame.com/go?s='+s.id+'&src=board'+(s.tagline?'&redeem=1':'')):hasDest):'';
   el.innerHTML=`<span class="sp-lbl">Presented by</span>${s.logo?`<img class="sp-logo" src="${s.logo}" alt="${esc(s.name)}">`:''}<span class="sp-name">${esc(s.name)}</span>${s.website_url?`<span class="sp-web">${esc(s.website_url.replace(/^https?:\/\//,''))}</span>`:''}${s.tagline?`<span class="sp-deal">${esc(s.tagline)}</span>`:''}${qtarget?`<div class="sp-qrwrap"><div class="sp-qr" id="spQr"></div><span class="sp-scan">${s.website_url?'Scan to visit':'Scan for socials'}</span></div>`:''}`;
   if(qtarget){const q=$('spQr');q.innerHTML='';try{new QRCode(q,{text:qtarget,width:118,height:118,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}}}
 loadSponsors();
