@@ -272,6 +272,10 @@
           <input class="ti" id="capInput" type="number" value="20" style="width:64px;"/>
           <span style="font-size:13px;color:var(--text2);">min</span>
         </div>
+        <div class="toggle-row" style="margin-top:10px;">
+          <label class="toggle"><input type="checkbox" id="pacerToggle"/><span class="slider"></span></label>
+          <div class="toggle-label">🤖 Ghost pacer — add a world-average bot to race (auto-on for online games)</div>
+        </div>
       </div>
     </div>
     <div class="adv"><div class="sec" style="margin-top:18px;">Board theme</div>
@@ -412,7 +416,7 @@ function _v(id){const e=$(id);return e?e.value:'';}
 function _set(id,v){if(v==null||v==='')return;const e=$(id);if(e)e.value=v;}
 const SET_KEY='wodly_settings_v1';
 function upv(id,def){var e=$(id);var v=e&&e.value?e.value.trim():'';return (v||def).toUpperCase();}
-function gatherSettings(){return{mv:{hearts:upv('mv-hearts','PUSH-UPS'),diamonds:upv('mv-diamonds','AIR SQUATS'),clubs:upv('mv-clubs','BURPEES'),spades:upv('mv-spades','SIT-UPS')},units:{hearts:_v('mvu-hearts')||'reps',diamonds:_v('mvu-diamonds')||'reps',clubs:_v('mvu-clubs')||'reps',spades:_v('mvu-spades')||'reps'},aceReps:Math.max(1,parseInt(_v('ace-reps'))||10),aceMove:upv('ace-move','BURPEES'),aceUnit:_v('ace-unit')||'reps',deckSz:selVal('deckRow')||'standard',diff:selVal('diffRow')||'easy',useTimer:$('turnTimerToggle').checked,turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60),penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),cap:$('capToggle').checked,capMin:Math.max(1,parseInt(_v('capInput'))||20),finishMode:selVal('finishRow')||'all',boardId:selBoard||'classic',presetId:(($('presetSel')&&$('presetSel').value)||''),presetName:(function(){var s=$('presetSel'),p=(s&&s.value&&W.PRESETS)?W.PRESETS.find(x=>x.id===s.value):null;return p?p.name:'Custom';})(),source:'gym',gym:(($('gymName')&&$('gymName').value.trim())||null),daily:(window.__dailyKey||null)};}
+function gatherSettings(){return{mv:{hearts:upv('mv-hearts','PUSH-UPS'),diamonds:upv('mv-diamonds','AIR SQUATS'),clubs:upv('mv-clubs','BURPEES'),spades:upv('mv-spades','SIT-UPS')},units:{hearts:_v('mvu-hearts')||'reps',diamonds:_v('mvu-diamonds')||'reps',clubs:_v('mvu-clubs')||'reps',spades:_v('mvu-spades')||'reps'},aceReps:Math.max(1,parseInt(_v('ace-reps'))||10),aceMove:upv('ace-move','BURPEES'),aceUnit:_v('ace-unit')||'reps',deckSz:selVal('deckRow')||'standard',diff:selVal('diffRow')||'easy',useTimer:$('turnTimerToggle').checked,turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60),penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),cap:$('capToggle').checked,capMin:Math.max(1,parseInt(_v('capInput'))||20),finishMode:selVal('finishRow')||'all',boardId:selBoard||'classic',presetId:(($('presetSel')&&$('presetSel').value)||''),presetName:(function(){var s=$('presetSel'),p=(s&&s.value&&W.PRESETS)?W.PRESETS.find(x=>x.id===s.value):null;return p?p.name:'Custom';})(),source:'gym',gym:(($('gymName')&&$('gymName').value.trim())||null),daily:(window.__dailyKey||null),pacer:($('pacerToggle')&&$('pacerToggle').checked)||false};}
 // Movement library: dropdown of known movements + remembered units; new ones register on game start.
 let MOVEUNITS={};
 function unitFor(name){var n=String(name||'').toLowerCase();if(n.startsWith('m ')||n.endsWith(' m')||n.indexOf('meter')>=0||n.indexOf('(m)')>=0||/[0-9]\s*m(\b|$)/.test(n))return 'meters';if(n.indexOf('cal')>=0)return 'cal';return MOVEUNITS[String(name||'').trim().toUpperCase()]||'reps';}
@@ -433,6 +437,7 @@ function loadSettings(){let s;try{s=JSON.parse(localStorage.getItem(SET_KEY)||'n
   if(typeof s.useTimer==='boolean'){$('turnTimerToggle').checked=s.useTimer;$('timerSettings').classList.toggle('show',s.useTimer);}
   _set('turnTimerInput',s.turnSec);_set('penTimerInput',s.penSec);
   if(typeof s.cap==='boolean')$('capToggle').checked=s.cap;_set('capInput',s.capMin);
+  if($('pacerToggle')&&typeof s.pacer==='boolean')$('pacerToggle').checked=s.pacer;
   if(s.units){if($('mvu-hearts'))$('mvu-hearts').value=s.units.hearts||'reps';if($('mvu-diamonds'))$('mvu-diamonds').value=s.units.diamonds||'reps';if($('mvu-clubs'))$('mvu-clubs').value=s.units.clubs||'reps';if($('mvu-spades'))$('mvu-spades').value=s.units.spades||'reps';}
   if(s.aceUnit&&$('ace-unit'))$('ace-unit').value=s.aceUnit;}
 loadSettings();
@@ -597,6 +602,14 @@ function subscribeServed(){
 async function pullServed(){if(!room||!SERVED)return;try{const{data}=await sb.from('rooms').select('state').eq('id',room.id).maybeSingle();if(data)onServed(data.state);}catch(e){}}
 function animateServedMove(pid,from,to){const start=performance.now(),dur=460;vpos[pid]=from;
   (function f(now){const t=Math.min(1,(now-start)/dur);vpos[pid]=from+(to-from)*t;drawTokens();if(t<1)requestAnimationFrame(f);else{delete vpos[pid];drawTokens();}})(start);}
+// ── World pacer (client-only ghost; never written to state, never logged) ──
+let PACER={t0:0,avg:900,pos:0}, pacerTimer=null;
+(async function(){try{const r=await sb.rpc('avg_finish_seconds');if(r&&!r.error&&r.data)PACER.avg=Math.max(120,+r.data||900);}catch(e){}})();
+function pacerOnFor(state){return !!((room&&room.is_public)||(state&&state.settings&&state.settings.pacer)||(room&&room.settings&&room.settings.pacer));}
+function makePacer(total){if(!PACER.t0)PACER.t0=Date.now();const frac=Math.min(1,((Date.now()-PACER.t0)/1000)/(PACER.avg||900));PACER.pos=frac*Math.max(1,(total-1));return {id:'__pacer',name:'World pacer',avatar:null,color:'#00E0C0',pos:PACER.pos,status:'',pacer:true,finished:false};}
+function drawPacerToken(ctx,cx,cy,ns){const rad=ns*0.32;ctx.save();ctx.setLineDash([5,4]);ctx.lineWidth=Math.max(2,ns*0.06);ctx.strokeStyle='#00E0C0';ctx.beginPath();ctx.arc(cx,cy,rad+ns*0.14,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.shadowColor='#00E0C0';ctx.shadowBlur=16;ctx.fillStyle='rgba(0,224,192,.92)';ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#04201c';ctx.font='bold '+Math.round(ns*0.42)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🤖',cx,cy+1);ctx.textBaseline='alphabetic';ctx.restore();}
+function startPacerTick(){if(pacerTimer)return;pacerTimer=setInterval(function(){if(!SERVED||!game||game.phase!=='playing'){return;}const total=game.total||2;const frac=Math.min(1,((Date.now()-PACER.t0)/1000)/(PACER.avg||900));const pc=(game.players||[]).filter(function(x){return x.pacer;})[0];if(pc){pc.pos=frac*Math.max(1,(total-1));drawTokens();}},450);}
+function stopPacerTick(){if(pacerTimer){clearInterval(pacerTimer);pacerTimer=null;}}
 function onServed(state){
   if(!SERVED||!state||!state.players)return;
   const firstRender=!game;
@@ -605,6 +618,7 @@ function onServed(state){
   if(firstRender){sizeCanvas();}
   else if(cv&&cv.width&&(!game.path||game.path.length!==game.total))game.path=genPath(game.total,cv.width,cv.height);
   state.players.forEach(p=>{const prev=servedPrev[p.id];if(prev!=null&&prev!==p.pos)animateServedMove(p.id,prev,p.pos);servedPrev[p.id]=p.pos;});
+  if(pacerOnFor(state)&&state.phase==='playing'){game.players=state.players.concat([makePacer(game.total||2)]);startPacerTick();}else{PACER.t0=0;stopPacerTick();}
   drawBoard();drawTokens();renderStandings();renderRecent();
   if(state.phase==='finished'&&!servedEnded){servedEnded=true;stopClocks();clearInterval(servedPoll);renderResults('served');}
 }
@@ -767,6 +781,7 @@ function drawTokens(){const cv=$('tokenCanvas'),ctx=cv.getContext('2d'),W2=cv.wi
     if(fr>0&&fp<total-1){const a=spaceXY(fp,total),b=spaceXY(fp+1,total);cx=a.x+(b.x-a.x)*fr;cy=a.y+(b.y-a.y)*fr-Math.sin(fr*Math.PI)*ns*0.55;}
     else{const sP=spaceXY(Math.min(fp,total-1),total);cx=sP.x;cy=sP.y;}
     const o=offs[pi%6];cx+=o[0]*ns*0.5;cy+=o[1]*ns*0.5;
+    if(p.pacer){drawPacerToken(ctx,cx,cy,ns);return;}
     const img=TOKIMG[p.avatar],act=p.status==='working',rad=ns*0.32;
     // glowing base disc marks the square
     ctx.save();ctx.shadowColor=p.color;ctx.shadowBlur=act?28:12;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.fill();ctx.restore();

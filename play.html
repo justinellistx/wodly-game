@@ -216,6 +216,12 @@ const MATCH_FN=W.SUPA_URL+'/functions/v1/match';
 // board never freezes players). Only public/scheduled matches auto-start from a phone; private
 // in-gym games still wait for the host to press START on the board.
 function isOnline(){return !!room;}
+// World pacer (client-only ghost; never written to state or logged)
+let PPACER={t0:0,avg:900};
+(async function(){try{const r=await sb.rpc('avg_finish_seconds');if(r&&!r.error&&r.data)PPACER.avg=Math.max(120,+r.data||900);}catch(e){}})();
+function pacerOn(){return !!(room&&(room.is_public||(room.settings&&room.settings.pacer)));}
+function injectPacer(state){try{if(!state)return;state.players=(state.players||[]).filter(function(p){return !p.pacer;});if(pacerOn()&&state.phase==='playing'&&state.total){if(!PPACER.t0)PPACER.t0=Date.now();var frac=Math.min(1,((Date.now()-PPACER.t0)/1000)/(PPACER.avg||900));state.players.push({id:'__pacer',name:'World pacer',avatar:null,color:'#00E0C0',pos:frac*Math.max(1,(state.total-1)),status:'',pacer:true,finished:false});}else if(state.phase!=='playing'){PPACER.t0=0;}}catch(e){}}
+setInterval(function(){try{if(!lastState||lastState.phase!=='playing'||!pacerOn())return;var pc=(lastState.players||[]).filter(function(p){return p.pacer;})[0];if(!pc)return;var frac=Math.min(1,((Date.now()-PPACER.t0)/1000)/(PPACER.avg||900));pc.pos=frac*Math.max(1,(lastState.total-1));drawMini();}catch(e){}},600);
 function autoStarts(){return !!(room&&(room.is_public||room.scheduled_at));}
 async function callMatch(action,extra){
   for(let i=0;i<4;i++){
@@ -384,6 +390,7 @@ async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim
   }catch(e){msg.textContent='Network error.';msg.className='submsg err';$('subBtn').disabled=false;}
 }
 function renderState(state){
+  injectPacer(state);
   const body=$('playBody'), phase=state.phase;
   const mp=myPlayer(state);
   lastState=state;
