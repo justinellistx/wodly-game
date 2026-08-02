@@ -220,6 +220,8 @@ function pickSponsor(){
   try{localStorage.setItem('wodly_sponsor_bag',JSON.stringify({key:key,bag:bag}));}catch(e){}
 }
 function sponsorMin(){return SPONSOR?{id:SPONSOR.id,name:SPONSOR.name,logo:SPONSOR.logo||null,website_url:SPONSOR.website_url||null,social_url:SPONSOR.social_url||null,tagline:SPONSOR.tagline||null}:null;}
+var imprKey=null;
+function logImpression(){if(!SPONSOR||!sb)return;var k=((HOST&&HOST.code)||'local')+'|'+SPONSOR.id;if(k===imprKey)return;imprKey=k;try{sb.from('sponsor_impressions').insert({sponsor_id:SPONSOR.id,source:'bingo',daily:null});}catch(e){}}
 function renderBSponsor(){
   var s=SPONSOR;
   var lob=$('spLobby');
@@ -296,7 +298,7 @@ $('startBtn').onclick=function(){
   S.players.forEach(function(p){p.card=newCard();p.marks={12:1};
     p.order=shuffle((function(){var a=[];for(var i=0;i<25;i++)if(i!==12)a.push(i);return a;})());
     p.idx=0;});
-  pickSponsor();renderBSponsor();
+  pickSponsor();logImpression();renderBSponsor();
   $('setup').classList.remove('active');$('game').classList.add('active');
   $('gInfo').textContent=(S.mode==='race'?'Race':'Class')+' · '+({0.6:'Beginner',1:'Rx',1.4:'Elite'}[S.diff])+' · '+(S.win>=25?'Blackout':S.win+' line'+(S.win>1?'s':''));
   var lg='';for(var i=0;i<5;i++)lg+='<div class="legchip"><b>'+LETTERS[i]+'</b>'+S.moves[i]+'</div>';$('gLegend').innerHTML=lg;
@@ -374,7 +376,7 @@ function finish(p){
   renderBSponsor();$('overlay').classList.add('on');
   if(!ONLINE&&!LOGGED){LOGGED=true;S.players.forEach(function(pl){var bm=byMoveFor(pl),tot=0;for(var k in bm)tot+=bm[k];if(tot>0)logRecap(pl.name,{byMove:bm,total:tot,count:squaresFor(pl),place:(pl===p)?1:null,game:'bingo'},S.gym);});}
 }
-function resetToSetup(){$('overlay').classList.remove('on');$('game').classList.remove('active');$('host').classList.remove('active');$('setup').classList.add('active');clearHostPoll();ONLINE=false;WINSHOWN=false;LOGGED=false;S.players.forEach(function(p){delete p.done;});}
+function resetToSetup(){$('overlay').classList.remove('on');$('game').classList.remove('active');$('host').classList.remove('active');$('setup').classList.add('active');clearHostPoll();ONLINE=false;WINSHOWN=false;LOGGED=false;imprKey=null;S.players.forEach(function(p){delete p.done;});}
 $('winClose').onclick=resetToSetup;
 $('newGame').onclick=resetToSetup;
 
@@ -406,7 +408,7 @@ $('hostBtn').onclick=async function(){
   HOST=room;WINSHOWN=false;$('hCode').textContent=room.code;$('hLink').textContent='wodlygame.com/bplay?room='+room.code;
   var joinUrl=location.origin+'/bplay?room='+room.code;
   $('qr').innerHTML='';try{new QRCode($('qr'),{text:joinUrl,width:162,height:162,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}
-  renderBSponsor();show('host');pollLobby();
+  renderBSponsor();logImpression();show('host');pollLobby();
 };
 function pollLobby(){clearHostPoll();HOSTPOLL=setInterval(async function(){
   try{var r=await sb.from('players').select('id,name,color').eq('room_id',HOST.id).order('created_at');var pl=r.data||[];HOSTPLAYERS=pl;
