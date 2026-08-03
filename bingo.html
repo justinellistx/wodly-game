@@ -124,6 +124,8 @@
         <button data-v="1" class="on">First line</button><button data-v="3">3 lines</button><button data-v="25">Blackout</button>
       </div>
 
+      <div id="bEstimate" style="margin-top:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.5;"></div>
+
       <label>Gym / box name (optional — counts toward the gym leaderboard)</label>
       <input type="text" id="gymName" list="gymList" placeholder="e.g. CrossFit Willis" maxlength="40" autocomplete="off">
       <datalist id="gymList"></datalist>
@@ -277,8 +279,21 @@ function beep(freq,dur){try{var ac=beep.ac||(beep.ac=new (window.AudioContext||w
 /* ---- setup wiring ---- */
 function segWire(id,cb){$(id).querySelectorAll('button').forEach(function(b){b.onclick=function(){$(id).querySelectorAll('button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');cb(b.dataset.v);};});}
 segWire('modeSeg',function(v){S.mode=v;$('modeNote').textContent=v==='race'?'Everyone plays their own card at their own pace. First to a line wins.':'One shared caller. Same number to everyone; the class moves together. First to a line wins.';});
-segWire('diffSeg',function(v){S.diff=parseFloat(v);});
-segWire('winSeg',function(v){S.win=parseInt(v,10);});
+// Reference expectations per player (from 2000-game simulations, at Rx; reps scale with difficulty)
+var BREF={1:{calls:41,rpm:35},3:{calls:55,rpm:47},25:{calls:73,rpm:62}};
+function updateEstimate(){
+  var el=$('bEstimate');if(!el)return;
+  var ref=BREF[S.win]||BREF[1];
+  var rpm=Math.max(1,Math.round(ref.rpm*S.diff)), total=rpm*5;
+  var mins=Math.max(3,Math.round(total*2.5/60));
+  var effort=total<160?'Quick':total<260?'Moderate':total<380?'Tough':'Grind';
+  el.innerHTML='<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px;">What to expect (per player)</div>'
+    +'<span style="color:#fff;font-weight:800;">≈ '+ref.calls+' calls</span> · <span style="color:#fff;font-weight:800;">~'+rpm+' reps</span>/movement · <span style="color:#fff;font-weight:800;">~'+total+' total reps</span>'
+    +'<br><span style="color:var(--orange);font-weight:700;">'+effort+'</span> · about '+mins+' min';
+}
+segWire('diffSeg',function(v){S.diff=parseFloat(v);updateEstimate();});
+segWire('winSeg',function(v){S.win=parseInt(v,10);updateEstimate();});
+updateEstimate();
 $('shuffleMoves').onclick=buildMoveInputs;
 
 function renderPlayers(){
