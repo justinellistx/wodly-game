@@ -318,7 +318,7 @@ async function doBingoSub(){
   var B='https://ynznwosssctxbdiauekj.supabase.co';
   try{
     var r=await fetch(B+'/rest/v1/subscribers',{method:'POST',headers:{apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:ME.name||null,source:'bingo-recap',consent:true})});
-    if(lastSummary)fetch(B+'/functions/v1/send-recap',{method:'POST',headers:{apikey:PUB,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:ME.name||null,image_url:null,summary:lastSummary,sponsor:(SPONSOR?{id:SPONSOR.id||null,name:SPONSOR.name,website_url:SPONSOR.website_url||SPONSOR.social_url||null,tagline:SPONSOR.tagline||null}:null)})});
+    if(lastSummary)fetch(B+'/functions/v1/send-recap',{method:'POST',headers:{apikey:PUB,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:ME.name||null,image_url:null,summary:lastSummary,avatar:(ME&&ME.img)||null,sponsor:(SPONSOR?{id:SPONSOR.id||null,name:SPONSOR.name,website_url:SPONSOR.website_url||SPONSOR.social_url||null,tagline:SPONSOR.tagline||null}:null)})});
     if(r.ok){msg.textContent='Sent! Check your inbox ✓';msg.className='submsg ok';}
     else if(r.status===409){msg.textContent="You're subscribed — recap sent ✓";msg.className='submsg ok';}
     else{msg.textContent='Could not send — try again later.';msg.className='submsg err';$('bSubBtn').disabled=false;}
