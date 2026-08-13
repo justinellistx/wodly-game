@@ -32,6 +32,7 @@
   .mvrow{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
   .mvrow .let{width:28px;height:28px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--orange);flex-shrink:0;}
   .mvrow input{flex:1;}
+  .mvrow .mvunit{flex-shrink:0;width:82px;font-size:13px;padding:9px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text2);font-family:inherit;}
   .plist{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
   .prow{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
   .pdot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
@@ -264,6 +265,11 @@ function linesFor(p){var n=0;for(var l=0;l<LINES.length;l++){var all=true;for(va
 function squaresFor(p){var n=0;for(var i=0;i<25;i++){if(i!==12&&p.marks[i])n++;}return n;}
 function won(p){return S.win>=25?squaresFor(p)>=24:linesFor(p)>=S.win;}
 function reps(num){return Math.max(1,Math.round((S.repMap[num]||10)*S.diff));}
+function isMeters(m){m=String(m||'').trim().toLowerCase();return m.indexOf('meter')>=0||m.indexOf('(m)')>=0||/^m\s/.test(m)||/\sm$/.test(m)||/[0-9]\s*m(\b|$)/.test(m);}
+function repScore(move,n,unit){n=Number(n)||0;var meters=(unit==='meters')||(!unit&&isMeters(move));return meters?Math.max(1,Math.round(n/10)):n;}
+function usuf(u){return u==='meters'?'m':(u==='cal'?' cal':'');}
+function unitFor(name){var n=String(name||'').toLowerCase();if(n.indexOf('meter')>=0||n.indexOf('(m)')>=0||/^m\s/.test(n)||/\sm$/.test(n)||/[0-9]\s*m(\b|$)/.test(n))return 'meters';if(n.indexOf('cal')>=0)return 'cal';return MOVEUNITS[String(name||'').trim().toUpperCase()]||'reps';}
+function uOf(i){return (S.moveUnits&&S.moveUnits[i])||'reps';}
 
 var MOVEUNITS={},LIB=POOL.slice(),sb=null;
 try{sb=window.supabase&&supabase.createClient('https://ynznwosssctxbdiauekj.supabase.co','sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq');}catch(e){}
@@ -272,10 +278,12 @@ async function loadLib(){
   if(sb){try{var r=await sb.rpc('movement_list');if(!r.error&&Array.isArray(r.data)&&r.data.length){LIB=r.data.map(function(m){MOVEUNITS[String(m.name).toUpperCase()]=m.unit;return m.name;});$('bMoves').innerHTML=LIB.map(function(n){return '<option value="'+String(n).replace(/"/g,'&quot;')+'">';}).join('');}}catch(e){}}
   buildMoveInputs();
 }
+function unitOpts(sel){return ['reps','cal','meters'].map(function(u){return '<option value="'+u+'"'+(u===sel?' selected':'')+'>'+u+'</option>';}).join('');}
 function buildMoveInputs(){
   var picks=shuffle(LIB).slice(0,5),html='';
-  for(var i=0;i<5;i++)html+='<div class="mvrow"><span class="let">'+LETTERS[i]+'</span><input type="text" id="mv'+i+'" list="bMoves" autocomplete="off" value="'+String(picks[i]||'').replace(/"/g,'&quot;')+'" placeholder="Movement"></div>';
+  for(var i=0;i<5;i++){var mv=String(picks[i]||'');html+='<div class="mvrow"><span class="let">'+LETTERS[i]+'</span><input type="text" id="mv'+i+'" list="bMoves" autocomplete="off" value="'+mv.replace(/"/g,'&quot;')+'" placeholder="Movement"><select id="mu'+i+'" class="mvunit">'+unitOpts(unitFor(mv))+'</select></div>';}
   $('moveInputs').innerHTML=html;
+  for(var j=0;j<5;j++){(function(k){var inp=$('mv'+k),su=$('mu'+k);if(inp&&su)inp.addEventListener('change',function(){su.value=unitFor(inp.value);});})(j);}
 }
 
 function newCard(){
@@ -324,7 +332,7 @@ $('startBtn').onclick=function(){
   if(!S.players.length){addPlayer();if(!S.players.length){alert('Add at least one player.');return;}}
   S.gym=($('gymName')&&$('gymName').value.trim())||null;
   S.moves=[];S.moveUnits=[];
-  for(var mi=0;mi<5;mi++){var mv=(($('mv'+mi)&&$('mv'+mi).value)||'').trim();if(!mv)mv=shuffle(LIB)[0]||'BURPEES';mv=mv.toUpperCase();S.moves.push(mv);S.moveUnits.push(MOVEUNITS[mv]||'reps');}
+  for(var mi=0;mi<5;mi++){var mv=(($('mv'+mi)&&$('mv'+mi).value)||'').trim();if(!mv)mv=shuffle(LIB)[0]||'BURPEES';mv=mv.toUpperCase();S.moves.push(mv);S.moveUnits.push((($('mu'+mi)&&$('mu'+mi).value)||MOVEUNITS[mv]||'reps'));}
   if(sb)S.moves.forEach(function(m,i){try{sb.rpc('add_movement',{p_name:m,p_unit:S.moveUnits[i]||'reps'});}catch(e){}});
   S.repMap={};for(var n=1;n<=75;n++)S.repMap[n]=rint(6,20);
   S.called={};S.current=0;S.over=false;S.finCount=0;LOGGED=false;
@@ -335,7 +343,7 @@ $('startBtn').onclick=function(){
   pickSponsor();renderBSponsor();
   $('setup').classList.remove('active');$('game').classList.add('active');startImpr();
   $('gInfo').textContent=(S.mode==='race'?'Race':'Class')+' · '+({0.6:'Beginner',1:'Rx',1.4:'Elite'}[S.diff])+' · '+(S.win>=25?'Blackout':S.win+' line'+(S.win>1?'s':''))+' · '+(S.finish==='all'?'Everyone finishes':'First to finish');
-  var lg='';for(var i=0;i<5;i++)lg+='<div class="legchip"><b>'+LETTERS[i]+'</b>'+S.moves[i]+'</div>';$('gLegend').innerHTML=lg;
+  var lg='';for(var i=0;i<5;i++)lg+='<div class="legchip"><b>'+LETTERS[i]+'</b>'+S.moves[i]+(uOf(i)!=='reps'?' <span style="color:var(--text3)">('+uOf(i)+')</span>':'')+'</div>';$('gLegend').innerHTML=lg;
   $('callbox').style.display=S.mode==='class'?'block':'none';
   $('callNext').onclick=callNext;
   if(S.mode==='class')$('curCall').textContent='—';
@@ -356,12 +364,12 @@ function renderCards(){
     for(var idx=0;idx<25;idx++){
       var val=cellNum(p,idx),done=p.marks[idx],cls='bc',inner='',daub='';
       if(val==='FREE'){cls+=' freecell';}
-      else if(done){cls+=' back';inner='<div class="rt">'+reps(val)+'</div><div class="rv">'+S.moves[colOf(idx)]+'</div>';daub='<div class="daub" style="background:'+p.color+'"></div>';}
+      else if(done){cls+=' back';inner='<div class="rt">'+reps(val)+usuf(uOf(colOf(idx)))+'</div><div class="rv">'+S.moves[colOf(idx)]+'</div>';daub='<div class="daub" style="background:'+p.color+'"></div>';}
       else{
         var live=false;
         if(S.mode==='race'){live=(p.order[p.idx]===idx);}
         else{live=!!S.called[val];}
-        if(live){cls+=' back live';inner='<div class="rt">'+reps(val)+'</div><div class="rv">'+S.moves[colOf(idx)]+'</div>';}
+        if(live){cls+=' back live';inner='<div class="rt">'+reps(val)+usuf(uOf(colOf(idx)))+'</div><div class="rv">'+S.moves[colOf(idx)]+'</div>';}
         else{cls+=' face';inner='<div class="num">'+val+'</div>';}
       }
       cells+='<div class="'+cls+'" data-p="'+pi+'" data-i="'+idx+'">'+inner+daub+'</div>';
@@ -369,7 +377,7 @@ function renderCards(){
     var cue='';
     if(S.mode==='race'&&!p.done){
       var nx=p.order[p.idx];
-      if(nx!=null){cue='<div class="cue">Next: <b>'+LETTERS[colOf(nx)]+' '+cellNum(p,nx)+'</b> — '+reps(cellNum(p,nx))+' '+S.moves[colOf(nx)]+'</div><button class="btn" data-doit="'+pi+'">Did it ✓</button>';}
+      if(nx!=null){cue='<div class="cue">Next: <b>'+LETTERS[colOf(nx)]+' '+cellNum(p,nx)+'</b> — '+reps(cellNum(p,nx))+usuf(uOf(colOf(nx)))+' '+S.moves[colOf(nx)]+'</div><button class="btn" data-doit="'+pi+'">Did it ✓</button>';}
     }
     html+='<div class="pcard'+(p.done?' win':'')+'"><div class="pchd"><span class="pdot" style="background:'+p.color+'"></span><span class="nm">'+p.name+'</span><span class="pg">'+pg+'</span></div>'
       +'<div class="bhead">'+head+'</div><div class="bgrid">'+cells+'</div>'
@@ -405,7 +413,7 @@ function callNext(){
 }
 $('callNext').onclick=callNext;
 
-function byMoveFor(pl){var bm={};for(var i=0;i<25;i++){if(i===12||!pl.marks[i])continue;var mv=S.moves[i%5];if(mv)bm[mv]=(bm[mv]||0)+reps(pl.card[i]);}return bm;}
+function byMoveFor(pl){var bm={};for(var i=0;i<25;i++){if(i===12||!pl.marks[i])continue;var mv=S.moves[i%5];if(mv)bm[mv]=(bm[mv]||0)+repScore(mv,reps(pl.card[i]),uOf(i%5));}return bm;}
 function finish(p){
   S.over=true;beep(990,.5);speak(p.name+' bingo!');
   var st=$('winStand');if(st)st.style.display='none';var stmp=$('winStamp');if(stmp)stmp.style.display='';
@@ -448,7 +456,7 @@ async function callNextOnline(){
 }
 function clearHostPoll(){if(HOSTPOLL){clearInterval(HOSTPOLL);HOSTPOLL=null;}}
 function genCode4(){var C='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';for(var i=0;i<4;i++)s+=C[rint(0,C.length-1)];return s;}
-function readMoves(){S.moves=[];S.moveUnits=[];for(var mi=0;mi<5;mi++){var mv=(($('mv'+mi)&&$('mv'+mi).value)||'').trim();if(!mv)mv=shuffle(LIB)[0]||'BURPEES';mv=mv.toUpperCase();S.moves.push(mv);S.moveUnits.push(MOVEUNITS[mv]||'reps');}if(sb)S.moves.forEach(function(m,i){try{sb.rpc('add_movement',{p_name:m,p_unit:S.moveUnits[i]||'reps'});}catch(e){}});}
+function readMoves(){S.moves=[];S.moveUnits=[];for(var mi=0;mi<5;mi++){var mv=(($('mv'+mi)&&$('mv'+mi).value)||'').trim();if(!mv)mv=shuffle(LIB)[0]||'BURPEES';mv=mv.toUpperCase();S.moves.push(mv);S.moveUnits.push((($('mu'+mi)&&$('mu'+mi).value)||MOVEUNITS[mv]||'reps'));}if(sb)S.moves.forEach(function(m,i){try{sb.rpc('add_movement',{p_name:m,p_unit:S.moveUnits[i]||'reps'});}catch(e){}});}
 $('hostBtn').onclick=async function(){
   if(!sb){alert('Online play needs a connection.');return;}
   readMoves();
@@ -457,7 +465,7 @@ $('hostBtn').onclick=async function(){
   var rmap={};for(var n=1;n<=75;n++)rmap[n]=rint(6,20);
   var room=null;
   for(var a=0;a<6;a++){var code=genCode4();
-    var r=await sb.from('rooms').insert({code:code,status:'lobby',host_id:'bingo-host',is_public:false,title:'WODLY Bingo',settings:{game:'bingo',mode:S.mode,diff:S.diff,win:S.win,finish:S.finish,moves:S.moves,repMap:rmap,gym:S.gym,sponsor:sponsorMin()}}).select().single();
+    var r=await sb.from('rooms').insert({code:code,status:'lobby',host_id:'bingo-host',is_public:false,title:'WODLY Bingo',settings:{game:'bingo',mode:S.mode,diff:S.diff,win:S.win,finish:S.finish,moves:S.moves,units:S.moveUnits,repMap:rmap,gym:S.gym,sponsor:sponsorMin()}}).select().single();
     if(!r.error){room=r.data;break;} if(r.error&&!/duplicate|unique/i.test(r.error.message||'')){alert(r.error.message);return;}}
   if(!room){alert('Could not create the game — try again.');return;}
   HOST=room;WINSHOWN=false;$('hCode').textContent=room.code;$('hLink').textContent='wodlygame.com/bplay?room='+room.code;
@@ -480,7 +488,7 @@ $('hStart').onclick=async function(){
   try{await sb.from('rooms').update(upd).eq('id',HOST.id);}catch(e){}
   ONLINE=true;WINSHOWN=false;
   $('gInfo').textContent=(isClass?'Class':'Race')+' · '+({0.6:'Beginner',1:'Rx',1.4:'Elite'}[S.diff])+' · '+(S.win>=25?'Blackout':S.win+' line'+(S.win>1?'s':''))+' · '+(FINISH==='all'?'Everyone finishes':'First to finish')+' · phones';
-  var lg='';for(var i=0;i<5;i++)lg+='<div class="legchip"><b>'+LETTERS[i]+'</b>'+S.moves[i]+'</div>';$('gLegend').innerHTML=lg;
+  var lg='';for(var i=0;i<5;i++)lg+='<div class="legchip"><b>'+LETTERS[i]+'</b>'+S.moves[i]+(uOf(i)!=='reps'?' <span style="color:var(--text3)">('+uOf(i)+')</span>':'')+'</div>';$('gLegend').innerHTML=lg;
   if(isClass){$('callbox').style.display='block';$('curCall').innerHTML='<div style="color:var(--text3);font-size:15px;">Tap “Call next number” to start</div>';$('callNext').onclick=callNextOnline;}
   else{$('callbox').style.display='none';}
   renderBSponsor();$('host').classList.remove('active');$('game').classList.add('active');startImpr();
