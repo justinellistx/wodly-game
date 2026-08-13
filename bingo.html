@@ -105,6 +105,25 @@
   .strow .pdot{width:16px;height:16px;border-radius:50%;flex:none;}
   .strow .snm{font-weight:800;font-size:19px;color:#fff;flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .strow .ssub{font-size:14px;color:var(--text2);white-space:nowrap;}
+  /* ── setup how-to ribbon ── */
+  .howto{background:linear-gradient(155deg,#191919,#0d0d0d);border:1px solid rgba(245,166,35,.35);border-radius:18px;padding:15px 12px 13px;margin-bottom:20px;box-shadow:0 0 22px rgba(245,166,35,.08);}
+  .howto .ht-title{font-size:12px;font-weight:800;letter-spacing:2px;text-align:center;color:var(--orange);margin-bottom:14px;}
+  .ht-steps{display:flex;align-items:flex-start;justify-content:center;gap:2px;}
+  .ht-step{flex:1;max-width:118px;text-align:center;}
+  .ht-badge{width:26px;height:26px;border-radius:50%;background:var(--orange);color:#111;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 9px;box-shadow:0 0 0 5px rgba(245,166,35,.14);}
+  .ht-ico{height:50px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;}
+  .ht-cap{font-size:11.5px;font-weight:700;color:#e9e9e9;line-height:1.25;}
+  .ht-arrow{align-self:center;color:var(--orange);font-size:20px;font-weight:900;margin-top:20px;animation:htFlow 1.5s ease-in-out infinite;}
+  .ht-arrow:nth-of-type(4){animation-delay:.25s;}.ht-arrow:nth-of-type(6){animation-delay:.5s;}
+  @keyframes htFlow{0%,100%{transform:translateX(0);opacity:.45;}50%{transform:translateX(3px);opacity:1;}}
+  .ht-sub{text-align:center;font-size:12.5px;color:var(--text2);margin-top:13px;font-weight:700;}
+  .ht-point{display:inline-block;animation:htBob 1.15s ease-in-out infinite;}
+  @keyframes htBob{0%,100%{transform:translateY(0);}50%{transform:translateY(4px);}}
+  /* numbered setup steps */
+  .snum{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--orange);color:#111;font-weight:900;font-size:12px;margin-right:9px;vertical-align:middle;box-shadow:0 0 0 4px rgba(245,166,35,.12);}
+  label .opt-tag{font-weight:600;font-size:11px;color:var(--text3);text-transform:none;letter-spacing:0;}
+  .start-point{text-align:center;color:var(--orange);font-size:13px;font-weight:800;margin:16px 0 -6px;animation:htBob 1.15s ease-in-out infinite;}
+  @media(max-width:460px){.ht-cap{font-size:10.5px;}.ht-arrow{font-size:16px;}}
 </style>
 </head>
 <body>
@@ -114,24 +133,84 @@
   <!-- SETUP -->
   <div id="setup" class="screen active">
     <div class="card">
-      <label>Mode</label>
+      <div class="howto">
+        <div class="ht-title">HOW FITNESS BINGO WORKS</div>
+        <div class="ht-steps">
+          <div class="ht-step">
+            <div class="ht-badge">1</div>
+            <div class="ht-ico">
+              <svg width="112" height="46" viewBox="0 0 112 46" xmlns="http://www.w3.org/2000/svg">
+                <g font-family="Poppins,system-ui,sans-serif" font-weight="800" font-size="14" text-anchor="middle">
+                  <rect x="0" y="9" width="20" height="28" rx="5" fill="#E8363D"/><text x="10" y="28" fill="#111">B</text>
+                  <rect x="23" y="9" width="20" height="28" rx="5" fill="#F5A623"/><text x="33" y="28" fill="#111">I</text>
+                  <rect x="46" y="9" width="20" height="28" rx="5" fill="#4CAF50"/><text x="56" y="28" fill="#111">N</text>
+                  <rect x="69" y="9" width="20" height="28" rx="5" fill="#2196F3"/><text x="79" y="28" fill="#fff">G</text>
+                  <rect x="92" y="9" width="20" height="28" rx="5" fill="#9b59b6"/><text x="102" y="28" fill="#fff">O</text>
+                </g>
+              </svg>
+            </div>
+            <div class="ht-cap">Pick 5 moves —<br>one per letter</div>
+          </div>
+          <div class="ht-arrow">→</div>
+          <div class="ht-step">
+            <div class="ht-badge">2</div>
+            <div class="ht-ico">
+              <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="46" height="46" rx="7" fill="#141414" stroke="#333"/>
+                <g>
+                  <rect x="6"  y="6"  width="7" height="7" rx="2" fill="#2a2a2a"/><rect x="15" y="6" width="7" height="7" rx="2" fill="#F5A623"/><rect x="24" y="6" width="7" height="7" rx="2" fill="#2a2a2a"/><rect x="33" y="6" width="7" height="7" rx="2" fill="#2a2a2a"/>
+                  <rect x="6"  y="15" width="7" height="7" rx="2" fill="#2a2a2a"/><rect x="15" y="15" width="7" height="7" rx="2" fill="#F5A623"/><rect x="24" y="15" width="7" height="7" rx="2" fill="#2a2a2a"/><rect x="33" y="15" width="7" height="7" rx="2" fill="#2a2a2a"/>
+                  <rect x="6"  y="24" width="7" height="7" rx="2" fill="#2a2a2a"/><rect x="15" y="24" width="7" height="7" rx="2" fill="#F5A623"/><rect x="24" y="24" width="7" height="7" rx="2" fill="#2a2a2a"/><rect x="33" y="24" width="7" height="7" rx="2" fill="#2a2a2a"/>
+                  <rect x="6"  y="33" width="7" height="7" rx="2" fill="#2a2a2a"/><rect x="15" y="33" width="7" height="7" rx="2" fill="#F5A623"/><rect x="24" y="33" width="7" height="7" rx="2" fill="#2a2a2a"/><rect x="33" y="33" width="7" height="7" rx="2" fill="#2a2a2a"/>
+                </g>
+              </svg>
+            </div>
+            <div class="ht-cap">Everyone gets<br>a random card</div>
+          </div>
+          <div class="ht-arrow">→</div>
+          <div class="ht-step">
+            <div class="ht-badge">3</div>
+            <div class="ht-ico">
+              <svg width="60" height="48" viewBox="0 0 60 48" xmlns="http://www.w3.org/2000/svg">
+                <g fill="#cfcfcf">
+                  <rect x="6" y="18" width="6" height="12" rx="2"/><rect x="12" y="14" width="6" height="20" rx="2"/>
+                  <rect x="18" y="22" width="14" height="4" rx="2"/>
+                  <rect x="32" y="14" width="6" height="20" rx="2"/><rect x="38" y="18" width="6" height="12" rx="2"/>
+                </g>
+                <circle cx="46" cy="14" r="11" fill="#F5A623" opacity="0.92"/>
+                <path d="M42 14 l3 3 l5 -6" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="ht-cap">Do the reps,<br>daub the square</div>
+          </div>
+          <div class="ht-arrow">→</div>
+          <div class="ht-step">
+            <div class="ht-badge">4</div>
+            <div class="ht-ico"><img src="assets/bingo/bingo-stamp.png" alt="Bingo!" style="height:48px;"></div>
+            <div class="ht-cap">Line or blackout<br>= BINGO!</div>
+          </div>
+        </div>
+        <div class="ht-sub">Set your game up below <span class="ht-point">👇</span></div>
+      </div>
+
+      <label><span class="snum">1</span>Mode</label>
       <div class="seg" id="modeSeg">
         <button data-v="race" class="on">Race — your own calls</button>
         <button data-v="class">Class — one shared caller</button>
       </div>
       <div id="modeNote" style="font-size:12px;color:var(--text3);margin-top:8px;">Everyone plays their own card at their own pace. First to a line wins.</div>
 
-      <label>Difficulty</label>
+      <label><span class="snum">2</span>Difficulty</label>
       <div class="seg" id="diffSeg">
         <button data-v="0.6">Beginner</button><button data-v="1" class="on">Rx</button><button data-v="1.4">Elite</button>
       </div>
 
-      <label>Win condition</label>
+      <label><span class="snum">3</span>Win condition</label>
       <div class="seg" id="winSeg">
         <button data-v="1" class="on">First line</button><button data-v="3">3 lines</button><button data-v="25">Blackout</button>
       </div>
 
-      <label>Finish</label>
+      <label><span class="snum">4</span>Finish</label>
       <div class="seg" id="finishSeg">
         <button data-v="first" class="on">First to finish</button><button data-v="all">Until everyone finishes</button>
       </div>
@@ -139,23 +218,24 @@
 
       <div id="bEstimate" style="margin-top:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.5;"></div>
 
-      <label>Gym / box name (optional — counts toward the gym leaderboard)</label>
+      <label>Gym / box name <span class="opt-tag">optional — counts toward the gym leaderboard</span></label>
       <input type="text" id="gymName" list="gymList" placeholder="e.g. CrossFit Willis" maxlength="40" autocomplete="off">
       <datalist id="gymList"></datalist>
 
-      <label>The 5 movements — one per letter</label>
+      <label><span class="snum">5</span>The 5 movements — one per letter</label>
       <div id="moveInputs"></div>
       <datalist id="bMoves"></datalist>
       <button class="btn ghost" id="shuffleMoves" style="margin-top:6px;padding:9px 16px;font-size:13px;">↻ Shuffle from library</button>
       <div style="font-size:12px;color:var(--text3);margin-top:8px;">Pick from WODLY's movement list or type your own — new movements get saved for next time.</div>
 
-      <label>Players</label>
+      <label><span class="snum">6</span>Players</label>
       <div class="plist" id="plist"></div>
       <div class="addrow">
         <input type="text" id="pname" placeholder="Player name" maxlength="16">
         <button class="btn" id="addP" style="padding:12px 18px;">Add</button>
       </div>
 
+      <div class="start-point">Ready? Let's play 🎉</div>
       <button class="btn block" id="startBtn">Start game (this screen)</button>
       <button class="btn block ghost" id="hostBtn" style="margin-top:10px;">📱 Host for phones →</button>
       <div style="font-size:12px;color:var(--text3);margin-top:8px;text-align:center;">“This screen” = pass-and-play on one device. “Host for phones” = each player joins on their own phone.</div>
