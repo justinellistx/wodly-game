@@ -1085,5 +1085,6 @@ function setFocus(on){const gs=$('gameScreen');if(!gs)return;gs.classList.toggle
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){const gs=$('gameScreen');if(gs&&gs.classList.contains('focus'))setFocus(false);}});})();
 window.addEventListener('resize',()=>{if(game){sizeCanvas();drawBoard();drawTokens();}});
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

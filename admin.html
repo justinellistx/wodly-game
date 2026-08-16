@@ -192,6 +192,10 @@
     <div id="mkBox"><div class="nodata">Loading…</div></div>
 
     </div></details>
+    <details class="sec" id="secMovements"><summary class="sechead">🏋️ Movement audit<span class="chev">▸</span></summary><div class="sec-body">
+    <div style="font-size:11px;color:var(--text3);margin:-4px 0 10px;">Catches name drift — near-duplicates to merge, and player-typed movements not yet in the library.</div>
+    <div id="movBox"><div class="nodata">Loading…</div></div>
+    </div></details>
     <details class="sec" id="secSubs"><summary class="sechead">✉️ Email subscribers <span id="subsCount" class="sec-sub"></span><span class="chev">▸</span></summary><div class="sec-body">
     <div style="display:flex;gap:10px;margin-bottom:12px;">
       <button class="btn ghost" id="loadSubs">Load subscribers</button>
@@ -225,7 +229,7 @@ $('enterBtn').onclick=async()=>{
   if(r&&r.ok){show('panel');}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
 };
 // Collapsible sections: lazy-load each section's data the first time it's opened.
-const SEC_LOADERS={secAnalytics:function(){loadAnalytics();},secDaily:function(){loadDaily();},secSponsors:function(){loadSponsors();},secEngagement:function(){loadClicks();},secPresence:function(){loadDailyReport();},secMediaKit:function(){loadMediaKit(30);}};
+const SEC_LOADERS={secAnalytics:function(){loadAnalytics();},secDaily:function(){loadDaily();},secSponsors:function(){loadSponsors();},secEngagement:function(){loadClicks();},secPresence:function(){loadDailyReport();},secMediaKit:function(){loadMediaKit(30);},secMovements:function(){loadMovements();}};
 Object.keys(SEC_LOADERS).forEach(function(id){var d=$(id);if(!d)return;d.addEventListener('toggle',function(){if(d.open&&!d.dataset.loaded){d.dataset.loaded='1';try{SEC_LOADERS[id]();}catch(e){}}});});
 
 // ── Daily workouts ──
@@ -322,6 +326,40 @@ async function loadDailyReport(){
   box.innerHTML=html;
 }
 $('loadReport').onclick=loadDailyReport;
+
+// ── Movement audit ──
+async function loadMovements(){
+  const box=$('movBox');box.innerHTML='<div class="nodata">Loading…</div>';
+  const r=await api('movement_audit');
+  if(!r||r.error||!r.data){box.innerHTML='<div class="nodata">Could not load'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
+  const d=r.data, dupes=d.possible_dupes||[], unc=d.uncurated||[];
+  let html='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">'
+    +`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 11px;font-size:12px;color:var(--text2);"><b style="color:#fff;">${d.total_canonical||0}</b> movements in play</div>`
+    +`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 11px;font-size:12px;color:var(--text2);"><b style="color:#4CAF50;">${d.in_library||0}</b> in library</div>`
+    +`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 11px;font-size:12px;color:var(--text2);"><b style="color:var(--orange);">${unc.length}</b> not in library</div>`
+    +'<button class="btn ghost" id="movRefresh" style="padding:6px 12px;font-size:12px;">↻ Refresh</button></div>';
+
+  html+='<div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin:6px 0 8px;">Possible duplicates</div>';
+  if(!dupes.length){
+    html+='<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.35);border-radius:10px;padding:10px 13px;font-size:13px;color:#bfe3bf;">✓ No duplicate drift — every movement maps to one canonical name.</div>';
+  }else{
+    html+=dupes.map(g=>'<div style="background:rgba(232,54,61,.07);border:1px solid rgba(232,54,61,.4);border-radius:10px;padding:10px 13px;margin-bottom:8px;font-size:13px;">'
+      +'<div style="color:#f0999a;font-weight:700;margin-bottom:4px;">Likely the same movement:</div>'
+      +g.map(m=>`<span style="display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px 9px;margin:2px 4px 2px 0;color:#fff;font-weight:700;">${esc(m.name)} <span style="color:var(--text3);font-weight:400;">×${m.uses}</span></span>`).join('')
+      +'<div style="color:var(--text3);font-size:11px;margin-top:5px;">→ add an alias in <code>norm_move</code> to merge these.</div></div>').join('');
+  }
+
+  html+='<div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin:16px 0 8px;">Player-typed movements not in the library</div>';
+  if(!unc.length){
+    html+='<div class="nodata">Everything players use is already in the library.</div>';
+  }else{
+    html+='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="color:var(--text3);text-align:left;"><th style="padding:6px 8px;">Movement</th><th style="padding:6px 8px;text-align:right;">Uses</th><th style="padding:6px 8px;">Raw variants seen</th></tr></thead><tbody>'
+      +unc.map(m=>`<tr style="border-top:1px solid var(--border);"><td style="padding:7px 8px;font-weight:700;color:#fff;">${esc(m.name)}</td><td style="padding:7px 8px;text-align:right;color:var(--orange);font-weight:800;">${m.uses||0}</td><td style="padding:7px 8px;color:var(--text3);font-size:12px;">${esc(m.variants||'')}</td></tr>`).join('')
+      +'</tbody></table></div><div style="color:var(--text3);font-size:11px;margin-top:8px;">High-use names here are good candidates to add to the movement library so hosts pick them instead of retyping.</div>';
+  }
+  box.innerHTML=html;
+  var rb=$('movRefresh');if(rb)rb.onclick=loadMovements;
+}
 
 // ── Sponsor media kit ──
 let mkData=[], mkDays=30;
@@ -490,5 +528,6 @@ $('dlSubs').onclick=()=>{const rows=[['email','name','source','consent','unsubsc
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='wodly-subscribers.csv';a.click();
 };
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

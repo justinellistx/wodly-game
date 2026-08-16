@@ -148,5 +148,6 @@ $('email').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click();});
 (function(){const p=new URLSearchParams(location.search).get('email');let saved='';try{saved=localStorage.getItem('wodly_email')||'';}catch(e){}
   const e=p||saved;if(e){$('email').value=e;load(e);}})();
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

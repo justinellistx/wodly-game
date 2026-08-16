@@ -336,5 +336,6 @@ async function save(done){
   try{await sb.from('players').update({bingo:{m:marks,sq:squares(),lines:linesN(),done:!!done,byMove:byMove,total:totalReps,wl:wlog,ts:Date.now()}}).eq('id',MYID);}catch(e){}
 }
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

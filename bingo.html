@@ -617,5 +617,6 @@ function renderWall(pl){
 loadLib();renderPlayers();if(sb)loadSponsors();
 (async function(){try{var r=await sb.rpc('gym_names');var l=$('gymList');if(l&&r&&Array.isArray(r.data))l.innerHTML=r.data.map(function(g){return '<option value="'+String(g).replace(/"/g,'&quot;')+'">';}).join('');}catch(e){}})();
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
