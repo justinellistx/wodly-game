@@ -226,6 +226,7 @@
       <div id="moveInputs"></div>
       <datalist id="bMoves"></datalist>
       <button class="btn ghost" id="shuffleMoves" style="margin-top:6px;padding:9px 16px;font-size:13px;">↻ Shuffle from library</button>
+      <button class="btn ghost" id="classroomBtn" style="margin-top:6px;margin-left:6px;padding:9px 16px;font-size:13px;border-color:rgba(76,175,80,.5);color:#9be0a0;">🎒 Classroom (kid-safe)</button>
       <div style="font-size:12px;color:var(--text3);margin-top:8px;">Pick from WODLY's movement list or type your own — new movements get saved for next time.</div>
 
       <label><span class="snum">6</span>Players</label>
@@ -347,8 +348,8 @@ function won(p){return S.win>=25?squaresFor(p)>=24:linesFor(p)>=S.win;}
 function reps(num){return Math.max(1,Math.round((S.repMap[num]||10)*S.diff));}
 function isMeters(m){m=String(m||'').trim().toLowerCase();return m.indexOf('meter')>=0||m.indexOf('(m)')>=0||/^m\s/.test(m)||/\sm$/.test(m)||/[0-9]\s*m(\b|$)/.test(m);}
 function repScore(move,n,unit){n=Number(n)||0;var meters=(unit==='meters')||(!unit&&isMeters(move));return meters?Math.max(1,Math.round(n/10)):n;}
-function usuf(u){return u==='meters'?'m':(u==='cal'?' cal':'');}
-function unitFor(name){var n=String(name||'').toLowerCase();if(n.indexOf('meter')>=0||n.indexOf('(m)')>=0||/^m\s/.test(n)||/\sm$/.test(n)||/[0-9]\s*m(\b|$)/.test(n))return 'meters';if(n.indexOf('cal')>=0)return 'cal';return MOVEUNITS[String(name||'').trim().toUpperCase()]||'reps';}
+function usuf(u){return u==='meters'?'m':(u==='cal'?' cal':(u==='sec'?' sec':''));}
+function unitFor(name){var n=String(name||'').toLowerCase();if(n.indexOf('meter')>=0||n.indexOf('(m)')>=0||/^m\s/.test(n)||/\sm$/.test(n)||/[0-9]\s*m(\b|$)/.test(n))return 'meters';if(n.indexOf('cal')>=0)return 'cal';if(n.indexOf('sec')>=0||n.indexOf('plank')>=0||n.indexOf('wall sit')>=0||n.indexOf('hollow hold')>=0)return 'sec';return MOVEUNITS[String(name||'').trim().toUpperCase()]||'reps';}
 function uOf(i){return (S.moveUnits&&S.moveUnits[i])||'reps';}
 
 var MOVEUNITS={},LIB=POOL.slice(),sb=null;
@@ -358,7 +359,7 @@ async function loadLib(){
   if(sb){try{var r=await sb.rpc('movement_list');if(!r.error&&Array.isArray(r.data)&&r.data.length){LIB=r.data.map(function(m){MOVEUNITS[String(m.name).toUpperCase()]=m.unit;return m.name;});$('bMoves').innerHTML=LIB.map(function(n){return '<option value="'+String(n).replace(/"/g,'&quot;')+'">';}).join('');}}catch(e){}}
   buildMoveInputs();
 }
-function unitOpts(sel){return ['reps','cal','meters'].map(function(u){return '<option value="'+u+'"'+(u===sel?' selected':'')+'>'+u+'</option>';}).join('');}
+function unitOpts(sel){return ['reps','cal','meters','sec'].map(function(u){return '<option value="'+u+'"'+(u===sel?' selected':'')+'>'+u+'</option>';}).join('');}
 function buildMoveInputs(){
   var picks=shuffle(LIB).slice(0,5),html='';
   for(var i=0;i<5;i++){var mv=String(picks[i]||'');html+='<div class="mvrow"><span class="let">'+LETTERS[i]+'</span><input type="text" id="mv'+i+'" list="bMoves" autocomplete="off" value="'+mv.replace(/"/g,'&quot;')+'" placeholder="Movement"><select id="mu'+i+'" class="mvunit">'+unitOpts(unitFor(mv))+'</select></div>';}
@@ -397,6 +398,12 @@ segWire('winSeg',function(v){S.win=parseInt(v,10);updateEstimate();});
 segWire('finishSeg',function(v){S.finish=v;$('finishNote').textContent=(v==='all')?'Game keeps going until every player hits bingo — final standings at the end.':'Game ends the moment the first player hits bingo.';});
 updateEstimate();
 $('shuffleMoves').onclick=buildMoveInputs;
+$('classroomBtn').onclick=function(){
+  var kid=['JUMPING JACKS','AIR SQUATS','HIGH KNEES','ARM CIRCLES','TOE TOUCHES'];
+  for(var i=0;i<5;i++){var inp=$('mv'+i),su=$('mu'+i);if(inp)inp.value=kid[i];if(su)su.value='reps';}
+  $('diffSeg').querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x.dataset.v==='0.6');});
+  S.diff=0.6;updateEstimate();
+};
 
 function renderPlayers(){
   var html='';S.players.forEach(function(p,i){html+='<div class="prow"><span class="pdot" style="background:'+p.color+'"></span><span class="nm">'+p.name+'</span><button class="x" data-i="'+i+'">×</button></div>';});
@@ -408,7 +415,7 @@ $('addP').onclick=addPlayer;
 $('pname').addEventListener('keydown',function(e){if(e.key==='Enter')addPlayer();});
 
 /* ---- start ---- */
-$('startBtn').onclick=function(){
+$('startBtn').onclick=function(){ try{wtrack('bingo_game_started',{mode:'local'});}catch(e){}
   if(!S.players.length){addPlayer();if(!S.players.length){alert('Add at least one player.');return;}}
   S.gym=($('gymName')&&$('gymName').value.trim())||null;
   S.moves=[];S.moveUnits=[];
@@ -419,7 +426,7 @@ $('startBtn').onclick=function(){
   var st0=$('winStand');if(st0)st0.style.display='none';var stmp0=$('winStamp');if(stmp0)stmp0.style.display='';
   S.players.forEach(function(p){p.card=newCard();p.marks={12:1};
     p.order=shuffle((function(){var a=[];for(var i=0;i<25;i++)if(i!==12)a.push(i);return a;})());
-    p.idx=0;p.done=false;p.place=0;});
+    p.idx=0;p.done=false;p.place=0;p.wl=[];p.lastTs=Date.now();});
   pickSponsor();renderBSponsor();
   $('setup').classList.remove('active');$('game').classList.add('active');startImpr();
   $('gInfo').textContent=(S.mode==='race'?'Race':'Class')+' · '+({0.6:'Beginner',1:'Rx',1.4:'Elite'}[S.diff])+' · '+(S.win>=25?'Blackout':S.win+' line'+(S.win>1?'s':''))+' · '+(S.finish==='all'?'Everyone finishes':'First to finish');
@@ -473,6 +480,7 @@ function renderCards(){
 function complete(pi,idx){
   var p=S.players[pi];if(p.marks[idx])return;
   p.marks[idx]=1;beep(660,.12);
+  var _mv=S.moves[idx%5];if(_mv){var _u=uOf(idx%5),_now=Date.now(),_sec=Math.min(600,Math.max(1,Math.round((_now-(p.lastTs||_now))/1000)));p.lastTs=_now;(p.wl=p.wl||[]).push({m:_mv,r:repScore(_mv,reps(p.card[idx]),_u),s:_sec,u:_u});}
   if(S.mode==='race'){p.idx++;while(p.idx<p.order.length&&p.marks[p.order[p.idx]])p.idx++;}
   if(won(p)&&!p.done){p.done=true;p.place=(S.finCount=(S.finCount||0)+1);
     if(S.finish==='all'){beep(990,.4);speak(p.name+' bingo!');
@@ -501,14 +509,14 @@ function finish(p){
   $('winWho').style.color=p.color;
   $('winSub').textContent=(S.win>=25?'Blackout — full card':(S.win>1?S.win+' lines':'First line')+' complete')+' · '+squaresFor(p)+' squares done';
   renderBSponsor();$('overlay').classList.add('on');
-  if(!ONLINE&&!LOGGED){LOGGED=true;S.players.forEach(function(pl){var bm=byMoveFor(pl),tot=0;for(var k in bm)tot+=bm[k];if(tot>0)logRecap(pl.name,{byMove:bm,total:tot,count:squaresFor(pl),place:(pl===p)?1:null,game:'bingo'},S.gym);});}
+  if(!ONLINE&&!LOGGED){LOGGED=true;S.players.forEach(function(pl){var bm=byMoveFor(pl),tot=0;for(var k in bm)tot+=bm[k];if(tot>0)logRecap(pl.name,{byMove:bm,total:tot,count:squaresFor(pl),place:(pl===p)?1:null,game:'bingo',order:(pl.wl||[])},S.gym);});}
 }
 function finishAll(){
   S.over=true;beep(990,.5);speak('Everyone finished!');
   var ranked=S.players.slice().sort(function(a,b){return (a.place||99)-(b.place||99);});
   showStandings(ranked.map(function(p){return {name:p.name,color:p.color,place:p.place,sub:squaresFor(p)+' squares'};}));
   renderBSponsor();$('overlay').classList.add('on');
-  if(!ONLINE&&!LOGGED){LOGGED=true;S.players.forEach(function(pl){var bm=byMoveFor(pl),tot=0;for(var k in bm)tot+=bm[k];if(tot>0)logRecap(pl.name,{byMove:bm,total:tot,count:squaresFor(pl),place:pl.place||null,game:'bingo'},S.gym);});}
+  if(!ONLINE&&!LOGGED){LOGGED=true;S.players.forEach(function(pl){var bm=byMoveFor(pl),tot=0;for(var k in bm)tot+=bm[k];if(tot>0)logRecap(pl.name,{byMove:bm,total:tot,count:squaresFor(pl),place:pl.place||null,game:'bingo',order:(pl.wl||[])},S.gym);});}
   renderCards();
 }
 function showStandings(rows){
@@ -538,6 +546,7 @@ function clearHostPoll(){if(HOSTPOLL){clearInterval(HOSTPOLL);HOSTPOLL=null;}}
 function genCode4(){var C='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';for(var i=0;i<4;i++)s+=C[rint(0,C.length-1)];return s;}
 function readMoves(){S.moves=[];S.moveUnits=[];for(var mi=0;mi<5;mi++){var mv=(($('mv'+mi)&&$('mv'+mi).value)||'').trim();if(!mv)mv=shuffle(LIB)[0]||'BURPEES';mv=mv.toUpperCase();S.moves.push(mv);S.moveUnits.push((($('mu'+mi)&&$('mu'+mi).value)||MOVEUNITS[mv]||'reps'));}if(sb)S.moves.forEach(function(m,i){try{sb.rpc('add_movement',{p_name:m,p_unit:S.moveUnits[i]||'reps'});}catch(e){}});}
 $('hostBtn').onclick=async function(){
+  try{wtrack('bingo_game_started',{mode:'host'});}catch(e){}
   if(!sb){alert('Online play needs a connection.');return;}
   readMoves();
   S.gym=($('gymName')&&$('gymName').value.trim())||null;
@@ -617,6 +626,7 @@ function renderWall(pl){
 loadLib();renderPlayers();if(sb)loadSponsors();
 (async function(){try{var r=await sb.rpc('gym_names');var l=$('gymList');if(l&&r&&Array.isArray(r.data))l.innerHTML=r.data.map(function(g){return '<option value="'+String(g).replace(/"/g,'&quot;')+'">';}).join('');}catch(e){}})();
 </script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}</script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

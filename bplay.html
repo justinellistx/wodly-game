@@ -168,8 +168,8 @@ var LINES=(function(){var L=[];for(var r=0;r<5;r++){var a=[];for(var c=0;c<5;c++
 
 var ROOM=null, MYID=null, ME={}, SOLO=false, CLASSMODE=false, S={diff:1,win:1,finish:'first',moves:[],moveUnits:[]}, card=[], repMap={}, order=[], idx=0, marks={12:1}, started=false, pollT=null, statePoll=null, byMove={}, totalReps=0, LIB=DEFMOVES.slice(), lastLive=-1, calledSet={}, current=0, ownWon=false;
 var MU={};
-function usuf(u){return u==='meters'?'m':(u==='cal'?' cal':'');}
-function inferUnit(m){m=String(m||'');if(W.isMeters&&W.isMeters(m))return 'meters';if(m.toLowerCase().indexOf('cal')>=0)return 'cal';return MU[m.toUpperCase()]||'reps';}
+function usuf(u){return u==='meters'?'m':(u==='cal'?' cal':(u==='sec'?' sec':''));}
+function inferUnit(m){m=String(m||'');if(W.isMeters&&W.isMeters(m))return 'meters';var l=m.toLowerCase();if(l.indexOf('cal')>=0)return 'cal';if(l.indexOf('sec')>=0||l.indexOf('plank')>=0||l.indexOf('wall sit')>=0||l.indexOf('hollow hold')>=0)return 'sec';return MU[m.toUpperCase()]||'reps';}
 function unitOf(i){return (S.moveUnits&&S.moveUnits[i%5])||'reps';}
 function scoreReps(mv,n,u){return (W.repScore)?W.repScore(mv,n,u):(u==='meters'?Math.max(1,Math.round(n/10)):n);}
 var wlog=[], moveStart=0, pacedIdx=-1, callTs={};
@@ -218,6 +218,7 @@ $('joinBtn').onclick=async function(){
     if(ins.error){$('joinErr').textContent=ins.error.message;$('joinBtn').disabled=false;return;}
     MYID=ins.data.id; ME.name=name;
     $('sbAv').src=ME.img; $('sbName').textContent=name;
+    try{wtrack('bingo_player_joined');}catch(e){}
     if(room.status==='playing'){beginGame();}else{show('waiting');pollStatus();}
   }catch(e){$('joinErr').textContent='Could not join. Check the code and try again.';$('joinBtn').disabled=false;}
 };
@@ -229,6 +230,7 @@ segWire('sWin',function(v){S.win=parseInt(v,10);});
 $('soloBtn').onclick=function(){if(!ME.avatar){var first=document.querySelector('.av');if(first)first.click();}show('soloSetup');};
 $('soloBack').onclick=function(){show('join');};
 $('soloStart').onclick=function(){
+  try{wtrack('bingo_game_started',{mode:'solo'});}catch(e){}
   SOLO=true; MYID=null;
   SOLOGYM=($('soloGym')&&$('soloGym').value.trim())||null;
   ME.name=($('pname').value.trim())||'You';
@@ -336,6 +338,7 @@ async function save(done){
   try{await sb.from('players').update({bingo:{m:marks,sq:squares(),lines:linesN(),done:!!done,byMove:byMove,total:totalReps,wl:wlog,ts:Date.now()}}).eq('id',MYID);}catch(e){}
 }
 </script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}</script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

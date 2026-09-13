@@ -243,6 +243,16 @@
     <span class="bgo-cta">Try it →</span>
   </a>
 
+  <a class="bgo-promo wild-promo" href="/wild">
+    <div class="bgo-ball"><i>W</i></div>
+    <div class="bgo-txt">
+      <span class="bgo-new">✨ BRAND NEW</span>
+      <div class="bgo-h">WODLY <b>Wild</b></div>
+      <div class="bgo-s">A UNO-style card battle — play a card, everyone else does the reps. Empty your hand first to win. Big screen + phones →</div>
+    </div>
+    <span class="bgo-cta">Try it →</span>
+  </a>
+
   <div style="display:flex;gap:18px;justify-content:center;margin:4px 0 18px;flex-wrap:wrap;">
     <a href="/leaderboard" style="font-size:13.5px;color:var(--gold);text-decoration:none;font-weight:700;">🏆 Leaderboard</a>
     <a href="/gyms" style="font-size:13.5px;color:var(--gold);text-decoration:none;font-weight:700;">🏋️ Gyms</a>
@@ -295,6 +305,8 @@
   })();
   if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
 </script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}
+(function(){var map=[['.opt.start','board'],['.opt.solo','solo'],['.opt.join','join'],['.opt.online','online'],['.bgo-promo:not(.wild-promo)','bingo'],['.wild-promo','wild']];map.forEach(function(p){var el=document.querySelector(p[0]);if(el)el.addEventListener('click',function(){wtrack('home_mode',{mode:p[1]});});});})();</script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

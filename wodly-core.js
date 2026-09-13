@@ -55,6 +55,7 @@
     { id:'cinda',  name:'Cinda',  cat:'Benchmark', note:'The bodyweight classic', mv:{hearts:'Pull-ups',diamonds:'Push-ups',clubs:'Air Squats',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
     { id:'frenn',  name:'Frenn',  cat:'Benchmark', note:'Fast & spicy', mv:{hearts:'Thrusters',diamonds:'Pull-ups',clubs:'Air Squats',spades:'Push Press'}, aceReps:5, aceMove:'Burpees' },
     { id:'hellen', name:'Hellen', cat:'Benchmark', note:'Swing & sweat', mv:{hearts:'KB Swings',diamonds:'Pull-ups',clubs:'Box Jumps',spades:'Push-ups'}, aceReps:200, aceMove:'m Run' },
+    { id:'classroom',name:'Classroom (kid-safe)', cat:'Classroom & schools', note:'Bodyweight brain break — K–8 friendly, no equipment', mv:{hearts:'Jumping Jacks',diamonds:'Air Squats',clubs:'High Knees',spades:'Arm Circles'}, aceReps:6, aceMove:'Toe Touches', diff:'easy' },
     { id:'bwblast',name:'Bodyweight Blast', cat:'Bodyweight (no gear)', note:'Anywhere, no equipment', mv:{hearts:'Push-ups',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Burpees'}, aceReps:8, aceMove:'50ft Shuttle Runs' },
     { id:'nogear', name:'No-Gear Grind', cat:'Bodyweight (no gear)', note:'Bodyweight conditioning', mv:{hearts:'Walking Lunges',diamonds:'Mountain Climbers',clubs:'Plank (sec)',spades:'High Knees'}, aceReps:15, aceMove:'Burpees' },
     { id:'dbgrind',name:'Dumbbell Grind', cat:'Dumbbell & kettlebell', note:'Grab a dumbbell', mv:{hearts:'DB Snatch',diamonds:'DB Thruster',clubs:'DB Goblet Squat',spades:'DB Row'}, aceReps:8, aceMove:'DB Devil Press' },

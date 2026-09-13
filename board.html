@@ -305,17 +305,17 @@
         <div class="sec"><span class="snum">2</span>Movements per suit <span style="text-transform:none;letter-spacing:0;color:var(--text3);font-weight:400;">— pick one or type your own; set its unit</span></div>
         <datalist id="moveList"></datalist>
         <div class="suit-grid">
-          <div class="sc hearts"><div class="si">♥</div><label style="color:#E8363D">Hearts</label><input id="mv-hearts" list="moveList" autocomplete="off" placeholder="Push-ups"/><select id="mvu-hearts" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option></select></div>
-          <div class="sc diamonds"><div class="si">♦</div><label style="color:#F5A623">Diamonds</label><input id="mv-diamonds" list="moveList" autocomplete="off" placeholder="Air Squats"/><select id="mvu-diamonds" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option></select></div>
-          <div class="sc clubs"><div class="si">♣</div><label style="color:#4CAF50">Clubs</label><input id="mv-clubs" list="moveList" autocomplete="off" placeholder="Burpees"/><select id="mvu-clubs" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option></select></div>
-          <div class="sc spades"><div class="si">♠</div><label style="color:#2196F3">Spades</label><input id="mv-spades" list="moveList" autocomplete="off" placeholder="Sit-ups"/><select id="mvu-spades" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option></select></div>
+          <div class="sc hearts"><div class="si">♥</div><label style="color:#E8363D">Hearts</label><input id="mv-hearts" list="moveList" autocomplete="off" placeholder="Push-ups"/><select id="mvu-hearts" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option><option value="sec">sec</option></select></div>
+          <div class="sc diamonds"><div class="si">♦</div><label style="color:#F5A623">Diamonds</label><input id="mv-diamonds" list="moveList" autocomplete="off" placeholder="Air Squats"/><select id="mvu-diamonds" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option><option value="sec">sec</option></select></div>
+          <div class="sc clubs"><div class="si">♣</div><label style="color:#4CAF50">Clubs</label><input id="mv-clubs" list="moveList" autocomplete="off" placeholder="Burpees"/><select id="mvu-clubs" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option><option value="sec">sec</option></select></div>
+          <div class="sc spades"><div class="si">♠</div><label style="color:#2196F3">Spades</label><input id="mv-spades" list="moveList" autocomplete="off" placeholder="Sit-ups"/><select id="mvu-spades" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option><option value="sec">sec</option></select></div>
         </div>
         <div class="ace-card-setup">
           <div class="lbl">Ace = penalty</div>
           <div class="ace-fields">
             <div><label>Amount</label><input id="ace-reps" type="number" min="1" max="2000" value="10"/></div>
             <div><label>Movement</label><input id="ace-move" list="moveList" autocomplete="off" placeholder="Burpees" value="Burpees"/></div>
-            <div><label>Unit</label><select id="ace-unit" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option></select></div>
+            <div><label>Unit</label><select id="ace-unit" class="mvunit"><option value="reps">reps</option><option value="cal">cal</option><option value="meters">meters</option><option value="sec">sec</option></select></div>
           </div>
         </div>
         </div>
@@ -520,7 +520,7 @@ function upv(id,def){var e=$(id);var v=e&&e.value?e.value.trim():'';return (v||d
 function gatherSettings(){return{mv:{hearts:upv('mv-hearts','PUSH-UPS'),diamonds:upv('mv-diamonds','AIR SQUATS'),clubs:upv('mv-clubs','BURPEES'),spades:upv('mv-spades','SIT-UPS')},units:{hearts:_v('mvu-hearts')||'reps',diamonds:_v('mvu-diamonds')||'reps',clubs:_v('mvu-clubs')||'reps',spades:_v('mvu-spades')||'reps'},aceReps:Math.max(1,parseInt(_v('ace-reps'))||10),aceMove:upv('ace-move','BURPEES'),aceUnit:_v('ace-unit')||'reps',deckSz:selVal('deckRow')||'standard',diff:selVal('diffRow')||'easy',useTimer:$('turnTimerToggle').checked,turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60),penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),cap:$('capToggle').checked,capMin:Math.max(1,parseInt(_v('capInput'))||20),finishMode:selVal('finishRow')||'all',boardId:selBoard||'classic',presetId:(($('presetSel')&&$('presetSel').value)||''),presetName:(function(){var s=$('presetSel'),p=(s&&s.value&&W.PRESETS)?W.PRESETS.find(x=>x.id===s.value):null;return p?p.name:'Custom';})(),source:'gym',gym:(($('gymName')&&$('gymName').value.trim())||null),daily:(window.__dailyKey||null),pacer:($('pacerToggle')&&$('pacerToggle').checked)||false};}
 // Movement library: dropdown of known movements + remembered units; new ones register on game start.
 let MOVEUNITS={};
-function unitFor(name){var n=String(name||'').toLowerCase();if(n.startsWith('m ')||n.endsWith(' m')||n.indexOf('meter')>=0||n.indexOf('(m)')>=0||/[0-9]\s*m(\b|$)/.test(n))return 'meters';if(n.indexOf('cal')>=0)return 'cal';return MOVEUNITS[String(name||'').trim().toUpperCase()]||'reps';}
+function unitFor(name){var n=String(name||'').toLowerCase();if(n.startsWith('m ')||n.endsWith(' m')||n.indexOf('meter')>=0||n.indexOf('(m)')>=0||/[0-9]\s*m(\b|$)/.test(n))return 'meters';if(n.indexOf('cal')>=0)return 'cal';if(n.indexOf('sec')>=0||n.indexOf('plank')>=0||n.indexOf('wall sit')>=0||n.indexOf('hollow hold')>=0)return 'sec';return MOVEUNITS[String(name||'').trim().toUpperCase()]||'reps';}
 function syncUnit(inpId,selId){var el=$(inpId),su=$(selId);if(!el||!su)return;su.value=MOVEUNITS[(el.value||'').trim().toUpperCase()]||unitFor(el.value);}
 function syncAllUnits(){syncUnit('mv-hearts','mvu-hearts');syncUnit('mv-diamonds','mvu-diamonds');syncUnit('mv-clubs','mvu-clubs');syncUnit('mv-spades','mvu-spades');syncUnit('ace-move','ace-unit');}
 function registerMovements(s){try{[[s.mv.hearts,s.units.hearts],[s.mv.diamonds,s.units.diamonds],[s.mv.clubs,s.units.clubs],[s.mv.spades,s.units.spades],[s.aceMove,s.aceUnit]].forEach(function(j){if(j[0])sb.rpc('add_movement',{p_name:j[0],p_unit:j[1]||'reps'});});}catch(e){}}
@@ -559,6 +559,7 @@ loadSettings();
     _set('mv-hearts',p.mv.hearts);_set('mv-diamonds',p.mv.diamonds);_set('mv-clubs',p.mv.clubs);_set('mv-spades',p.mv.spades);_set('ace-reps',p.aceReps);_set('ace-move',p.aceMove);
     if(p.units){if($('mvu-hearts'))$('mvu-hearts').value=p.units.hearts||'reps';if($('mvu-diamonds'))$('mvu-diamonds').value=p.units.diamonds||'reps';if($('mvu-clubs'))$('mvu-clubs').value=p.units.clubs||'reps';if($('mvu-spades'))$('mvu-spades').value=p.units.spades||'reps';if($('ace-unit')&&p.aceUnit)$('ace-unit').value=p.aceUnit;}
     else syncAllUnits();
+    if(p.diff)document.querySelectorAll('#diffRow .ob').forEach(function(x){x.classList.toggle('sel',x.dataset.v===p.diff);});
     $('presetNote').textContent='✓ '+p.name+(p.note?' — '+p.note:'')+' · tweak any movement below if you like';
     if(typeof updateWEstimate==='function')updateWEstimate();
   }
@@ -571,7 +572,7 @@ loadSettings();
     sel.insertBefore(og,sel.children[1]||null);}catch(e){}})();
 })();
 
-$('openLobbyBtn').onclick=async()=>{
+$('openLobbyBtn').onclick=async()=>{ try{wtrack('wodly_open_lobby');}catch(e){}
   SOLO=false;
   const settings=gatherSettings();try{localStorage.setItem(SET_KEY,JSON.stringify(settings));}catch(e){}registerMovements(settings);
   setStatus('creating room…');
@@ -682,7 +683,7 @@ if(window.matchMedia&&matchMedia('(pointer:fine)').matches){let _lastHov=null;do
 const MATCH_FN=W.SUPA_URL+'/functions/v1/match';
 let SERVED=false, servedPoll=null, servedEnded=false, servedPrev={};
 async function callMatch(action,extra){try{const r=await fetch(MATCH_FN,{method:'POST',headers:{'apikey':W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,room_id:room&&room.id},extra||{}))});return await r.json();}catch(e){return{error:String(e)};}}
-$('startBtn').onclick=async()=>{
+$('startBtn').onclick=async()=>{ try{wtrack('wodly_game_started',{mode:SOLO?'solo':'online'});}catch(e){}
   if(!players.length)return;
   SERVED=true;SOLO=false;servedEnded=false;capFired=false;vpos={};servedPrev={};game=null;
   const s=room.settings||gatherSettings();
@@ -1008,7 +1009,7 @@ function triggerCap(){if(capFired||!game||game.ended)return;capFired=true;
   // mark any not-yet-finished players' standing by position; end with results.
   endGame('cap');}
 
-function unitSuffix(u){return u==='meters'?'m':(u==='cal'?' cal':'');}
+function unitSuffix(u){return u==='meters'?'m':(u==='cal'?' cal':(u==='sec'?' sec':''));}
 function cardText(c){if(!c)return null;return c.reps+unitSuffix(c.unit)+' '+c.move;}
 function renderStandings(){const b=$('standBody');if(!game)return;b.innerHTML='';
   // finished players first (by placing), then racers by furthest position.
@@ -1085,6 +1086,7 @@ function setFocus(on){const gs=$('gameScreen');if(!gs)return;gs.classList.toggle
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){const gs=$('gameScreen');if(gs&&gs.classList.contains('focus'))setFocus(false);}});})();
 window.addEventListener('resize',()=>{if(game){sizeCanvas();drawBoard();drawTokens();}});
 </script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}</script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

@@ -291,7 +291,7 @@ $('joinBtn').onclick=async()=>{if(!chosen)return;$('avErr').textContent='';const
   const{count}=await sb.from('players').select('*',{count:'exact',head:true}).eq('room_id',room.id);
   const row={room_id:room.id,client_id:myId,name,avatar:chosen,color:av.color,connected:true,last_seen:new Date().toISOString()};if(!me)row.seat=count||0;
   const{data,error}=await sb.from('players').upsert(row,{onConflict:'room_id,client_id'}).select().single();
-  if(error){$('avErr').textContent='Join failed: '+error.message;return;}me=data;enterPlay();};
+  if(error){$('avErr').textContent='Join failed: '+error.message;return;}me=data;try{wtrack('wodly_player_joined');}catch(e){}enterPlay();};
 
 function setConn(t,cls){const el=$('connPill');if(!el)return;el.style.display='';el.textContent=t;el.className='conn'+(cls?' '+cls:'');}
 function connect(){if(stateChan)sb.removeChannel(stateChan);setConn('Connecting…','warn');
@@ -514,6 +514,7 @@ function renderRecentLog(state){const wrap=$('logWrap'),list=$('logList');const 
     row.innerHTML=`<span class="ld" style="background:${e.color}"></span><span class="ln">${esc(e.name)}</span><span class="lt">⏱${pfmt(e.gs)}</span><span class="lc" style="color:${col}">${esc(desc)}</span><span class="lk" style="color:${col}">${label}${sym}</span>`;
     list.appendChild(row);});}
 </script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}</script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
