@@ -1,0 +1,176 @@
+/* WODLY core — shared constants, game logic, and Supabase helpers.
+   Used by board.html (the gym screen / host) and play.html (phone controller). */
+(function (global) {
+  // ── Supabase ──────────────────────────────────────────────────────────────
+  const SUPA_URL = 'https://ynznwosssctxbdiauekj.supabase.co';
+  const SUPA_KEY = 'sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq';
+  // requires @supabase/supabase-js v2 loaded globally as `supabase`
+  function makeClient() {
+    return global.supabase.createClient(SUPA_URL, SUPA_KEY, {
+      realtime: { params: { eventsPerSecond: 20 } }
+    });
+  }
+
+  // ── Brand + constants ─────────────────────────────────────────────────────
+  const BRAND = { hearts:'#E8363D', diamonds:'#F5A623', clubs:'#4CAF50', spades:'#2196F3',
+                  ace:'#9b59b6', orange:'#F5A623', green:'#4CAF50', red:'#E8363D', blue:'#2196F3' };
+  const SUITS = ['hearts','diamonds','clubs','spades'];
+  const SYM = { hearts:'♥', diamonds:'♦', clubs:'♣', spades:'♠' };
+  const SCOL = { hearts:BRAND.hearts, diamonds:BRAND.diamonds, clubs:BRAND.clubs, spades:BRAND.spades };
+  const FACE_LABELS = { 11:'J', 12:'Q', 13:'K' };
+  const DECK_SPACES = { quick:52, standard:104, large:130 };
+  const DIFF_MULT = { easy:0.6, medium:1.0, hard:1.4 };
+  const PCOLS = ['#F5A623','#E8363D','#4CAF50','#2196F3','#9b59b6','#00BCD4'];
+
+  // Player-selection characters (image art lives in /assets/characters)
+  const AVATARS = [
+    { id:'ninja',        name:'Ninja',           img:'assets/characters/ninja.png',          color:'#2196F3' },
+    { id:'lifter',       name:'Lifter',          img:'assets/characters/lifter.png',         color:'#4CAF50' },
+    { id:'runner',       name:'Runner',          img:'assets/characters/runner.png',         color:'#E8363D' },
+    { id:'gymnast',      name:'Gymnast',         img:'assets/characters/gymnast.png',        color:'#2196F3' },
+    { id:'firebreather', name:'Firebreather',    img:'assets/characters/firebreather.png',   color:'#F5A623' },
+    { id:'champ',        name:'Champ',           img:'assets/characters/champ.png',          color:'#F5A623' },
+    { id:'coach',        name:'Coach',           img:'assets/characters/coach.png',          color:'#F5A623' },
+    { id:'rookie',       name:'Rookie',          img:'assets/characters/rookie.png',         color:'#E8363D' },
+    { id:'cheerleader',  name:'Cheerleader',     img:'assets/characters/cheerleader.png',    color:'#9b59b6' },
+    { id:'sunrise',      name:'Sunrise',         img:'assets/characters/sunrise.png',        color:'#F5A623' },
+    { id:'supplementking', name:'Supplement King', img:'assets/characters/supplementking.png', color:'#4CAF50' },
+    { id:'hybridracer',  name:'Hybrid Racer',    img:'assets/characters/hybridracer.png',    color:'#00BCD4' }
+  ];
+
+  // Board background themes (square art drawn behind the spiral path). To add one, drop a
+  // square PNG (2048x2048+) in assets/boards/ and add an entry here.
+  const BOARDS = [
+    { id:'classic', name:'Classic', file:'assets/board-bg.png' },
+    { id:'arena',   name:'Arena',   file:'assets/board-arena.jpg' },
+    { id:'box',     name:'The Box', file:'assets/board-box.jpg' },
+    { id:'vintage', name:'Vintage', file:'assets/board-vintage.jpg' },
+    { id:'july4th', name:'July 4th', file:'assets/board-july4th.jpg' }
+  ];
+
+  // Pre-made workout decks. Movements are generic; names are playful homages, not official.
+  // Each fills the 4 suits (hearts/diamonds/clubs/spades) + the ace penalty.
+  const PRESETS = [
+    { id:'merph',  name:'Merph',  cat:'Benchmark', note:'Hero tribute', mv:{hearts:'Pull-ups',diamonds:'Push-ups',clubs:'Air Squats',spades:'Burpees'}, aceReps:400, aceMove:'m Run' },
+    { id:'cinda',  name:'Cinda',  cat:'Benchmark', note:'The bodyweight classic', mv:{hearts:'Pull-ups',diamonds:'Push-ups',clubs:'Air Squats',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
+    { id:'frenn',  name:'Frenn',  cat:'Benchmark', note:'Fast & spicy', mv:{hearts:'Thrusters',diamonds:'Pull-ups',clubs:'Air Squats',spades:'Push Press'}, aceReps:5, aceMove:'Burpees' },
+    { id:'hellen', name:'Hellen', cat:'Benchmark', note:'Swing & sweat', mv:{hearts:'KB Swings',diamonds:'Pull-ups',clubs:'Box Jumps',spades:'Push-ups'}, aceReps:200, aceMove:'m Run' },
+    { id:'classroom',name:'Classroom (kid-safe)', cat:'Classroom & schools', note:'Bodyweight brain break — K–8 friendly, no equipment', mv:{hearts:'Jumping Jacks',diamonds:'Air Squats',clubs:'High Knees',spades:'Arm Circles'}, aceReps:6, aceMove:'Toe Touches', diff:'easy' },
+    { id:'bwblast',name:'Bodyweight Blast', cat:'Bodyweight (no gear)', note:'Anywhere, no equipment', mv:{hearts:'Push-ups',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Burpees'}, aceReps:8, aceMove:'50ft Shuttle Runs' },
+    { id:'nogear', name:'No-Gear Grind', cat:'Bodyweight (no gear)', note:'Bodyweight conditioning', mv:{hearts:'Walking Lunges',diamonds:'Mountain Climbers',clubs:'Plank (sec)',spades:'High Knees'}, aceReps:15, aceMove:'Burpees' },
+    { id:'dbgrind',name:'Dumbbell Grind', cat:'Dumbbell & kettlebell', note:'Grab a dumbbell', mv:{hearts:'DB Snatch',diamonds:'DB Thruster',clubs:'DB Goblet Squat',spades:'DB Row'}, aceReps:8, aceMove:'DB Devil Press' },
+    { id:'kbeng',  name:'Kettlebell Engine', cat:'Dumbbell & kettlebell', note:'One kettlebell', mv:{hearts:'KB Swings',diamonds:'KB Goblet Squat',clubs:'KB Clean',spades:'KB Deadlift'}, aceReps:15, aceMove:'KB Swings' },
+    { id:'core',   name:'Core Crusher', cat:'Core & conditioning', note:'Abs on fire', mv:{hearts:'Sit-ups',diamonds:'Leg Raises',clubs:'Russian Twists',spades:'Plank (sec)'}, aceReps:20, aceMove:'Hollow Hold (sec)' },
+    { id:'cardio', name:'Cardio Burner', cat:'Core & conditioning', note:'Heart-rate spike', mv:{hearts:'Burpees',diamonds:'Mountain Climbers',clubs:'High Knees',spades:'Jumping Jacks'}, aceReps:15, aceMove:'Burpees' },
+    { id:'hybridrace',   name:'Hybrid Race',   cat:'Hybrid race', note:'The 8-station sim', mv:{hearts:'Wall Balls',diamonds:'Burpee Broad Jumps',clubs:'Sandbag Lunges',spades:'SkiErg (cal)'}, aceReps:1000, aceMove:'m Run' },
+    { id:'hybridengine', name:'Hybrid Engine', cat:'Hybrid race', note:'Erg-heavy conditioning', mv:{hearts:'SkiErg (cal)',diamonds:'Row (cal)',clubs:'Burpee Broad Jumps',spades:'Wall Balls'}, aceReps:500, aceMove:'m Run' }
+  ];
+
+  // ── Card logic ────────────────────────────────────────────────────────────
+  function cardType(v){ if(v===1)return'ace'; if(v===2)return'skip'; if(v===3||v===4)return'back'; return'workout'; }
+  function getReps(v,d){ if(v>=11)return v; return Math.max(1, Math.round(v * (DIFF_MULT[d]||1))); }
+  // Distance movements (metres) score at 10 m = 1 rep. The card still shows the full distance to run.
+  function isMeters(m){ m=String(m||'').trim().toLowerCase(); return m.startsWith('m ')||m.endsWith(' m')||m.indexOf('meter')>=0||m.indexOf('(m)')>=0||/[0-9]\s*m(\b|$)/.test(m); }
+  // Distance movements score at 10 m = 1 rep. Prefer the explicit unit; fall back to the name heuristic
+  // so older '(m)' / 'm Run' style names still convert.
+  function repScore(move,n,unit){ n=Number(n)||0; var meters=(unit==='meters')||(!unit&&isMeters(move)); return meters?Math.max(1,Math.round(n/10)):n; }
+  function buildDeck(){
+    const d=[];
+    SUITS.forEach(s=>{ d.push({suit:s,val:1,label:'A'});
+      for(let v=2;v<=13;v++) d.push({suit:s,val:v,label:v<=10?String(v):(FACE_LABELS[v]||String(v))}); });
+    for(let i=d.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+    return d;
+  }
+
+  // ── Misc helpers ──────────────────────────────────────────────────────────
+  // 4-char join code, avoiding ambiguous chars (no O/0/I/1)
+  function genCode(){ const a='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<4;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; }
+  function clientId(){
+    try { let id=localStorage.getItem('wodly_client_id');
+      if(!id){ id='c_'+Math.random().toString(36).slice(2)+Date.now().toString(36); localStorage.setItem('wodly_client_id',id); }
+      return id;
+    } catch(e){ return 'c_'+Math.random().toString(36).slice(2); }
+  }
+
+  // ── Daily WOD: one shared, deterministic workout per calendar day ──
+  // Fallback library (used only if the server daily_plan RPC is unreachable). Keep in sync
+  // with the seeded daily_workouts table; admin-added/edited workouts live server-side.
+  const DAILY_WODS = [
+    { name:'Full Send',    mv:{hearts:'Burpees',diamonds:'Air Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
+    { name:'Engine Room',  mv:{hearts:'Mountain Climbers',diamonds:'High Knees',clubs:'Jumping Jacks',spades:'Burpees'}, aceReps:15, aceMove:'Burpees' },
+    { name:'Core Quake',   mv:{hearts:'Sit-ups',diamonds:'Leg Raises',clubs:'Russian Twists',spades:'Plank (sec)'}, aceReps:20, aceMove:'Hollow Hold (sec)' },
+    { name:'Leg Day Lite', mv:{hearts:'Air Squats',diamonds:'Walking Lunges',clubs:'Jump Squats',spades:'Wall Sit (sec)'}, aceReps:15, aceMove:'Air Squats' },
+    { name:'Push Party',   mv:{hearts:'Push-ups',diamonds:'Pike Push-ups',clubs:'Shoulder Taps',spades:'Plank (sec)'}, aceReps:10, aceMove:'Push-ups' },
+    { name:'Burpee Blast', mv:{hearts:'Burpees',diamonds:'Air Squats',clubs:'Push-ups',spades:'Mountain Climbers'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Cardio Cruise',mv:{hearts:'High Knees',diamonds:'Butt Kicks',clubs:'Jumping Jacks',spades:'Skaters'}, aceReps:15, aceMove:'Burpees' },
+    { name:'Squad Squats', mv:{hearts:'Air Squats',diamonds:'Jump Squats',clubs:'Cossack Squats',spades:'Wall Sit (sec)'}, aceReps:15, aceMove:'Air Squats' },
+    { name:'Ab Attack',    mv:{hearts:'Sit-ups',diamonds:'Bicycle Crunches',clubs:'V-ups',spades:'Plank (sec)'}, aceReps:20, aceMove:'Sit-ups' },
+    { name:'Sprint & Squat',mv:{hearts:'Air Squats',diamonds:'Mountain Climbers',clubs:'Burpees',spades:'High Knees'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Grip & Rip',   mv:{hearts:'Pull-ups',diamonds:'Hollow Rocks',clubs:'Superman',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
+    { name:'Total Torch',  mv:{hearts:'Burpees',diamonds:'Jump Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Iron Grip',    mv:{hearts:'Kettlebell Swings',diamonds:'Goblet Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Barbell Blitz',mv:{hearts:'Deadlifts',diamonds:'Front Squats',clubs:'Push Press',spades:'Air Squats'}, aceReps:10, aceMove:'Burpees' },
+    { name:'Row House',    mv:{hearts:'Row (cal)',diamonds:'Air Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Box Office',   mv:{hearts:'Box Jumps',diamonds:'Step-ups',clubs:'Push-ups',spades:'Mountain Climbers'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Wall Ball Wars',mv:{hearts:'Wall Balls',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Push-ups'}, aceReps:15, aceMove:'Wall Balls' },
+    { name:'Thruster Throwdown',mv:{hearts:'Thrusters',diamonds:'Pull-ups',clubs:'Air Squats',spades:'Push-ups'}, aceReps:12, aceMove:'Thrusters' },
+    { name:'Dumbbell Destroyer',mv:{hearts:'Dumbbell Snatches',diamonds:'Dumbbell Thrusters',clubs:'Goblet Squats',spades:'Push-ups'}, aceReps:12, aceMove:'Devil Press' },
+    { name:'Kettlebell King',mv:{hearts:'Kettlebell Swings',diamonds:'Goblet Squats',clubs:'Kettlebell Deadlifts',spades:'Sit-ups'}, aceReps:15, aceMove:'Kettlebell Swings' },
+    { name:'Pull Party',   mv:{hearts:'Pull-ups',diamonds:'Ring Rows',clubs:'Toes-to-Bar',spades:'Hollow Rocks'}, aceReps:10, aceMove:'Pull-ups' },
+    { name:'Cardio Inferno',mv:{hearts:'Bike (cal)',diamonds:'High Knees',clubs:'Jumping Jacks',spades:'Mountain Climbers'}, aceReps:15, aceMove:'Burpees' },
+    { name:'Ski Patrol',   mv:{hearts:'Ski (cal)',diamonds:'Air Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Hero Heavy',   mv:{hearts:'Deadlifts',diamonds:'Pull-ups',clubs:'Push-ups',spades:'Air Squats'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Row & Go',     mv:{hearts:'Row (m)',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Push-ups'}, aceReps:12, aceMove:'Burpees' },
+    { name:'Farmers Fury', mv:{hearts:'Farmer Carry (m)',diamonds:'Goblet Squats',clubs:'Push-ups',spades:'Sit-ups'}, aceReps:12, aceMove:'Kettlebell Swings' },
+    { name:'Clean Sweep',  mv:{hearts:'Hang Cleans',diamonds:'Front Squats',clubs:'Push Press',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
+    { name:'Devils Dozen', mv:{hearts:'Devil Press',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Mountain Climbers'}, aceReps:12, aceMove:'Devil Press' },
+    { name:'Grinder',      mv:{hearts:'Wall Balls',diamonds:'Box Jumps',clubs:'Kettlebell Swings',spades:'Burpees'}, aceReps:15, aceMove:'Burpees' },
+    { name:'Sunday Funday',mv:{hearts:'Air Squats',diamonds:'Push-ups',clubs:'Sit-ups',spades:'Jumping Jacks'}, aceReps:10, aceMove:'Burpees' }
+  ];
+  function dailyKey(d){ d=d||new Date(); const m=(''+(d.getMonth()+1)).padStart(2,'0'), day=(''+d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; }
+  function dailyIndex(d){ d=d||new Date(); const epochDay=Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000); return ((epochDay%DAILY_WODS.length)+DAILY_WODS.length)%DAILY_WODS.length; }
+  function dailyWod(d){ d=d||new Date(); const w=DAILY_WODS[dailyIndex(d)]; return { key:dailyKey(d), name:w.name, mv:w.mv, aceReps:w.aceReps, aceMove:w.aceMove }; }
+
+  // ── Data-driven "smart" workouts, generated from what the community has logged ──
+  // Returns up to 4 preset objects (same shape as PRESETS) built live from movement_pace
+  // (fastest/slowest) and movement_leaderboard (most/least logged). Pass a Supabase client.
+  async function smartPresets(sb){
+    try{
+      var res = await Promise.all([sb.rpc('movement_pace'), sb.rpc('movement_leaderboard'), sb.rpc('movement_list')]);
+      var pace=(res[0]&&res[0].data)||{}, lb=(res[1]&&res[1].data)||[], mlist=(res[2]&&res[2].data)||[];
+      var umap={}; (mlist||[]).forEach(function(m){ umap[String(m.name).toUpperCase()]=m.unit; });
+      var unitOf=function(n){ return umap[String(n).toUpperCase()]||'reps'; };
+      var DEF=['BURPEES','AIR SQUATS','PUSH-UPS','SIT-UPS','MOUNTAIN CLIMBERS'];
+      var pad=function(a){ a=a.filter(Boolean); var i=0; while(a.length<4&&i<DEF.length){ if(a.indexOf(DEF[i])<0)a.push(DEF[i]); i++; } return a.slice(0,4); };
+      var mk=function(id,name,note,names,aceReps,aceMove){
+        names=pad(names.map(function(n){return String(n).toUpperCase();}));
+        var suits=['hearts','diamonds','clubs','spades'], mv={}, units={};
+        suits.forEach(function(s,i){ mv[s]=names[i]; units[s]=unitOf(names[i]); });
+        return { id:id, name:name, cat:'⚡ From the community data', note:note, mv:mv, units:units, aceReps:aceReps, aceMove:String(aceMove).toUpperCase(), aceUnit:unitOf(aceMove) };
+      };
+      var out=[], reps=(pace&&pace.reps)||[];
+      if(reps.length>=4){
+        var fast=reps.slice(0,4).map(function(x){return x.move;});
+        var slow=reps.slice(-4).reverse().map(function(x){return x.move;});
+        out.push(mk('smart:fast','Lightning Fast','The quickest-moving movements we track', fast, 15, fast[0]));
+        out.push(mk('smart:grind','The Grinder','The slowest, most grueling movements', slow, 8, slow[0]));
+      }
+      var byUse=(lb||[]).filter(function(x){return x&&x.m;});
+      if(byUse.length>=4){
+        var pop=byUse.slice(0,4).map(function(x){return x.m;});
+        var used=byUse.filter(function(x){return (+x.reps||0)>0;});
+        var rare=used.slice(-4).reverse().map(function(x){return x.m;});
+        out.push(mk('smart:pop','Crowd Favorite','The most-logged movements in the community', pop, 12, pop[0]));
+        if(rare.length) out.push(mk('smart:rare','Hidden Gems','Rarely-programmed movements — give them some love', rare, 12, rare[0]));
+      }
+      return out;
+    }catch(e){ return []; }
+  }
+
+  global.WODLY = {
+    SUPA_URL, SUPA_KEY, makeClient,
+    BRAND, SUITS, SYM, SCOL, FACE_LABELS, DECK_SPACES, DIFF_MULT, PCOLS, AVATARS, PRESETS, BOARDS,
+    DAILY_WODS, dailyKey, dailyWod, smartPresets,
+    cardType, getReps, isMeters, repScore, buildDeck, genCode, clientId
+  };
+})(typeof window !== 'undefined' ? window : globalThis);

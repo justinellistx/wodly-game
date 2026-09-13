@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WODLY — Sponsor Admin</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta name="robots" content="noindex">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;--border:#333;--text:#fff;--text2:#aaa;--text3:#666;}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:#fff;min-height:100vh;padding:24px;}
+  .wrap{max-width:880px;margin:0 auto;}
+  h1{font-size:26px;font-weight:900;letter-spacing:4px;}
+  .sub{color:var(--text3);font-size:12px;text-transform:uppercase;letter-spacing:2px;margin-bottom:22px;}
+  .screen{display:none;}.screen.active{display:block;}
+  label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;display:block;margin:14px 0 6px;}
+  input[type=text],input[type=url],input[type=password]{width:100%;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;}
+  .btn{padding:12px 22px;font-size:14px;font-weight:800;letter-spacing:.5px;background:var(--orange);border:none;border-radius:10px;color:#000;cursor:pointer;}
+  .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text2);}
+  .btn.danger{background:transparent;border:1px solid var(--red);color:var(--red);}
+  .err{color:var(--red);font-size:13px;margin-top:10px;min-height:16px;}
+  .ok{color:var(--green);}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:18px;}
+  .row{display:flex;gap:14px;flex-wrap:wrap;}
+  .row>div{flex:1;min-width:220px;}
+  .logo-drop{border:1px dashed #444;border-radius:10px;padding:14px;text-align:center;cursor:pointer;background:var(--surface2);}
+  .logo-prev{max-height:70px;max-width:200px;object-fit:contain;margin-top:8px;}
+  .slist{display:flex;flex-direction:column;gap:12px;}
+  .srow{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;}
+  .srow.off{opacity:.5;}
+  .srow .lg{width:90px;height:54px;background:#000;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+  .srow .lg img{max-width:100%;max-height:100%;object-fit:contain;}
+  .srow .meta{flex:1;}.srow .meta b{font-size:16px;}.srow .meta div{font-size:12px;color:var(--text3);word-break:break-all;}
+  .srow .acts{display:flex;gap:8px;flex-shrink:0;}
+  .pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+  .pill.on{background:rgba(76,175,80,.2);color:var(--green);}.pill.off{background:rgba(120,120,120,.2);color:var(--text3);}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .sectitle{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:28px 0 12px;display:flex;justify-content:space-between;align-items:center;}
+  details.sec{border:1px solid var(--border);border-radius:12px;margin:0 0 12px;background:rgba(255,255,255,.02);}
+  details.sec>summary.sechead{list-style:none;cursor:pointer;padding:15px 16px;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;color:#fff;user-select:none;}
+  details.sec>summary.sechead::-webkit-details-marker{display:none;}
+  details.sec>summary.sechead .chev{margin-left:auto;color:var(--text3);font-size:13px;transition:transform .18s;}
+  details.sec[open]>summary.sechead .chev{transform:rotate(90deg);}
+  details.sec>summary.sechead:hover{background:rgba(255,255,255,.03);border-radius:12px;}
+  details.sec[open]>summary.sechead{border-bottom:1px solid var(--border);border-radius:12px 12px 0 0;}
+  .sec-body{padding:14px 16px 18px;}
+  .sec-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .sec-sub{color:var(--text3);font-weight:600;font-size:12px;text-transform:none;letter-spacing:0;}
+  .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:8px;}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+  .stat b{display:block;font-size:30px;font-weight:900;line-height:1.1;}
+  .stat span{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);}
+  .stat.hl{border-color:rgba(245,166,35,.5);}.stat.hl b{color:var(--orange);}
+  .angrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+  @media(max-width:640px){.angrid{grid-template-columns:1fr;}}
+  .blk{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 16px;}
+  .blk h4{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:11px;}
+  .bar{display:flex;align-items:center;gap:9px;margin:6px 0;font-size:13px;}
+  .bar .lbl{width:118px;flex-shrink:0;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar .track{flex:1;background:var(--surface2);border-radius:6px;height:15px;overflow:hidden;}
+  .bar .fill{height:100%;background:linear-gradient(90deg,var(--orange),#f7bd57);border-radius:6px;min-width:2px;}
+  .bar .val{width:44px;text-align:right;color:var(--text2);font-variant-numeric:tabular-nums;flex-shrink:0;}
+  .nodata{color:var(--text3);font-size:13px;padding:4px 0;}
+  .seg{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:9px;overflow:hidden;}
+  .seg button{background:none;border:none;color:var(--text2);font-size:12px;font-weight:700;padding:6px 11px;cursor:pointer;font-family:inherit;}
+  .seg button.on{background:var(--orange);color:#000;}
+  .mkp.on{background:var(--orange);color:#000;border-color:var(--orange);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- GATE -->
+  <div id="gate" class="screen active">
+    <h1>WODLY</h1><div class="sub">Sponsor admin</div>
+    <div class="card" style="max-width:380px;">
+      <label>Admin passcode</label>
+      <input type="password" id="pass" placeholder="Enter passcode" autocomplete="off">
+      <button class="btn" id="enterBtn" style="margin-top:16px;">Enter</button>
+      <div class="err" id="gateErr"></div>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div id="panel" class="screen">
+    <div class="topbar"><div><h1>WODLY</h1><div class="sub" style="margin-bottom:0;">Admin</div></div><button class="btn ghost" id="lockBtn">Lock</button></div>
+
+    <details class="sec" id="secAnalytics"><summary class="sechead">📊 Analytics<span class="chev">▸</span></summary><div class="sec-body">
+      <div class="sec-tools">
+        <span class="seg" id="periodSeg"><button data-d="" class="on">All</button><button data-d="90">90d</button><button data-d="30">30d</button><button data-d="7">7d</button></span>
+        <button class="btn ghost" id="dlStats" style="padding:6px 12px;font-size:12px;">⬇ CSV</button>
+        <button class="btn ghost" id="refreshStats" style="padding:6px 12px;font-size:12px;">Refresh</button>
+      </div>
+    <div class="statgrid" id="statGrid"><div class="nodata">Loading…</div></div>
+    <div class="angrid" id="anGrid"></div>
+
+    </div></details>
+    <details class="sec" id="secDaily"><summary class="sechead">🔥 Daily workouts<span class="chev">▸</span></summary><div class="sec-body">
+      <div class="sec-tools"><button class="btn ghost" id="dRefresh" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
+    <div class="card">
+      <div style="font-weight:800;font-size:15px;margin-bottom:2px;" id="dFormTitle">Add a daily workout</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Four movements (one per card suit) plus an ace penalty. New workouts join the daily rotation automatically.</div>
+      <label>Workout name</label>
+      <input type="text" id="d-name" placeholder="e.g. Friday Fire">
+      <div class="row" style="margin-top:4px;">
+        <div><label>♥ Hearts movement</label><input type="text" id="d-hearts" list="dMoves" placeholder="e.g. Burpees"></div>
+        <div><label>♦ Diamonds movement</label><input type="text" id="d-diamonds" list="dMoves" placeholder="e.g. Air Squats"></div>
+      </div>
+      <div class="row">
+        <div><label>♣ Clubs movement</label><input type="text" id="d-clubs" list="dMoves" placeholder="e.g. Push-ups"></div>
+        <div><label>♠ Spades movement</label><input type="text" id="d-spades" list="dMoves" placeholder="e.g. Sit-ups"></div>
+      </div>
+      <div class="row">
+        <div style="flex:0 0 150px;min-width:120px;"><label>Ace penalty reps</label><input type="text" id="d-acereps" placeholder="12"></div>
+        <div><label>Ace penalty movement</label><input type="text" id="d-acemove" list="dMoves" placeholder="e.g. Burpees"></div>
+      </div>
+      <datalist id="dMoves"></datalist>
+      <div style="margin-top:16px;display:flex;gap:10px;">
+        <button class="btn" id="dSaveBtn">Add workout</button>
+        <button class="btn ghost" id="dCancelBtn" style="display:none;">Cancel edit</button>
+      </div>
+      <div class="err" id="dErr"></div>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:18px 0 10px;">Rotation library <span id="dCount" style="color:var(--text2);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+    <div class="slist" id="dList"><div style="color:var(--text3)">Loading…</div></div>
+
+    <div class="card" style="margin-top:18px;">
+      <div style="font-weight:800;font-size:15px;margin-bottom:2px;">📌 Pin a workout to a date</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Override the rotation on a specific day — everyone who plays that day gets this exact workout.</div>
+      <div class="row">
+        <div style="flex:0 0 180px;min-width:150px;"><label>Date</label><input type="date" id="d-pindate" style="width:100%;font-size:15px;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:#fff;"></div>
+        <div><label>Workout</label><select id="d-pinsel" style="width:100%;font-size:15px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:#fff;"></select></div>
+      </div>
+      <div style="margin-top:14px;"><button class="btn" id="dPinBtn">Pin date</button></div>
+      <div class="err" id="dPinErr"></div>
+      <div id="dPins" style="margin-top:14px;"></div>
+    </div>
+
+    </div></details>
+    <details class="sec" id="secSponsors"><summary class="sechead">🏷️ Sponsors &amp; deals<span class="chev">▸</span></summary><div class="sec-body">
+    <div class="card">
+      <div style="font-weight:800;font-size:15px;margin-bottom:6px;" id="formTitle">Add a sponsor</div>
+      <div class="row">
+        <div>
+          <label>Sponsor name</label>
+          <input type="text" id="f-name" placeholder="e.g. Rogue Fitness">
+          <label>Website URL</label>
+          <input type="url" id="f-web" placeholder="https://example.com">
+          <label>Socials URL (for the QR code)</label>
+          <input type="url" id="f-social" placeholder="https://instagram.com/example">
+          <label>Deal / tagline <span style="text-transform:none;letter-spacing:0;color:var(--text3);">(optional, ~60 chars)</span></label>
+          <input type="text" id="f-tagline" maxlength="80" placeholder="e.g. 15% off for WODLY players">
+          <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:14px;color:var(--text2);margin-top:14px;"><input type="checkbox" id="f-active" checked> Active (shown on boards)</label>
+        </div>
+        <div>
+          <label>Logo</label>
+          <div class="logo-drop" id="logoDrop">Click to choose a logo image<br><img class="logo-prev" id="logoPrev" style="display:none;"></div>
+          <input type="file" id="f-logo" accept="image/*" style="display:none;">
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;">
+        <button class="btn" id="saveBtn">Add sponsor</button>
+        <button class="btn ghost" id="cancelBtn" style="display:none;">Cancel edit</button>
+      </div>
+      <div class="err" id="formErr"></div>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin:18px 0 10px;">Sponsors</div>
+    <div class="slist" id="slist"><div style="color:var(--text3)">Loading…</div></div>
+
+    </div></details>
+    <details class="sec" id="secEngagement"><summary class="sechead">📈 Sponsor engagement<span class="chev">▸</span></summary><div class="sec-body">
+      <div class="sec-tools"><button class="btn ghost" id="loadClicks" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
+    <div id="clicksBox"><div class="nodata">Loading…</div></div>
+
+    </div></details>
+    <details class="sec" id="secPresence"><summary class="sechead">📅 Daily workout — sponsor presence<span class="chev">▸</span></summary><div class="sec-body">
+      <div class="sec-tools"><button class="btn ghost" id="loadReport" style="padding:6px 12px;font-size:12px;">Refresh</button></div>
+    <div id="reportBox"><div class="nodata">Loading…</div></div>
+
+    </div></details>
+    <details class="sec" id="secMediaKit"><summary class="sechead">🧾 Sponsor media kit<span class="chev">▸</span></summary><div class="sec-body">
+      <div class="sec-tools">
+        <button class="btn ghost mkp" data-days="7" style="padding:6px 10px;font-size:12px;">7d</button>
+        <button class="btn ghost mkp" data-days="30" style="padding:6px 10px;font-size:12px;">30d</button>
+        <button class="btn ghost mkp" data-days="90" style="padding:6px 10px;font-size:12px;">90d</button>
+        <button class="btn ghost mkp" data-days="0" style="padding:6px 10px;font-size:12px;">All</button>
+        <button class="btn" id="mkCsv" style="padding:6px 12px;font-size:12px;">⬇ CSV</button>
+      </div>
+    <div style="font-size:11px;color:var(--text3);margin:-4px 0 10px;">Reach &amp; screen-time per sponsor — the numbers you hand a prospect.</div>
+    <div id="mkBox"><div class="nodata">Loading…</div></div>
+
+    </div></details>
+    <details class="sec" id="secMovements"><summary class="sechead">🏋️ Movement audit<span class="chev">▸</span></summary><div class="sec-body">
+    <div style="font-size:11px;color:var(--text3);margin:-4px 0 10px;">Catches name drift — near-duplicates to merge, and player-typed movements not yet in the library.</div>
+    <div id="movBox"><div class="nodata">Loading…</div></div>
+    </div></details>
+    <details class="sec" id="secSubs"><summary class="sechead">✉️ Email subscribers <span id="subsCount" class="sec-sub"></span><span class="chev">▸</span></summary><div class="sec-body">
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <button class="btn ghost" id="loadSubs">Load subscribers</button>
+      <button class="btn" id="dlSubs" style="display:none;">Download CSV</button>
+    </div>
+    <div id="subsList" style="font-size:13px;color:var(--text3);"></div>
+    </div></details>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL='https://ynznwosssctxbdiauekj.supabase.co';
+const PUB='sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq';
+const FN=SUPA_URL+'/functions/v1/sponsor-admin';
+const sb=supabase.createClient(SUPA_URL,PUB);
+const $=id=>document.getElementById(id);
+let passcode='', editId=null, logoData=null;
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+async function api(action,extra){
+  const res=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({passcode,action},extra))});
+  return res.json();
+}
+
+// ── Gate ──
+$('enterBtn').onclick=async()=>{
+  passcode=$('pass').value.trim();$('gateErr').textContent='';
+  const r=await api('verify');
+  if(r&&r.ok){show('panel');}else{$('gateErr').textContent='Invalid passcode.';passcode='';}
+};
+// Collapsible sections: lazy-load each section's data the first time it's opened.
+const SEC_LOADERS={secAnalytics:function(){loadAnalytics();},secDaily:function(){loadDaily();},secSponsors:function(){loadSponsors();},secEngagement:function(){loadClicks();},secPresence:function(){loadDailyReport();},secMediaKit:function(){loadMediaKit(30);},secMovements:function(){loadMovements();}};
+Object.keys(SEC_LOADERS).forEach(function(id){var d=$(id);if(!d)return;d.addEventListener('toggle',function(){if(d.open&&!d.dataset.loaded){d.dataset.loaded='1';try{SEC_LOADERS[id]();}catch(e){}}});});
+
+// ── Daily workouts ──
+let dailyData=[], dEditId=null;
+function dailyMovesDatalist(){
+  const set=new Set();
+  dailyData.forEach(w=>{[w.hearts,w.diamonds,w.clubs,w.spades,w.ace_move].forEach(m=>{if(m)set.add(m);});});
+  $('dMoves').innerHTML=[...set].sort().map(m=>`<option value="${esc(m)}">`).join('');
+}
+async function loadDaily(){
+  const r=await api('daily_list');
+  const list=$('dList');
+  if(!r||r.error||!r.data){list.innerHTML='<div style="color:var(--text3)">Could not load'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
+  dailyData=r.data.workouts||[];
+  const active=dailyData.filter(w=>w.active).length;
+  $('dCount').textContent='· '+active+' active / '+dailyData.length+' in rotation';
+  dailyMovesDatalist();
+  $('d-pinsel').innerHTML=dailyData.map(w=>`<option value="${w.id}">${esc(w.name)}${w.active?'':' (paused)'}</option>`).join('');
+  if(!dailyData.length){list.innerHTML='<div style="color:var(--text3)">No workouts yet. Add one above.</div>';}
+  else{
+    list.innerHTML='';
+    dailyData.forEach(w=>{const d=document.createElement('div');d.className='srow'+(w.active?'':' off');
+      d.innerHTML=`<div class="meta"><b>${esc(w.name)}</b> <span class="pill ${w.active?'on':'off'}">${w.active?'In rotation':'Paused'}</span>
+        <div style="margin-top:6px;color:var(--text2);font-size:13px;">♥ ${esc(w.hearts)} · ♦ ${esc(w.diamonds)} · ♣ ${esc(w.clubs)} · ♠ ${esc(w.spades)}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px;">🅰 ${esc(String(w.ace_reps))} ${esc(w.ace_move)}</div></div>
+      <div class="acts"><button class="btn ghost" data-de="${w.id}">Edit</button><button class="btn ghost" data-dt="${w.id}">${w.active?'Pause':'Activate'}</button><button class="btn danger" data-dd="${w.id}">Delete</button></div>`;
+      list.appendChild(d);});
+    list.querySelectorAll('[data-de]').forEach(b=>b.onclick=()=>dStartEdit(dailyData.find(x=>String(x.id)===b.dataset.de)));
+    list.querySelectorAll('[data-dt]').forEach(b=>b.onclick=async()=>{const w=dailyData.find(x=>String(x.id)===b.dataset.dt);await api('daily_toggle',{id:w.id,active:!w.active});loadDaily();});
+    list.querySelectorAll('[data-dd]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this workout from the rotation?'))return;await api('daily_delete',{id:+b.dataset.dd});loadDaily();});
+  }
+  const sched=r.data.schedule||[];const byId={};dailyData.forEach(w=>byId[w.id]=w.name);
+  $('dPins').innerHTML=sched.length?'<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:6px;">Upcoming pinned dates</div>'+sched.map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--border);font-size:13px;">
+      <span style="width:110px;color:#fff;">${esc(s.day)}</span><span style="flex:1;color:var(--text2);">${esc(byId[s.workout_id]||('#'+s.workout_id))}</span>
+      <button class="btn ghost" data-unpin="${esc(s.day)}" style="padding:4px 10px;font-size:12px;">Unpin</button></div>`).join(''):'<div style="font-size:12px;color:var(--text3);">No dates pinned — the rotation runs automatically.</div>';
+  $('dPins').querySelectorAll('[data-unpin]').forEach(b=>b.onclick=async()=>{await api('daily_unpin',{day:b.dataset.unpin});loadDaily();});
+}
+function dReset(){dEditId=null;['d-name','d-hearts','d-diamonds','d-clubs','d-spades','d-acereps','d-acemove'].forEach(id=>$(id).value='');
+  $('dFormTitle').textContent='Add a daily workout';$('dSaveBtn').textContent='Add workout';$('dCancelBtn').style.display='none';$('dErr').textContent='';}
+function dStartEdit(w){if(!w)return;dEditId=w.id;$('d-name').value=w.name||'';$('d-hearts').value=w.hearts||'';$('d-diamonds').value=w.diamonds||'';$('d-clubs').value=w.clubs||'';$('d-spades').value=w.spades||'';$('d-acereps').value=w.ace_reps!=null?w.ace_reps:'';$('d-acemove').value=w.ace_move||'';
+  $('dFormTitle').textContent='Edit daily workout';$('dSaveBtn').textContent='Save changes';$('dCancelBtn').style.display='inline-block';$('d-name').scrollIntoView({behavior:'smooth',block:'center'});}
+$('dCancelBtn').onclick=dReset;
+$('dSaveBtn').onclick=async()=>{
+  $('dErr').textContent='';
+  const w={name:$('d-name').value.trim(),hearts:$('d-hearts').value.trim(),diamonds:$('d-diamonds').value.trim(),clubs:$('d-clubs').value.trim(),spades:$('d-spades').value.trim(),ace_reps:parseInt($('d-acereps').value,10)||12,ace_move:$('d-acemove').value.trim()||'Burpees'};
+  if(!w.name||!w.hearts||!w.diamonds||!w.clubs||!w.spades){$('dErr').textContent='Fill in the name and all four movements.';return;}
+  $('dSaveBtn').disabled=true;
+  const r=await api(dEditId?'daily_update':'daily_add',dEditId?{id:dEditId,workout:w}:{workout:w});
+  $('dSaveBtn').disabled=false;
+  if(r.error){$('dErr').textContent=r.error;return;}
+  dReset();loadDaily();
+};
+$('dRefresh').onclick=loadDaily;
+$('dPinBtn').onclick=async()=>{
+  $('dPinErr').textContent='';
+  const day=$('d-pindate').value, workout_id=+$('d-pinsel').value;
+  if(!day){$('dPinErr').textContent='Pick a date.';return;}
+  if(!workout_id){$('dPinErr').textContent='Add a workout first, then pick one.';return;}
+  const r=await api('daily_pin',{day,workout_id});
+  if(r.error){$('dPinErr').textContent=r.error;return;}
+  loadDaily();
+};
+
+// ── Sponsor engagement ──
+async function loadClicks(){
+  const box=$('clicksBox');box.innerHTML='<div class="nodata">Loading…</div>';
+  const r=await api('sponsor_clicks');
+  if(!r||r.error||!r.data){box.innerHTML='<div class="nodata">Could not load'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
+  const d=r.data;
+  if(!d.length){box.innerHTML='<div class="nodata">No sponsors yet — add one above.</div>';return;}
+  const any=d.some(s=>(s.total||0)>0);
+  box.innerHTML=(any?'':'<div class="nodata" style="margin-bottom:10px;">No scans or clicks logged yet — they’ll appear here as people scan the board QR or tap sponsor links.</div>')
+    +'<div class="slist">'+d.map(s=>`<div class="srow">
+      <div class="meta"><b>${esc(s.name)}</b> <span class="pill ${s.active?'on':'off'}">${s.active?'Active':'Hidden'}</span>
+        <div style="margin-top:7px;display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text2);">
+          <span>📺 ${s.scans||0} board scans</span><span>📲 ${s.phone||0} phone</span><span>✉️ ${s.email||0} email</span>
+          <span style="color:var(--orange);font-weight:800;">${s.total||0} total</span><span style="color:var(--text3);">${s.last30||0} in 30d</span>
+        </div>
+      </div></div>`).join('')+'</div>';
+}
+$('loadClicks').onclick=loadClicks;
+
+// ── Daily workout sponsor presence ──
+async function loadDailyReport(){
+  const box=$('reportBox');box.innerHTML='<div class="nodata">Loading…</div>';
+  const r=await api('sponsor_report');
+  if(!r||r.error||!r.data){box.innerHTML='<div class="nodata">Could not load'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
+  const daily=(r.data.daily)||[], per=(r.data.per_sponsor)||[];
+  let html='';
+  if(per.length){html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">'+per.map(s=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 11px;font-size:12px;color:var(--text2);"><b style="color:#fff;">${esc(s.name)}</b> &nbsp;👁️ ${s.impressions||0} &nbsp;👆 ${s.clicks||0}</div>`).join('')+'</div>';}
+  if(!daily.length){html+='<div class="nodata">No daily-workout sponsor impressions logged yet — they’ll appear here after a daily workout is played on the board.</div>';box.innerHTML=html;return;}
+  html+='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="color:var(--text3);text-align:left;"><th style="padding:6px 8px;">Day</th><th style="padding:6px 8px;">Presented by</th><th style="padding:6px 8px;text-align:right;">👁️ Impressions</th><th style="padding:6px 8px;text-align:right;">👆 Clicks</th></tr></thead><tbody>'+
+    daily.map(d=>`<tr style="border-top:1px solid var(--border);"><td style="padding:7px 8px;font-weight:700;">${esc(d.day)}</td><td style="padding:7px 8px;">${esc(d.name)}</td><td style="padding:7px 8px;text-align:right;">${d.impressions||0}</td><td style="padding:7px 8px;text-align:right;color:var(--orange);font-weight:800;">${d.clicks||0}</td></tr>`).join('')+'</tbody></table></div>';
+  box.innerHTML=html;
+}
+$('loadReport').onclick=loadDailyReport;
+
+// ── Movement audit ──
+async function loadMovements(){
+  const box=$('movBox');box.innerHTML='<div class="nodata">Loading…</div>';
+  const r=await api('movement_audit');
+  if(!r||r.error||!r.data){box.innerHTML='<div class="nodata">Could not load'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
+  const d=r.data, dupes=d.possible_dupes||[], unc=d.uncurated||[];
+  let html='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">'
+    +`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 11px;font-size:12px;color:var(--text2);"><b style="color:#fff;">${d.total_canonical||0}</b> movements in play</div>`
+    +`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 11px;font-size:12px;color:var(--text2);"><b style="color:#4CAF50;">${d.in_library||0}</b> in library</div>`
+    +`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 11px;font-size:12px;color:var(--text2);"><b style="color:var(--orange);">${unc.length}</b> not in library</div>`
+    +'<button class="btn ghost" id="movRefresh" style="padding:6px 12px;font-size:12px;">↻ Refresh</button></div>';
+
+  html+='<div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin:6px 0 8px;">Possible duplicates</div>';
+  if(!dupes.length){
+    html+='<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.35);border-radius:10px;padding:10px 13px;font-size:13px;color:#bfe3bf;">✓ No duplicate drift — every movement maps to one canonical name.</div>';
+  }else{
+    html+=dupes.map(g=>'<div style="background:rgba(232,54,61,.07);border:1px solid rgba(232,54,61,.4);border-radius:10px;padding:10px 13px;margin-bottom:8px;font-size:13px;">'
+      +'<div style="color:#f0999a;font-weight:700;margin-bottom:4px;">Likely the same movement:</div>'
+      +g.map(m=>`<span style="display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px 9px;margin:2px 4px 2px 0;color:#fff;font-weight:700;">${esc(m.name)} <span style="color:var(--text3);font-weight:400;">×${m.uses}</span></span>`).join('')
+      +'<div style="color:var(--text3);font-size:11px;margin-top:5px;">→ add an alias in <code>norm_move</code> to merge these.</div></div>').join('');
+  }
+
+  html+='<div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin:16px 0 8px;">Player-typed movements not in the library</div>';
+  if(!unc.length){
+    html+='<div class="nodata">Everything players use is already in the library.</div>';
+  }else{
+    html+='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="color:var(--text3);text-align:left;"><th style="padding:6px 8px;">Movement</th><th style="padding:6px 8px;text-align:right;">Uses</th><th style="padding:6px 8px;">Raw variants seen</th></tr></thead><tbody>'
+      +unc.map(m=>`<tr style="border-top:1px solid var(--border);"><td style="padding:7px 8px;font-weight:700;color:#fff;">${esc(m.name)}</td><td style="padding:7px 8px;text-align:right;color:var(--orange);font-weight:800;">${m.uses||0}</td><td style="padding:7px 8px;color:var(--text3);font-size:12px;">${esc(m.variants||'')}</td></tr>`).join('')
+      +'</tbody></table></div><div style="color:var(--text3);font-size:11px;margin-top:8px;">High-use names here are good candidates to add to the movement library so hosts pick them instead of retyping.</div>';
+  }
+  box.innerHTML=html;
+  var rb=$('movRefresh');if(rb)rb.onclick=loadMovements;
+}
+
+// ── Sponsor media kit ──
+let mkData=[], mkDays=30;
+function fmtDur(sec){sec=+sec||0;const h=Math.floor(sec/3600),m=Math.round((sec%3600)/60);if(h>0)return h+'h '+(m>0?m+'m':'');if(m>0)return m+'m';return (sec>0?sec+'s':'0');}
+async function loadMediaKit(days){
+  if(typeof days==='number')mkDays=days;
+  const box=$('mkBox');box.innerHTML='<div class="nodata">Loading…</div>';
+  document.querySelectorAll('.mkp').forEach(b=>b.classList.toggle('on',(+b.dataset.days)===mkDays));
+  const r=await api('media_kit',{days:mkDays});
+  if(!r||r.error||!r.data){box.innerHTML='<div class="nodata">Could not load'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
+  mkData=r.data||[];
+  const any=mkData.some(s=>(s.games||0)>0);
+  if(!any){box.innerHTML='<div class="nodata">No sponsor exposure logged in this period yet — it fills in as games are played on the board &amp; Bingo.</div>';return;}
+  box.innerHTML='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="color:var(--text3);text-align:left;">'
+    +'<th style="padding:6px 8px;">Sponsor</th><th style="padding:6px 8px;text-align:right;">Games</th><th style="padding:6px 8px;text-align:right;">Screen time</th><th style="padding:6px 8px;text-align:right;">Athlete-views</th><th style="padding:6px 8px;text-align:right;">Locations</th><th style="padding:6px 8px;text-align:right;">Scans</th><th style="padding:6px 8px;text-align:right;">🎁 Deals</th><th style="padding:6px 8px;text-align:right;">✉️ Opens</th><th style="padding:6px 8px;text-align:right;">Scans/game</th></tr></thead><tbody>'
+    +mkData.map(s=>{const cpg=(s.games>0)?(s.clicks/s.games).toFixed(2):'0';return `<tr style="border-top:1px solid var(--border);"><td style="padding:7px 8px;font-weight:700;">${esc(s.name)}${s.active?'':' <span class="pill off">Hidden</span>'}</td><td style="padding:7px 8px;text-align:right;">${s.games||0}</td><td style="padding:7px 8px;text-align:right;font-weight:800;">${fmtDur(s.screen_sec)}</td><td style="padding:7px 8px;text-align:right;">${s.athlete_views||0}</td><td style="padding:7px 8px;text-align:right;">${s.locations||0}</td><td style="padding:7px 8px;text-align:right;">${s.clicks||0}</td><td style="padding:7px 8px;text-align:right;font-weight:700;">${s.redemptions||0}</td><td style="padding:7px 8px;text-align:right;">${s.email_opens||0}</td><td style="padding:7px 8px;text-align:right;color:var(--orange);font-weight:800;">${cpg}</td></tr>`;}).join('')
+    +'</tbody></table></div>';
+}
+document.querySelectorAll('.mkp').forEach(b=>b.onclick=()=>loadMediaKit(+b.dataset.days));
+$('mkCsv').onclick=()=>{
+  if(!mkData.length){alert('Nothing to export yet.');return;}
+  const label=(mkDays>0?mkDays+'d':'all-time');
+  const hdr=['Sponsor','Games','ScreenTimeSeconds','AthleteViews','Locations','Devices','Scans','Redemptions','EmailsSent','EmailOpens','Period'];
+  const rows=mkData.map(s=>[s.name,s.games||0,s.screen_sec||0,s.athlete_views||0,s.locations||0,s.devices||0,s.clicks||0,s.redemptions||0,s.emails||0,s.email_opens||0,label]);
+  const csv=[hdr].concat(rows).map(r=>r.map(v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wodly-sponsor-mediakit-'+label+'.csv';document.body.appendChild(a);a.click();a.remove();
+};
+
+// ── Analytics ──
+const B_NAME={classic:'Classic',arena:'Arena',box:'The Box',vintage:'Vintage',july4th:'July 4th'};
+const DF_NAME={easy:'Beginner',medium:'Rx',hard:'Elite'};
+const DK_NAME={quick:'Fast',standard:'Standard',large:'Beast'};
+const FIN_NAME={all:'Everyone finishes',first:'First to finish'};
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const cap=s=>String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1);
+const hourLbl=k=>{const h=+k,ap=h<12?'am':'pm';let hh=h%12;if(!hh)hh=12;return hh+ap;};
+const commaN=n=>Number(n).toLocaleString();
+function bars(arr,o){o=o||{};if(!arr||!arr.length)return '<div class="nodata">No data yet</div>';
+  const max=Math.max.apply(null,arr.map(x=>+x.n).concat([1]));
+  return arr.map(x=>{const lbl=o.labelMap?(o.labelMap[x.k]!=null?o.labelMap[x.k]:x.k):(o.labelFn?o.labelFn(x.k):x.k);
+    const w=Math.round(+x.n/max*100),v=o.fmt?o.fmt(x.n):x.n;
+    return `<div class="bar"><span class="lbl" title="${esc(String(lbl))}">${esc(String(lbl))}</span><span class="track"><span class="fill" style="width:${w}%"></span></span><span class="val">${v}</span></div>`;}).join('');}
+function blk(title,inner){return `<div class="blk"><h4>${title}</h4>${inner}</div>`;}
+let lastStats=null, curDays='';
+async function loadAnalytics(){
+  $('statGrid').innerHTML='<div class="nodata">Loading…</div>';$('anGrid').innerHTML='';
+  const r=await api('analytics',{days:curDays?+curDays:null});
+  if(!r||r.error||!r.data){$('statGrid').innerHTML='<div class="nodata">Could not load analytics'+(r&&r.error?': '+esc(r.error):'')+'</div>';return;}
+  const d=r.data,o=d.overview||{};lastStats=d;
+  const cards=[['Games played',o.games_played,1],['Last 7 days',o.games_7d,0],['Gym games',o.games_gym,0],['Online games',o.games_online,0],
+    ['Unique players',o.players_total,0],['Workouts finished',o.finishers_total,0],['Avg players/game',o.players_per_game,0],
+    ['Subscribers',o.subscribers,0],['Upcoming sessions',o.upcoming_sessions,0]];
+  $('statGrid').innerHTML=cards.map(c=>`<div class="stat${c[2]?' hl':''}"><b>${c[1]!=null?c[1]:0}</b><span>${c[0]}</span></div>`).join('');
+  const g=[];
+  g.push(blk('Most-used presets',bars(d.presets)));
+  g.push(blk('Board themes',bars(d.boards,{labelMap:B_NAME})));
+  g.push(blk('Movements programmed',bars(d.movements)));
+  g.push(blk('Reps performed by movement',bars(d.reps_by_movement,{fmt:commaN})));
+  g.push(blk('Difficulty',bars(d.difficulty,{labelMap:DF_NAME})));
+  g.push(blk('Deck size',bars(d.deck,{labelMap:DK_NAME})));
+  g.push(blk('Finish mode',bars(d.finish,{labelMap:FIN_NAME})));
+  g.push(blk('Characters picked',bars(d.avatars,{labelFn:cap})));
+  g.push(blk('Games per day (14d)',bars(d.games_by_day)));
+  g.push(blk('Busiest hours (Central)',bars(d.by_hour,{labelFn:hourLbl})));
+  g.push(blk('Busiest days',bars(d.by_dow,{labelFn:k=>DOW[+k]||k})));
+  $('anGrid').innerHTML=g.join('');
+  // Movement pace (avg seconds per rep/cal/10m, from captured movement durations)
+  try{const pr=await sb.rpc('movement_pace');if(!pr.error&&pr.data){const pd=pr.data;
+    const UL={reps:'per rep',cal:'per calorie',meters:'per 10 m'};
+    const units=['reps','cal','meters'].filter(u=>Array.isArray(pd[u])&&pd[u].length);
+    if(units.length){
+      const row=(icon,move,pace,n)=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;"><span style="width:16px">${icon}</span><span style="flex:1;font-weight:600">${esc(move)}</span><span style="color:#fff;font-weight:800">${(+pace).toFixed(1)}s</span><span style="color:#888;font-size:11px;width:36px;text-align:right">${n}×</span></div>`;
+      const html=units.map(u=>{const a=pd[u];const rows=a.map((x,i)=>row(i===0?'⚡':(i===a.length-1&&a.length>1?'🐌':'·'),x.move,x.pace,x.n)).join('');
+        return `<div style="margin-bottom:12px;"><div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">${UL[u]||u}</div>${rows}</div>`;}).join('');
+      $('anGrid').insertAdjacentHTML('beforeend',blk('Movement pace (fastest → slowest)',html));
+    }
+  }}catch(e){}
+}
+$('refreshStats').onclick=loadAnalytics;
+$('periodSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  $('periodSeg').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');curDays=b.dataset.d;loadAnalytics();});
+// CSV export of the currently-loaded stats
+const SEC={presets:'Presets',boards:'Board themes',movements:'Movements programmed',reps_by_movement:'Reps by movement',difficulty:'Difficulty',deck:'Deck size',finish:'Finish mode',avatars:'Characters',games_by_day:'Games per day',by_hour:'By hour (Central)',by_dow:'By day of week'};
+function csvCell(c){c=String(c==null?'':c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}
+$('dlStats').onclick=()=>{
+  if(!lastStats){return;}
+  const rows=[['Section','Label','Value']];
+  const o=lastStats.overview||{};
+  Object.keys(o).forEach(k=>rows.push(['Overview',k.replace(/_/g,' '),o[k]]));
+  Object.keys(SEC).forEach(key=>{(lastStats[key]||[]).forEach(x=>{
+    let lbl=x.k;if(key==='boards')lbl=B_NAME[x.k]||x.k;else if(key==='difficulty')lbl=DF_NAME[x.k]||x.k;
+    else if(key==='deck')lbl=DK_NAME[x.k]||x.k;else if(key==='finish')lbl=FIN_NAME[x.k]||x.k;
+    else if(key==='avatars')lbl=cap(x.k);else if(key==='by_hour')lbl=hourLbl(x.k);else if(key==='by_dow')lbl=DOW[+x.k]||x.k;
+    rows.push([SEC[key],lbl,x.n]);});});
+  const csv=rows.map(r=>r.map(csvCell).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='wodly-stats-'+(curDays?curDays+'d':'all')+'-'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+};
+$('pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('enterBtn').click();});
+$('lockBtn').onclick=()=>{passcode='';$('pass').value='';show('gate');};
+
+// ── Logo upload (downscaled to keep it small) ──
+$('logoDrop').onclick=()=>$('f-logo').click();
+$('f-logo').onchange=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();
+  r.onload=()=>{const img=new Image();img.onload=()=>{
+    const max=340,scale=Math.min(1,max/img.width);const w=Math.round(img.width*scale),h=Math.round(img.height*scale);
+    const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+    logoData=c.toDataURL('image/png');$('logoPrev').src=logoData;$('logoPrev').style.display='inline-block';};img.src=r.result;};
+  r.readAsDataURL(file);};
+
+// ── Save ──
+$('saveBtn').onclick=async()=>{
+  $('formErr').textContent='';
+  const name=$('f-name').value.trim();
+  if(!name){$('formErr').textContent='Sponsor name is required.';return;}
+  const sponsor={name,website_url:$('f-web').value.trim()||null,social_url:$('f-social').value.trim()||null,tagline:$('f-tagline').value.trim()||null,active:$('f-active').checked};
+  if(logoData)sponsor.logo=logoData;
+  $('saveBtn').disabled=true;
+  const r=await api(editId?'update':'create',editId?{id:editId,sponsor}:{sponsor});
+  $('saveBtn').disabled=false;
+  if(r.error){$('formErr').textContent=r.error;return;}
+  resetForm();loadSponsors();
+};
+$('cancelBtn').onclick=resetForm;
+function resetForm(){editId=null;logoData=null;$('f-name').value='';$('f-web').value='';$('f-social').value='';$('f-tagline').value='';$('f-active').checked=true;
+  $('logoPrev').style.display='none';$('logoPrev').src='';$('formTitle').textContent='Add a sponsor';$('saveBtn').textContent='Add sponsor';$('cancelBtn').style.display='none';$('formErr').textContent='';}
+
+// ── List ──
+async function loadSponsors(){
+  const{data}=await sb.from('sponsors').select('*').order('sort').order('created_at');
+  const l=$('slist');if(!data||!data.length){l.innerHTML='<div style="color:var(--text3)">No sponsors yet. Add one above.</div>';return;}
+  l.innerHTML='';
+  data.forEach(s=>{const d=document.createElement('div');d.className='srow'+(s.active?'':' off');
+    d.innerHTML=`<div class="lg">${s.logo?`<img src="${s.logo}">`:'<span style="color:#444;font-size:11px">no logo</span>'}</div>
+      <div class="meta"><b>${esc(s.name)}</b> <span class="pill ${s.active?'on':'off'}">${s.active?'Active':'Hidden'}</span>
+        <div>${s.website_url?esc(s.website_url):'—'}</div><div>QR → ${s.social_url?esc(s.social_url):'—'}</div>${s.tagline?`<div style="color:var(--brand,#F5A623)">🏷️ ${esc(s.tagline)}</div>`:''}</div>
+      <div class="acts"><button class="btn ghost" data-edit="${s.id}">Edit</button><button class="btn ghost" data-toggle="${s.id}">${s.active?'Hide':'Show'}</button><button class="btn danger" data-del="${s.id}">Delete</button></div>`;
+    l.appendChild(d);});
+  l.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>startEdit(data.find(x=>x.id===b.dataset.edit)));
+  l.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{const s=data.find(x=>x.id===b.dataset.toggle);await api('update',{id:s.id,sponsor:{active:!s.active}});loadSponsors();});
+  l.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this sponsor?'))return;await api('delete',{id:b.dataset.del});loadSponsors();});
+}
+function startEdit(s){editId=s.id;logoData=null;$('f-name').value=s.name||'';$('f-web').value=s.website_url||'';$('f-social').value=s.social_url||'';$('f-tagline').value=s.tagline||'';$('f-active').checked=!!s.active;
+  if(s.logo){$('logoPrev').src=s.logo;$('logoPrev').style.display='inline-block';}else{$('logoPrev').style.display='none';}
+  $('formTitle').textContent='Edit sponsor';$('saveBtn').textContent='Save changes';$('cancelBtn').style.display='inline-block';window.scrollTo(0,0);}
+// ── Subscribers ──
+let subsData=[];
+$('loadSubs').onclick=async()=>{$('subsList').innerHTML='Loading…';const r=await api('subs_list');
+  if(r.error){$('subsList').textContent=r.error;return;}
+  subsData=r.data||[];const active=subsData.filter(s=>!s.unsubscribed).length;
+  $('subsCount').textContent='· '+active+' active / '+subsData.length+' total';
+  $('dlSubs').style.display=subsData.length?'inline-block':'none';
+  if(!subsData.length){$('subsList').textContent='No subscribers yet.';return;}
+  $('subsList').innerHTML='<div style="max-height:340px;overflow:auto;border:1px solid var(--border);border-radius:10px;">'+
+    subsData.map(s=>`<div style="display:flex;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--border);${s.unsubscribed?'opacity:.45;':''}">
+      <span style="flex:1;color:#fff;word-break:break-all;">${esc(s.email)}${s.unsubscribed?' <span style="color:var(--red);font-size:11px;">unsub</span>':''}</span>
+      <span style="color:var(--text3);">${esc(s.source||'')}</span>
+      <span style="color:var(--text3);white-space:nowrap;">${new Date(s.created_at).toLocaleDateString()}</span>
+    </div>`).join('')+'</div>';
+};
+$('dlSubs').onclick=()=>{const rows=[['email','name','source','consent','unsubscribed','unsub_token','created_at']];
+  subsData.forEach(s=>rows.push([s.email,s.name||'',s.source||'',s.consent,s.unsubscribed,s.unsub_token,s.created_at]));
+  const csv=rows.map(row=>row.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='wodly-subscribers.csv';a.click();
+};
+</script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WODLY — Play</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta name="theme-color" content="#0d0d0d">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--purple:#9b59b6;--bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;--border:#333;--text:#fff;--text2:#aaa;--text3:#666;}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:#fff;min-height:100vh;max-width:480px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom));}
+  .screen{display:none;}.screen.active{display:block;}
+  /* join screen: vertically balance so it isn't jammed at the top on phones */
+  #joinScreen.active{display:flex;flex-direction:column;justify-content:center;min-height:calc(100vh - 60px);}
+  .joinhint{text-align:center;font-size:13px;color:var(--text2);margin:-8px 0 18px;line-height:1.5;}
+  h1{font-size:30px;font-weight:900;letter-spacing:6px;text-align:center;margin-top:8px;}
+  .tagline{text-align:center;font-size:11px;font-weight:700;letter-spacing:2px;margin-bottom:22px;}
+  .tagline .t1{color:var(--green);}.tagline .t2{color:var(--orange);}.tagline .t3{color:var(--red);}
+  label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;display:block;margin:14px 0 6px;}
+  input{width:100%;font-size:18px;padding:13px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:#fff;}
+  #codeIn{letter-spacing:8px;text-align:center;text-transform:uppercase;font-weight:800;}
+  .bigbtn{width:100%;padding:15px;font-size:16px;font-weight:800;letter-spacing:1px;background:var(--orange);border:none;border-radius:14px;color:#000;cursor:pointer;margin-top:20px;}
+  .bigbtn:disabled{opacity:.4;}
+  .err{color:var(--red);font-size:13px;text-align:center;margin-top:12px;min-height:16px;}
+  .av-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;}
+  .av-card{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;transition:.12s;}
+  .av-card.sel{border-color:var(--orange);background:rgba(245,166,35,.12);}
+  .av-card.taken{opacity:.3;pointer-events:none;}
+  .av-card img{width:84px;height:84px;object-fit:contain;}
+  .av-card .nm{font-size:12px;color:var(--text2);margin-top:4px;font-weight:600;}.av-card.sel .nm{color:var(--orange);}
+  .me-head{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;}
+  .me-head img{width:54px;height:54px;object-fit:contain;}
+  .me-head .mn{font-size:17px;font-weight:800;}.me-head .ms{font-size:12px;color:var(--text3);}
+  .me-head .mpos{margin-left:auto;text-align:right;}.me-head .mpos b{font-size:20px;color:var(--orange);}.me-head .mpos span{font-size:11px;color:var(--text3);display:block;}
+  .spbar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:9px 13px;margin-bottom:14px;text-decoration:none;color:inherit;}
+  .spbar .spl{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);}
+  .spbar .spn{font-size:14px;font-weight:800;color:#fff;}
+  .spbar .spdeal{font-size:11px;font-weight:700;color:var(--orange);background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.35);border-radius:999px;padding:2px 9px;}
+  .spbar .spgo{margin-left:auto;font-size:12px;font-weight:800;color:var(--orange);white-space:nowrap;}
+  .spbar img{height:26px;max-width:90px;object-fit:contain;}
+  /* dice + roll */
+  .rollwrap{text-align:center;padding:8px 0 4px;}
+  .coachtip{background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.45);border-radius:12px;padding:11px 14px;font-size:14px;color:#f5d9a8;line-height:1.5;margin:0 0 16px;text-align:center;}
+  .coachtip b{color:#F5A623;}
+  .die{width:130px;height:130px;margin:0 auto 16px;border-radius:26px;background:linear-gradient(145deg,#262626,#0b0b0b);border:2px solid #3a3a3a;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:6px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 24px rgba(245,166,35,.28);}
+  .die .pip{width:100%;height:100%;border-radius:50%;}
+  .die .pip.on{background:radial-gradient(circle at 34% 30%,#ffe0a0,#F5A623);box-shadow:0 0 10px rgba(245,166,35,.8);}
+  .die.rolling{animation:shake .35s infinite;}
+  @keyframes shake{0%,100%{transform:rotate(-6deg) translateY(0);}50%{transform:rotate(6deg) translateY(-6px);}}
+  .rollbtn{width:100%;padding:20px;font-size:22px;font-weight:900;letter-spacing:1px;background:var(--orange);border:none;border-radius:18px;color:#000;cursor:pointer;}
+  .rollbtn:disabled{opacity:.5;}
+  .dblbtn{width:100%;margin-top:12px;padding:14px;font-size:14px;font-weight:800;letter-spacing:.5px;background:transparent;border:2px solid var(--orange);border-radius:14px;color:var(--orange);cursor:pointer;}
+  .dblbtn:disabled{opacity:.5;}
+  .dblspent{margin-top:12px;font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+  .dvsum{grid-column:1/4;grid-row:1/4;display:flex;align-items:center;justify-content:center;font-size:56px;font-weight:900;color:var(--orange);}
+  .card-do{padding:22px;border-radius:18px;text-align:center;margin-bottom:6px;}
+  .card-do.work{background:rgba(245,166,35,.12);border:2px solid var(--orange);}
+  .card-do.ace{background:rgba(155,89,182,.14);border:2px solid var(--purple);}
+  .card-do .tag{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;}
+  .card-do.work .tag{color:var(--orange);}.card-do.ace .tag{color:var(--purple);}
+  .card-do .reps{font-size:58px;font-weight:900;line-height:1;margin:6px 0;}
+  .card-do .move{font-size:22px;font-weight:700;margin-bottom:6px;}
+  .card-do .cd{font-size:13px;color:var(--text3);margin-bottom:14px;font-variant-numeric:tabular-nums;}
+  .card-do .cd.urgent{color:var(--red);font-weight:700;}
+  .donebtn{width:100%;padding:18px;font-size:20px;font-weight:900;background:var(--green);border:none;border-radius:16px;color:#000;cursor:pointer;}
+  /* on-brand WODLY card */
+  .cardpop{animation:pop .38s cubic-bezier(.2,1.25,.4,1);}
+  @keyframes pop{from{transform:scale(.8) rotate(-3deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+  .wcard{position:relative;max-width:300px;margin:0 auto 14px;padding:24px 18px 16px;border-radius:18px;border:3px solid;background:radial-gradient(circle at 50% 38%, #1b1b1e, #090909);text-align:center;overflow:hidden;}
+  .wcard:before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 2px,transparent 2px 8px);pointer-events:none;}
+  .wc-corner{position:absolute;font-size:17px;font-weight:800;line-height:.92;letter-spacing:.5px;}
+  .wc-corner.tl{top:9px;left:12px;}.wc-corner.br{bottom:9px;right:12px;transform:rotate(180deg);}
+  .wc-tag{font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:4px;}
+  .wc-pip{width:88px;height:88px;margin:8px auto 12px;border:2px solid;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;box-shadow:inset 0 0 18px rgba(255,255,255,.06);}
+  .wc-reps{font-size:66px;font-weight:900;line-height:1;color:#fff;}
+  .wc-move{font-size:22px;font-weight:700;margin-top:2px;color:#fff;}
+  .wc-foot{margin-top:14px;font-size:14px;letter-spacing:1px;}
+  .wc-foot b{color:#fff;letter-spacing:3px;margin-left:6px;}
+  /* OH NO! back-card moment */
+  .ohno{display:none;position:fixed;inset:0;z-index:1100;align-items:center;justify-content:center;background:rgba(110,0,0,.5);padding:18px;}
+  .ohno.show{display:flex;animation:ohnoIn .2s ease;}
+  @keyframes ohnoIn{from{opacity:0;}to{opacity:1;}}
+  .ohno-card{background:linear-gradient(160deg,#2a0c0c,#140505);border:3px solid var(--red);border-radius:22px;padding:28px 24px;text-align:center;box-shadow:0 0 55px rgba(232,54,61,.65);max-width:330px;width:100%;animation:ohnoShake .5s;}
+  @keyframes ohnoShake{0%,100%{transform:translateX(0) rotate(0);}20%{transform:translateX(-11px) rotate(-2deg);}40%{transform:translateX(11px) rotate(2deg);}60%{transform:translateX(-7px) rotate(-1deg);}80%{transform:translateX(7px) rotate(1deg);}}
+  .ohno-big{font-size:48px;font-weight:900;color:var(--red);letter-spacing:2px;line-height:1;text-shadow:0 0 22px rgba(232,54,61,.7);}
+  .ohno-arrow{font-size:84px;font-weight:900;color:var(--red);line-height:.9;margin:4px 0;animation:ohnoBob .6s infinite alternate;}
+  @keyframes ohnoBob{from{transform:translateY(-5px);}to{transform:translateY(7px);}}
+  .ohno-txt{font-size:30px;font-weight:900;color:#fff;}
+  .ohno-sub{font-size:16px;color:var(--text2);margin-top:6px;}
+  .ohno-tap{font-size:12px;color:var(--text3);margin-top:16px;}
+  .ohno-card.boost{border-color:var(--green);box-shadow:0 0 55px rgba(76,175,80,.6);background:linear-gradient(160deg,#0c2a12,#051405);}
+  .ohno-big.boost{color:var(--green);text-shadow:0 0 22px rgba(76,175,80,.7);}
+  .ohno-arrow.boost{color:var(--green);}
+  .stand{margin-top:22px;}
+  .stand .sh{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-weight:700;margin-bottom:8px;}
+  .srow{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;}
+  .srow.me{border-color:var(--orange);}
+  .srow .sd{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+  .srow .sn{font-size:14px;font-weight:600;flex:1;}
+  .srow .spos{font-size:12px;color:var(--text3);}
+  .srow .sdo{font-size:12px;color:var(--orange);font-weight:600;margin-left:8px;}
+  .srow .sdo.ace{color:var(--purple);}
+  .lrow{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;}
+  .lrow .ld{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .lrow .ln{font-size:13px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lrow .lt{font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums;margin-right:6px;}
+  .lrow .lc{font-size:14px;font-weight:700;}
+  .lrow .lk{font-size:14px;font-weight:800;margin-left:8px;}
+  .winbox{text-align:center;padding:30px 16px;}.winbox img{width:130px;height:130px;object-fit:contain;}.winbox h2{font-size:26px;font-weight:900;margin-top:10px;}
+  .results{max-width:340px;margin:6px auto 0;}
+  .rrow{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);margin-bottom:6px;}
+  .rrow.me{border-color:var(--orange);}
+  .rrow .rpl{font-size:17px;font-weight:900;width:34px;text-align:center;}
+  .rrow .rnm{flex:1;font-weight:700;font-size:15px;}
+  .rrow .rtm{font-size:14px;color:var(--text2);font-variant-numeric:tabular-nums;}
+  .subwrap{max-width:340px;margin:18px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:left;}
+  .subttl{font-size:15px;font-weight:800;}
+  .subsub{font-size:12px;color:var(--text3);margin:4px 0 12px;line-height:1.45;}
+  .subwrap input[type=email]{width:100%;font-size:15px;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:#fff;}
+  .subbtn{width:100%;margin-top:10px;padding:12px;font-size:14px;font-weight:800;background:var(--orange);border:none;border-radius:11px;color:#000;cursor:pointer;}
+  .subbtn:disabled{opacity:.5;}
+  .submsg{font-size:12px;margin-top:8px;min-height:15px;}.submsg.ok{color:var(--green);}.submsg.err{color:var(--red);}
+  .subconsent{display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--text3);margin-top:10px;line-height:1.4;}
+  .subconsent a{color:var(--text2);}
+  .recap{max-width:340px;margin:14px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:left;}
+  .recap-h{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+  .recap-total{font-size:46px;font-weight:900;color:#fff;line-height:1;margin:4px 0 2px;}
+  .recap-total span{font-size:13px;color:var(--text3);font-weight:600;margin-left:8px;text-transform:uppercase;letter-spacing:1px;}
+  .recap-moves{margin:8px 0 2px;}
+  .rm{display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-top:1px solid var(--border);}
+  .rm span{color:var(--text2);}.rm b{color:var(--orange);font-variant-numeric:tabular-nums;}
+  .sharebtn{width:100%;margin-top:12px;padding:13px;font-size:15px;font-weight:800;background:#fff;color:#000;border:none;border-radius:12px;cursor:pointer;}
+  .pill{display:inline-block;margin-top:14px;padding:8px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text2);}.pill b{color:var(--orange);letter-spacing:3px;}
+  .conn{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;padding:4px 12px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--text3);z-index:50;}
+  .conn.live{color:var(--green);border-color:rgba(76,175,80,.45);}
+  .conn.warn{color:var(--orange);border-color:rgba(245,166,35,.45);}
+  #miniWrap{position:relative;margin:6px 0 14px;}
+  #miniBoard{width:100%;border-radius:14px;display:block;background:#0a0a0b;cursor:pointer;}
+  .minihint{position:absolute;bottom:7px;right:10px;font-size:10px;color:var(--text2);background:rgba(0,0,0,.45);padding:2px 8px;border-radius:10px;pointer-events:none;}
+  #miniWrap.focus{position:fixed;inset:0;z-index:900;margin:0;background:rgba(4,4,5,.985);display:flex;align-items:center;justify-content:center;}
+  #miniWrap.focus #miniBoard{border-radius:0;}
+  #miniWrap.focus .minihint{bottom:14px;left:0;right:0;text-align:center;background:none;}
+  .cdlabel{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+  .countdown{font-size:32px;font-weight:900;color:var(--orange);font-variant-numeric:tabular-nums;margin:6px 0;}
+  .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:16px;}
+  .disc-overlay.show{display:flex;}
+  .disc-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:20px 18px;max-width:360px;width:100%;max-height:90vh;overflow-y:auto;}
+  .disc-box h2{font-size:19px;font-weight:900;letter-spacing:2px;text-align:center;margin-bottom:4px;}
+  .disc-box .disc-sub{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--orange);text-align:center;margin-bottom:12px;}
+  .disc-box p{font-size:12.5px;line-height:1.55;color:var(--text2);margin-bottom:10px;}.disc-box p strong{color:#fff;}
+  .disc-accept{width:100%;padding:13px;font-size:14px;font-weight:700;background:var(--orange);border:none;border-radius:12px;color:#000;cursor:pointer;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="disc-overlay" id="discOverlay">
+  <div class="disc-box">
+    <h2>WODLY</h2><div class="disc-sub">Before you play</div>
+    <p>WODLY is a fitness game that prompts physical exercise. <strong>Exercise carries risk of injury.</strong></p>
+    <p>Consult a physician before starting any exercise program, especially if you have a medical condition, are pregnant, or have been inactive. Stop if you feel pain, dizziness, or discomfort.</p>
+    <p>You play at your own risk. By continuing, you agree that <strong>you are responsible for exercising safely</strong> within your own ability, and that the creators of WODLY are not liable for any injury, loss, or damage.</p>
+    <button class="disc-accept" id="discAccept">I understand — let's go</button>
+  </div>
+</div>
+
+<div class="ohno" id="ohno"></div>
+
+<div id="joinScreen" class="screen active">
+  <h1>WODLY</h1>
+  <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
+  <div class="joinhint">Enter the 4-letter code shown on the big screen to join the game.</div>
+  <label>Room code</label>
+  <input id="codeIn" maxlength="4" placeholder="ABCD" autocomplete="off" autocapitalize="characters">
+  <label>Team name</label>
+  <input id="nameIn" maxlength="16" placeholder="Your team name" autocomplete="off">
+  <button class="bigbtn" id="toAvatars">NEXT: PICK CHARACTER →</button>
+  <div class="err" id="joinErr"></div>
+</div>
+
+<div id="avatarScreen" class="screen">
+  <h1>WODLY</h1>
+  <div class="tagline" style="margin-bottom:14px;">Pick your character</div>
+  <div class="av-grid" id="avGrid"></div>
+  <button class="bigbtn" id="joinBtn" disabled>JOIN GAME</button>
+  <div class="err" id="avErr"></div>
+</div>
+
+<div id="playScreen" class="screen">
+  <div class="me-head">
+    <img id="meImg" alt="">
+    <div><div class="mn" id="meName">You</div><div class="ms" id="meRoom">Room ····</div></div>
+    <div class="mpos"><b id="mePos">0</b><span>your space</span></div>
+  </div>
+  <a id="spBar" class="spbar" style="display:none;" target="_blank" rel="noopener"></a>
+  <div id="miniWrap" style="display:none;"><canvas id="miniBoard"></canvas><div class="minihint">tap to expand</div></div>
+  <div id="playBody"></div>
+  <div class="stand" id="standWrap" style="display:none;"><div class="sh">Standings</div><div id="standList"></div></div>
+  <div class="stand" id="logWrap" style="display:none;"><div class="sh">Last 5 cards</div><div id="logList"></div></div>
+</div>
+<div id="connPill" class="conn" style="display:none;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="wodly-core.js"></script>
+<script src="wodly-board.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const W=window.WODLY, sb=W.makeClient(), myId=W.clientId();
+const $=id=>document.getElementById(id);
+const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,3,6,2,5,8]};
+function renderDie(n){const on=PIPS[n]||[];let h='';for(let i=0;i<9;i++)h+=`<span class="pip${on.indexOf(i)>=0?' on':''}"></span>`;return h;}
+let room=null, me=null, chosen=null, takenIds=[], stateChan=null, rolling=false, lastStatus='', cdInt=null, seenEid=0, ohnoT=null, pollInt=null, reconnT=null, bodySig='', dblUsed=false, lastState=null, schedInt=null, lastStartTry=0, lastRecap=null, winSponsor=null;
+(async()=>{try{const{data}=await sb.from('sponsors').select('id,name,logo,website_url,social_url,tagline').eq('active',true).order('sort');if(data&&data.length)winSponsor=data[Math.floor(Math.random()*data.length)];}catch(e){}})();
+const MATCH_FN=W.SUPA_URL+'/functions/v1/match';
+// Server-authoritative for EVERY room now (in-gym games run on the edge fn too, so a dropped
+// board never freezes players). Only public/scheduled matches auto-start from a phone; private
+// in-gym games still wait for the host to press START on the board.
+function isOnline(){return !!room;}
+// World pacer (client-only ghost; never written to state or logged)
+let PPACER={t0:0,avg:900};
+(async function(){try{const r=await sb.rpc('avg_finish_seconds');if(r&&!r.error&&r.data)PPACER.avg=Math.max(120,+r.data||900);}catch(e){}})();
+function pacerOn(){return !!(room&&(room.is_public||(room.settings&&room.settings.pacer)));}
+function injectPacer(state){try{if(!state)return;state.players=(state.players||[]).filter(function(p){return !p.pacer;});if(pacerOn()&&state.phase==='playing'&&state.total){if(!PPACER.t0)PPACER.t0=Date.now();var frac=Math.min(1,((Date.now()-PPACER.t0)/1000)/(PPACER.avg||900));state.players.push({id:'__pacer',name:'World pacer',avatar:null,color:'#00E0C0',pos:frac*Math.max(1,(state.total-1)),status:'',pacer:true,finished:false});}else if(state.phase!=='playing'){PPACER.t0=0;}}catch(e){}}
+setInterval(function(){try{if(!lastState||lastState.phase!=='playing'||!pacerOn())return;var pc=(lastState.players||[]).filter(function(p){return p.pacer;})[0];if(!pc)return;var frac=Math.min(1,((Date.now()-PPACER.t0)/1000)/(PPACER.avg||900));pc.pos=frac*Math.max(1,(lastState.total-1));drawMini();}catch(e){}},600);
+function autoStarts(){return !!(room&&(room.is_public||room.scheduled_at));}
+async function callMatch(action,extra){
+  for(let i=0;i<4;i++){
+    try{const r=await fetch(MATCH_FN,{method:'POST',headers:{'apikey':W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,room_id:room&&room.id,player_id:me&&me.id},extra||{}))});
+      const j=await r.json();if((r.ok&&!j.error)||(j&&j.early))return j;}catch(e){}
+    await new Promise(res=>setTimeout(res,300));
+  }
+  return {error:'failed'};
+}
+const BOARDBG=new Image();BOARDBG.onload=()=>drawMini();BOARDBG.src='assets/board-bg.png';
+const TOKIMG={};(W.AVATARS||[]).forEach(a=>{const im=new Image();im.onload=()=>drawMini();im.src=a.img;TOKIMG[a.id]=im;});
+function sizeMini(){const c=$('miniBoard');if(!c)return;const wrap=$('miniWrap'),focus=wrap.classList.contains('focus');
+  const side=focus?Math.round(Math.min(window.innerWidth,window.innerHeight)*0.96):((wrap.clientWidth)||340);
+  c.width=side*2;c.height=side*2;c.style.width=focus?side+'px':'100%';c.style.height=focus?side+'px':'auto';drawMini();}
+function boardFileFor(id){const b=(W.BOARDS||[]).find(x=>x.id===id);return b?b.file:'assets/board-bg.png';}
+function drawMini(){const c=$('miniBoard');if(!c||!window.WODLYBoard||!lastState||!lastState.total)return;
+  const want=boardFileFor(lastState.boardId||'classic');if(BOARDBG.src.indexOf(want)<0){BOARDBG.src=want;return;}
+  WODLYBoard.render(c,lastState,{boardImg:BOARDBG,tokenImgs:TOKIMG});}
+(function(){const c=$('miniBoard');if(c)c.addEventListener('click',()=>{$('miniWrap').classList.toggle('focus');sizeMini();});
+  window.addEventListener('resize',sizeMini);})();
+function showEvent(ev){const el=$('ohno');const skip=ev.type==='skip';
+  el.innerHTML=`<div class="ohno-card${skip?' boost':''}"><div class="ohno-big${skip?' boost':''}">${skip?'BOOST!':'OH NO!'}</div><div class="ohno-arrow${skip?' boost':''}">${skip?'↑':'↓'}</div><div class="ohno-txt">${skip?'Skip +2':('Go back '+ev.val)}</div><div class="ohno-sub">${W.SYM[ev.suit]||''} — ${skip?'forward 2 spaces':('back '+ev.val+' space'+(ev.val>1?'s':''))}</div><div class="ohno-tap">tap to dismiss</div></div>`;
+  el.classList.add('show');el.onclick=()=>el.classList.remove('show');
+  clearTimeout(ohnoT);ohnoT=setTimeout(()=>el.classList.remove('show'),2800);}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+// First-timer coach tips — shown once, then remembered so they never nag returning players
+function tipHTML(key,html){try{if(localStorage.getItem('wodly_tip_'+key))return '';}catch(e){}return '<div class="coachtip">'+html+'</div>';}
+function seenTip(key){try{localStorage.setItem('wodly_tip_'+key,'1');}catch(e){}}
+function cardHTML(c){const ace=c.kind==='ace';const col=ace?'#9b59b6':(W.SCOL[c.suit]||'#F5A623');const sym=W.SYM[c.suit]||'';const label=ace?'A':(c.label||'');
+  return `<div class="wcard" style="border-color:${col};box-shadow:0 0 34px ${col}66, inset 0 0 44px ${col}1a;">
+    <div class="wc-corner tl" style="color:${col}">${esc(label)}<br>${sym}</div>
+    <div class="wc-corner br" style="color:${col}">${esc(label)}<br>${sym}</div>
+    ${ace?`<div class="wc-tag" style="color:${col}">Ace Penalty</div>`:''}
+    <div class="wc-pip" style="color:${col};border-color:${col}">${ace?'A':sym}</div>
+    <div class="wc-reps">${c.reps}${c.unit==='meters'?'m':(c.unit==='cal'?' cal':'')}</div>
+    <div class="wc-move">${esc(c.move||'')}</div>
+    <div class="wc-foot"><span style="color:#E8363D">♥</span><span style="color:#F5A623">♦</span><span style="color:#4CAF50">♣</span><span style="color:#2196F3">♠</span><b>WODLY</b></div>
+  </div>`;}
+
+const DISC_KEY='wodly_disc_v1';
+$('discAccept').onclick=()=>{try{localStorage.setItem(DISC_KEY,'1');}catch(e){}$('discOverlay').classList.remove('show');};
+(function(){let s=false;try{s=localStorage.getItem(DISC_KEY)==='1';}catch(e){}if(!s)$('discOverlay').classList.add('show');})();
+
+const params=new URLSearchParams(location.search);
+const pre=(params.get('room')||'').toUpperCase().slice(0,4);if(pre)$('codeIn').value=pre;
+
+async function lookupRoom(code){const{data}=await sb.from('rooms').select('*').eq('code',code).maybeSingle();return data;}
+
+$('toAvatars').onclick=async()=>{
+  const code=$('codeIn').value.trim().toUpperCase(),name=$('nameIn').value.trim();$('joinErr').textContent='';
+  if(code.length!==4){$('joinErr').textContent='Enter the 4-letter room code.';return;}
+  if(!name){$('joinErr').textContent='Enter your team name.';return;}
+  room=await lookupRoom(code);if(!room){$('joinErr').textContent="That room code wasn't found.";return;}
+  const{data:existing}=await sb.from('players').select('*').eq('room_id',room.id).eq('client_id',myId).maybeSingle();
+  const{data:roster}=await sb.from('players').select('avatar,client_id').eq('room_id',room.id);
+  takenIds=(roster||[]).filter(p=>p.client_id!==myId).map(p=>p.avatar);
+  if(existing){me=existing;chosen=existing.avatar;}
+  renderAvatars();show('avatarScreen');
+};
+function renderAvatars(){const g=$('avGrid');g.innerHTML='';
+  W.AVATARS.forEach(a=>{const taken=takenIds.includes(a.id);const d=document.createElement('div');d.className='av-card'+(chosen===a.id?' sel':'')+(taken?' taken':'');
+    d.innerHTML=`<img src="${a.img}" alt="${a.name}"><div class="nm">${a.name}</div>`;
+    if(!taken)d.onclick=()=>{chosen=a.id;renderAvatars();$('joinBtn').disabled=false;};g.appendChild(d);});
+  $('joinBtn').disabled=!chosen;}
+$('joinBtn').onclick=async()=>{if(!chosen)return;$('avErr').textContent='';const name=$('nameIn').value.trim();const av=W.AVATARS.find(a=>a.id===chosen);
+  const{count}=await sb.from('players').select('*',{count:'exact',head:true}).eq('room_id',room.id);
+  const row={room_id:room.id,client_id:myId,name,avatar:chosen,color:av.color,connected:true,last_seen:new Date().toISOString()};if(!me)row.seat=count||0;
+  const{data,error}=await sb.from('players').upsert(row,{onConflict:'room_id,client_id'}).select().single();
+  if(error){$('avErr').textContent='Join failed: '+error.message;return;}me=data;try{wtrack('wodly_player_joined');}catch(e){}enterPlay();};
+
+function setConn(t,cls){const el=$('connPill');if(!el)return;el.style.display='';el.textContent=t;el.className='conn'+(cls?' '+cls:'');}
+function connect(){if(stateChan)sb.removeChannel(stateChan);setConn('Connecting…','warn');
+  stateChan=sb.channel('state-'+room.id)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:'id=eq.'+room.id},p=>{room=Object.assign(room,p.new);renderState(p.new.state||{});})
+    .subscribe(status=>{
+      if(status==='SUBSCRIBED')setConn('● Live','live');
+      else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){setConn('Reconnecting…','warn');clearTimeout(reconnT);reconnT=setTimeout(()=>{if(room)connect();},2500);}
+    });}
+async function pollOnce(){if(!room)return;try{const{data}=await sb.from('rooms').select('state').eq('id',room.id).maybeSingle();if(data){room.state=data.state;renderState(data.state||{});}}catch(e){}}
+function startPolling(){clearInterval(pollInt);pollInt=setInterval(pollOnce,4000);}
+function enterPlay(){
+  const av=W.AVATARS.find(a=>a.id===me.avatar);
+  $('meImg').src=av?av.img:'';$('meName').textContent=me.name;$('meRoom').textContent='Room '+room.code;
+  try{dblUsed=localStorage.getItem('wodly_dbl_'+room.id+'_'+me.id)==='1';}catch(e){}
+  show('playScreen');bodySig='';renderState(room.state||{});
+  connect();startPolling();
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollOnce();});
+}
+function sendIntent(type,payload){return sb.from('intents').insert({room_id:room.id,player_id:me.id,type,payload:payload||{}}).then(({error})=>{if(error)console.warn('intent failed:',error.message);});}
+
+function myPlayer(state){return (state.players||[]).find(p=>p.id===me.id);}
+
+function computeRecap(mp){const h=(mp&&mp.hist)||[];const byMove={};let total=0;h.forEach(e=>{byMove[e.m]=(byMove[e.m]||0)+e.r;total+=e.r;});return {byMove,total,count:h.length,order:h};}
+function buzz(pat){try{if(navigator.vibrate)navigator.vibrate(pat);}catch(e){}}
+function confettiP(){try{const cv=document.createElement('canvas');cv.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:9998;';cv.width=innerWidth;cv.height=innerHeight;document.body.appendChild(cv);const x=cv.getContext('2d');const cols=['#F5A623','#E8363D','#4CAF50','#2196F3','#fff'],P=[];for(let i=0;i<110;i++)P.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*0.4,vx:(Math.random()-0.5)*6,vy:2+Math.random()*5,s:6+Math.random()*8,c:cols[i%cols.length],r:Math.random()*6,vr:(Math.random()-0.5)*0.35});const st=performance.now();let last=st;(function fr(now){const dt=Math.min(34,now-last);last=now;x.clearRect(0,0,cv.width,cv.height);let al=false;P.forEach(p=>{p.vy+=0.06*dt/16;p.x+=p.vx*dt/16;p.y+=p.vy*dt/16;p.r+=p.vr;if(p.y<cv.height+30)al=true;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62);x.restore();});if(now-st<4200&&al)requestAnimationFrame(fr);else cv.remove();})(st);}catch(e){}}
+function loadImg(src){return new Promise(res=>{if(!src){res(null);return;}const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src;});}
+function makeQR(text,size){return new Promise(res=>{try{if(typeof QRCode==='undefined'){res(null);return;}const d=document.createElement('div');new QRCode(d,{text,width:size,height:size,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});setTimeout(()=>{const c=d.querySelector('canvas');if(c){res(c);return;}const im=d.querySelector('img');if(im){if(im.complete&&im.naturalWidth){res(im);}else{im.onload=()=>res(im);im.onerror=()=>res(null);}return;}res(null);},80);}catch(e){res(null);}});}
+async function makeRecapImage(rec,mp){
+  const C=document.createElement('canvas');C.width=1080;C.height=1080;const x=C.getContext('2d');
+  const g=x.createRadialGradient(540,320,80,540,720,920);g.addColorStop(0,'#1d1d24');g.addColorStop(1,'#09090a');x.fillStyle=g;x.fillRect(0,0,1080,1080);
+  x.fillStyle='#F5A623';x.fillRect(0,0,1080,9);x.fillRect(0,1071,1080,9);
+  x.textAlign='center';
+  x.fillStyle='#fff';x.font='900 86px system-ui,sans-serif';x.fillText('WODLY',540,135);
+  x.font='800 25px system-ui';x.fillStyle='#4CAF50';x.fillText('TRAIN.',438,172);x.fillStyle='#F5A623';x.fillText('PLAY.',540,172);x.fillStyle='#E8363D';x.fillText('COMPETE.',654,172);
+  const av=W.AVATARS.find(a=>a.id===mp.avatar);const cim=await loadImg(av?av.img:null);
+  if(cim&&cim.naturalWidth){x.drawImage(cim,540-140,198,280,280);}
+  x.fillStyle='#fff';x.font='900 50px system-ui';x.fillText((mp.name||'Athlete').toUpperCase(),540,545);
+  x.fillStyle='#F5A623';x.font='800 23px system-ui';x.fillText(rec.place?(ord(rec.place).toUpperCase()+' PLACE · CRUSHED THE WOD'):'CRUSHED THE WOD',540,582);
+  x.fillStyle='#fff';x.font='900 128px system-ui';x.fillText(String(rec.total),540,700);
+  x.fillStyle='#888';x.font='800 25px system-ui';x.fillText('TOTAL REPS',540,738);
+  const moves=Object.keys(rec.byMove);let yy=805;
+  moves.slice(0,5).forEach(m=>{x.textAlign='left';x.fillStyle='#dddddd';x.font='600 30px system-ui';x.fillText(m.length>22?m.slice(0,22):m,170,yy);x.textAlign='right';x.fillStyle='#F5A623';x.font='800 30px system-ui';x.fillText(String(rec.byMove[m]),910,yy);yy+=42;});
+  x.textAlign='center';
+  {const sp=curSponsor||winSponsor;if(sp&&sp.name){x.fillStyle='#888';x.font='700 19px system-ui';x.fillText('PRESENTED BY '+(sp.name||'').toUpperCase(),540,1010);}}
+  x.fillStyle='#F5A623';x.font='800 23px system-ui';x.fillText('wodlygame.com   ·   Tag @wodlygame',540,1048);
+  // "Scan to play" QR (top-right corner)
+  const qr=await makeQR('https://wodlygame.com',150);
+  if(qr){const qx=892,qy=30,qs=150;x.fillStyle='#fff';x.fillRect(qx-9,qy-9,qs+18,qs+18);try{x.drawImage(qr,qx,qy,qs,qs);}catch(e){}x.textAlign='center';x.fillStyle='#F5A623';x.font='800 19px system-ui';x.fillText('SCAN TO PLAY',qx+qs/2,qy+qs+26);}
+  return new Promise(res=>C.toBlob(b=>res(b),'image/png'));
+}
+async function shareRecap(rec,mp){
+  const btn=$('shareBtn');if(btn){btn.disabled=true;btn.textContent='Building…';}
+  const blob=await makeRecapImage(rec,mp);
+  if(btn){btn.disabled=false;btn.textContent='📸 Share my card';}
+  if(!blob)return;
+  const file=new File([blob],'wodly-wod.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'My WODLY WOD'});return;}catch(e){}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wodly-wod.png';a.click();
+}
+function fmtCountdown(ms){if(ms<=0)return 'Starting any moment…';const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sec=s%60;
+  if(d>0)return d+'d '+h+'h '+m+'m';if(h>0)return h+'h '+m+'m '+sec+'s';return m+'m '+sec+'s';}
+function subHTML(kind){const recap=kind==='recap';return `<div class="subwrap">
+  <div class="subttl">${recap?'📧 Email me my recap':'🔔 New boards & worldwide matches'}</div>
+  <div class="subsub">${recap?'Get this workout — reps, time & your share card — emailed to you. Plus alerts for new boards & worldwide matches. No spam.':'Get an email when we release new workouts and schedule global matches. No spam.'}</div>
+  ${recap?`<input id="subGym" list="gymList" maxlength="40" placeholder="Your gym / box (optional)" autocomplete="off"><datalist id="gymList"></datalist>`:''}
+  <input id="subEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
+  <button class="subbtn" id="subBtn">${recap?'Email it to me':'Notify me'}</button>
+  <div class="submsg" id="subMsg"></div>
+  <label class="subconsent"><input type="checkbox" id="subConsent"> I agree to receive occasional WODLY emails. <a href="/privacy" target="_blank">Privacy</a></label>
+</div>`;}
+function wireSub(source){const b=$('subBtn');if(b)b.onclick=()=>doSubscribe(source);}
+// Gym dropdown — fill the datalist with known gyms so athletes pick an existing name (consistent spelling) or add a new one
+let __gymCache=null;
+async function fillGymList(){const list=$('gymList');if(!list)return;try{if(!__gymCache){const{data}=await sb.rpc('gym_names');__gymCache=Array.isArray(data)?data:[];}list.innerHTML=__gymCache.map(g=>'<option value="'+String(g).replace(/"/g,'&quot;')+'">').join('');}catch(e){}}
+async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim(),msg=$('subMsg');if(!msg)return;
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='Enter a valid email.';msg.className='submsg err';return;}
+  if(!$('subConsent').checked){msg.textContent='Please tick the box to consent.';msg.className='submsg err';return;}
+  $('subBtn').disabled=true;msg.textContent='…';msg.className='submsg';
+  if(source==='recap'&&lastRecap){try{
+    let imageUrl=null;
+    try{const blob=await makeRecapImage(lastRecap,me);
+      if(blob){const path='r_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.png';
+        const up=await sb.storage.from('recaps').upload(path,blob,{contentType:'image/png',upsert:true});
+        if(!up.error)imageUrl=sb.storage.from('recaps').getPublicUrl(path).data.publicUrl;}
+    }catch(e){}
+    const gym=((($('subGym')||{}).value)||'').trim()||null;if(gym){try{localStorage.setItem('wodly_gym',gym);}catch(e){}}
+    const daily=(room&&room.settings&&room.settings.daily)||null;
+    fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,deck:null,summary:lastRecap,image_url:imageUrl,gym:gym,daily:daily})});
+    fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:{apikey:W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:(me&&me.name)||null,image_url:imageUrl,summary:lastRecap,avatar:(function(){var a=(W.AVATARS||[]).find(function(x){return x.id===(me&&me.avatar);});return a?a.img:null;})(),sponsor:curSponsor?{id:curSponsor.id||null,name:curSponsor.name,website_url:curSponsor.website_url||curSponsor.social_url||null,tagline:curSponsor.tagline||null}:null})});
+  }catch(e){}}
+  try{const r=await fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,source,consent:true})});
+    if(r.status===201||r.status===204||r.status===200){msg.textContent="You're on the list ✓";msg.className='submsg ok';}
+    else if(r.status===409){msg.textContent="You're already subscribed ✓";msg.className='submsg ok';}
+    else{msg.textContent='Could not subscribe — try again later.';msg.className='submsg err';$('subBtn').disabled=false;}
+  }catch(e){msg.textContent='Network error.';msg.className='submsg err';$('subBtn').disabled=false;}
+}
+function renderState(state){
+  injectPacer(state);
+  const body=$('playBody'), phase=state.phase;
+  const mp=myPlayer(state);
+  lastState=state;
+  const _hasBoard=!!(phase==='playing'&&state.total),mw=$('miniWrap');
+  if(_hasBoard){mw.style.display='';const c=$('miniBoard'),want=((mw.clientWidth||340)*2);if(!mw.classList.contains('focus')&&Math.abs(c.width-want)>4)sizeMini();else drawMini();}else if(!mw.classList.contains('focus')){mw.style.display='none';}
+  if(mp)$('mePos').textContent=mp.pos;
+  if(mp&&mp.event&&(mp.event.type==='back'||mp.event.type==='skip')&&mp.event.eid!==seenEid){seenEid=mp.event.eid;showEvent(mp.event);}
+  renderStandings(state);renderRecentLog(state);renderSponsorBar(state);
+  const sig=phase+'|'+(mp?(mp.status+'|'+mp.pos+'|'+(mp.finished?'F'+mp.place:'')+'|'+(mp.card?(mp.card.kind+mp.card.reps+(mp.card.move||'')):'no')):'nomp')+'|'+(state.winner?state.winner.id:'')+'|'+((state.results||[]).length);
+  if(sig===bodySig&&!rolling)return; // body unchanged — don't disturb countdown/animations on poll
+  if(rolling)return;
+  bodySig=sig;clearInterval(schedInt);schedInt=null;
+  // finished
+  if(phase==='finished'&&state.winner){clearCd();
+    const results=state.results||[];
+    const myR=results.find(r=>r.id===me.id)||(mp?{place:(mp.finished?mp.place:null),finishSec:mp.finishSec,dnf:!mp.finished,pos:mp.pos}:null);
+    const av=W.AVATARS.find(a=>a.id===((mp&&mp.avatar)||state.winner.avatar));
+    const rec=computeRecap(mp);lastRecap=rec;if(myR&&myR.place)rec.place=myR.place;if(myR&&!myR.dnf&&myR.finishSec!=null)rec.timeSec=myR.finishSec;const moves=Object.keys(rec.byMove);
+    let head;
+    if(myR&&myR.place===1)head='You win! 🏆';
+    else if(myR&&!myR.dnf&&myR.place)head='You finished '+ord(myR.place)+'! 🏁';
+    else head=esc(state.winner.name)+' wins!';
+    const subt=(myR&&!myR.dnf&&myR.finishSec!=null)?`<div class="pill">Your time <b>${pfmt(myR.finishSec)}</b></div>`:`<div class="pill">Room <b>${room.code}</b></div>`;
+    const resHTML=results.length>1?`<div class="results">${results.map(r=>{const medal=r.place===1?'🥇':r.place===2?'🥈':r.place===3?'🥉':(r.place+'.');const t=r.dnf?'—':pfmt(r.finishSec||0);return `<div class="rrow${r.id===me.id?' me':''}"><span class="rpl">${medal}</span><span class="rnm">${esc(r.name)}</span><span class="rtm">${t}</span></div>`;}).join('')}</div>`:'';
+    const recHTML=rec.total>0?`<div class="recap"><div class="recap-h">Your workout</div><div class="recap-total">${rec.total}<span>total reps</span></div><div class="recap-moves">${moves.map(m=>`<div class="rm"><span>${esc(m)}</span><b>${rec.byMove[m]}</b></div>`).join('')}</div><button class="sharebtn" id="shareBtn">📸 Share my card</button></div>`:'';
+    body.innerHTML=`<div class="winbox"><img src="${av?av.img:''}"><h2>${head}</h2>${subt}</div>`+resHTML+recHTML+subHTML('recap');
+    const shb=$('shareBtn');if(shb)shb.onclick=()=>shareRecap(rec,mp);
+    (function(){const g=$('subGym');if(!g)return;let v='';try{v=localStorage.getItem('wodly_gym')||'';}catch(e){}if(room&&!room.is_public&&room.settings&&room.settings.gym)v=room.settings.gym;g.value=v;fillGymList();})();
+    if(!window.__cel){window.__cel=true;confettiP();buzz([90,40,90,40,160]);}
+    wireSub('recap');return;}
+  if(phase!=='playing'){clearCd();
+    const sched=(room&&room.scheduled_at)?new Date(room.scheduled_at).getTime():0;
+    const title=(room&&room.title)?esc(room.title):'';
+    body.innerHTML=`<div class="rollwrap" style="padding:22px 0;text-align:center;">
+      <div class="mn" style="font-size:20px;">You're in!${title?' · '+title:''}</div>
+      ${sched?`<div class="cdlabel" style="margin-top:16px;">Match starts in</div><div class="countdown" id="cdown">…</div><div class="ms">${new Date(room.scheduled_at).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}</div>`:'<div class="ms" style="margin-top:8px;">Waiting for the host to start…</div>'}
+      <div style="margin-top:16px;"><span class="pill">Room <b>${room.code}</b></span></div></div>`;
+    const tryStart=()=>{if(isOnline()&&Date.now()-lastStartTry>3000){lastStartTry=Date.now();callMatch('start').then(()=>pollOnce());}};
+    if(sched){const tick=()=>{const el=$('cdown');if(el)el.textContent=fmtCountdown(sched-Date.now());if(sched-Date.now()<=0)tryStart();};tick();schedInt=setInterval(tick,1000);}
+    else if(autoStarts()){tryStart();schedInt=setInterval(tryStart,3000);}
+    lastStatus='';return;}
+  if(!mp){
+    if(isOnline()){if(Date.now()-lastStartTry>2500){lastStartTry=Date.now();callMatch('join').then(()=>pollOnce());}body.innerHTML='<div class="rollwrap" style="padding:24px 0;text-align:center;"><div class="mn">Joining the match…</div><div class="ms">one sec</div></div>';}
+    else body.innerHTML='<div class="rollwrap">Syncing…</div>';
+    return;}
+  if(rolling){return;} // keep local dice animation until it sends
+  if(mp.finished){clearCd();
+    body.innerHTML=`<div class="rollwrap" style="padding:24px 0;text-align:center;">
+      <div class="mn" style="font-size:26px;">🏁 Finished ${ord(mp.place)}!</div>
+      <div class="ms" style="margin-top:6px;">Your time ${pfmt(mp.finishSec||0)}</div>
+      <div class="ms" style="margin-top:14px;">Waiting for the others to finish…</div></div>`;
+    if(lastStatus!=='finished')buzz([120,60,200]);
+    lastStatus='finished';return;}
+  if(mp.status==='working'&&mp.card){
+    clearCd();const isAce=mp.card.kind==='ace';
+    body.innerHTML=`<div class="cardpop">${cardHTML(mp.card)}${tipHTML('done','💪 Do the reps shown above, then tap <b>Done ✓</b>')}<div class="cd" id="cd"></div>
+      <button class="donebtn" id="doneBtn">DONE ✓</button></div>`;
+    $('doneBtn').onclick=()=>{seenTip('done');$('doneBtn').disabled=true;$('doneBtn').textContent='Saved!';clearCd();if(isOnline())callMatch('done').then(()=>pollOnce());else sendIntent(isAce?'penalty_done':'done');};
+    startCd(state, isAce);
+    lastStatus='working';return;
+  }
+  // idle -> roll
+  clearCd();
+  body.innerHTML=`<div class="rollwrap">${tipHTML('roll','👆 Tap <b>ROLL</b> — you\'ll move ahead and land on a movement to do')}<div class="die" id="die">${renderDie(mp.lastRoll||5)}</div>
+    <button class="rollbtn" id="rollBtn">🎲 ROLL</button>
+    ${dblUsed?'<div class="dblspent">Double dice used</div>':'<button class="dblbtn" id="dblBtn">🎲🎲 DOUBLE DICE · once per game</button>'}</div>`;
+  $('rollBtn').onclick=()=>{seenTip('roll');doRoll(false);};
+  if(!dblUsed&&$('dblBtn'))$('dblBtn').onclick=()=>doRoll(true);
+  lastStatus='idle';
+}
+
+function doRoll(dbl){
+  if(rolling)return;rolling=true;
+  const die=$('die'), btn=$('rollBtn'), db=$('dblBtn');btn.disabled=true;if(db)db.disabled=true;die.classList.add('rolling');
+  const dv = dbl ? (1+Math.floor(Math.random()*6))+(1+Math.floor(Math.random()*6)) : (1+Math.floor(Math.random()*6));
+  if(dbl){dblUsed=true;try{localStorage.setItem('wodly_dbl_'+room.id+'_'+me.id,'1');}catch(e){}}
+  let ticks=0;const iv=setInterval(()=>{die.innerHTML=renderDie(1+Math.floor(Math.random()*6));if(++ticks>10){clearInterval(iv);
+    die.innerHTML = dbl ? ('<div class="dvsum">'+dv+'</div>') : renderDie(dv);
+    die.classList.remove('rolling');
+    if(isOnline()){callMatch('roll',{dv}).then(()=>{rolling=false;pollOnce();}).catch(()=>{rolling=false;pollOnce();});}
+    else{sendIntent('roll',{dv});setTimeout(()=>{rolling=false;renderState(room.state||{});},700);}}},70);
+}
+
+function startCd(state,isAce){clearCd();if(!state.useTimer)return;let rem=isAce?(state.penSec||45):(state.turnSec||60);const el=$('cd');if(!el)return;
+  function tick(){if(!el)return;el.textContent=rem>0?('⏱ '+rem+'s'):'TIME!';el.className='cd'+(rem<=10?' urgent':'');if(rem<=0){clearCd();return;}rem--;}
+  tick();cdInt=setInterval(tick,1000);}
+function clearCd(){if(cdInt){clearInterval(cdInt);cdInt=null;}}
+
+function ord(n){n=n||0;const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+let curSponsor=null;
+function renderSponsorBar(state){const bar=$('spBar');if(!bar)return;
+  // gym games carry the chosen sponsor in state; online matches use the phone's own random pick
+  const s=(state&&state.sponsor)||winSponsor||null;
+  const phase=state&&state.phase;
+  if(!s||!(phase==='playing'||phase==='finished')){curSponsor=null;bar.style.display='none';return;}
+  curSponsor=s;const dest=s.website_url||s.social_url||'';const rd=s.tagline?'&redeem=1':'';const link=(dest&&s.id)?('https://wodlygame.com/go?s='+s.id+'&src=phone'+rd):dest;
+  bar.href=link||'#';if(!link)bar.removeAttribute('target');else bar.target='_blank';
+  bar.innerHTML=`${s.logo?`<img src="${s.logo}" alt="">`:''}<span class="spl">Presented by</span><span class="spn">${esc(s.name||'')}</span>${s.tagline?`<span class="spdeal">${esc(s.tagline)}</span>`:''}${link?('<span class="spgo">'+(s.tagline?'🎁 Claim deal →':'Visit →')+'</span>'):''}`;
+  bar.style.display='flex';}
+function renderStandings(state){const list=$('standList'),wrap=$('standWrap');const ps=state.players||[];
+  if(!ps.length||(state.phase!=='playing'&&state.phase!=='finished')){wrap.style.display='none';return;}
+  wrap.style.display='';const total=state.total||52;
+  // finished first (by placing), then racers by furthest position
+  const ranked=ps.slice().sort((a,b)=>{if(a.finished&&b.finished)return a.place-b.place;if(a.finished)return -1;if(b.finished)return 1;return b.pos-a.pos;});
+  list.innerHTML='';
+  ranked.forEach(p=>{const medal=p.finished?(p.place===1?'🥇':p.place===2?'🥈':p.place===3?'🥉':(p.place+'.')):'';
+    const doing=p.finished?`<span class="sdo" style="color:var(--orange)">🏁 ${pfmt(p.finishSec||0)}</span>`:(p.status==='working'&&p.card?`<span class="sdo ${p.card.kind==='ace'?'ace':''}">${p.card.reps} ${esc(p.card.move||'')}</span>`:'');
+    const posCell=p.finished?`<span class="spos">${medal}</span>`:`<span class="spos">${p.pos}/${total-1}</span>`;
+    const row=document.createElement('div');row.className='srow'+(p.id===me.id?' me':'');
+    row.innerHTML=`<span class="sd" style="background:${p.color}"></span><span class="sn">${esc(p.name)}</span>${posCell}${doing}`;
+    list.appendChild(row);});}
+function pfmt(s){s=s||0;const m=Math.floor(s/60),sc=s%60;return m+':'+(sc<10?'0':'')+sc;}
+function renderRecentLog(state){const wrap=$('logWrap'),list=$('logList');const lg=state.log||[];
+  if(!lg.length||state.phase!=='playing'){wrap.style.display='none';return;}
+  wrap.style.display='';list.innerHTML='';
+  lg.slice().reverse().forEach(e=>{const skip=e.kind==='skip',back=e.kind==='back',ace=e.kind==='ace';
+    const col=skip?'#4CAF50':back?'#E8363D':ace?'#9b59b6':(W.SCOL[e.suit]||'#F5A623');
+    const sym=W.SYM[e.suit]||'',label=ace?'A':(e.label||'');
+    const desc=skip?'Skip +2':back?('Back '+e.val):((e.reps)+' '+(e.move||''));
+    const row=document.createElement('div');row.className='lrow';
+    row.innerHTML=`<span class="ld" style="background:${e.color}"></span><span class="ln">${esc(e.name)}</span><span class="lt">⏱${pfmt(e.gs)}</span><span class="lc" style="color:${col}">${esc(desc)}</span><span class="lk" style="color:${col}">${label}${sym}</span>`;
+    list.appendChild(row);});}
+</script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

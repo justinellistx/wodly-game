@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WODLY — Public Lobby</title>
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--gold:#F5A623;--bg:#0a0a0b;--surface:#161616;--surface2:#1f1f1f;--border:#333;--text:#fff;--text2:#aaa;--text3:#777;}
+  body{font-family:system-ui,sans-serif;background:radial-gradient(circle at 50% -8%,#1d1d22,#0a0a0b 60%);color:#fff;min-height:100vh;padding:26px 18px 60px;}
+  .wrap{max-width:720px;margin:0 auto;}
+  .top{text-align:center;margin-bottom:22px;}
+  h1{font-size:34px;font-weight:900;letter-spacing:7px;}
+  .sub{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-top:6px;}
+  .back{display:inline-block;margin-top:12px;font-size:12px;color:var(--text3);text-decoration:none;}
+  .sec{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin:24px 0 10px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;}
+  label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;display:block;margin:12px 0 6px;}
+  input,select{width:100%;font-size:15px;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:#fff;}
+  .row{display:flex;gap:12px;flex-wrap:wrap;}.row>div{flex:1;min-width:140px;}
+  .btn{width:100%;margin-top:16px;padding:14px;font-size:15px;font-weight:800;letter-spacing:.5px;background:var(--orange);border:none;border-radius:12px;color:#000;cursor:pointer;}
+  .btn:disabled{opacity:.5;}
+  .err{color:var(--red);font-size:13px;margin-top:10px;min-height:16px;}
+  .match{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px;}
+  .match .info{flex:1;min-width:0;}
+  .match .ttl{font-size:17px;font-weight:800;}
+  .match .meta{font-size:12px;color:var(--text3);margin-top:3px;}
+  .match .when{font-size:13px;color:var(--text2);margin-top:5px;}
+  .match .when b{color:var(--gold);font-variant-numeric:tabular-nums;}
+  .badge{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px;flex-shrink:0;}
+  .badge.live{background:rgba(76,175,80,.18);color:var(--green);}
+  .badge.up{background:rgba(245,166,35,.16);color:var(--gold);}
+  .badge.open{background:rgba(33,150,243,.16);color:#7fc0ff;}
+  .join{flex-shrink:0;padding:11px 18px;font-size:14px;font-weight:800;background:transparent;border:2px solid var(--orange);border-radius:12px;color:var(--orange);cursor:pointer;text-decoration:none;}
+  .empty{color:var(--text3);font-size:14px;text-align:center;padding:24px;}
+  .matchwrap{margin-bottom:12px;}
+  .matchwrap .match{margin-bottom:0;}
+  .dtoggle{background:none;border:none;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer;margin-top:7px;padding:0;font-family:inherit;}
+  .details{display:none;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-top:8px;}
+  .details.open{display:block;}
+  .details .mv{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:12px;}
+  .details .mv .s{font-size:14px;color:var(--text);}
+  .dk{font-size:12px;color:var(--text3);line-height:1.6;}
+  .dk b{color:var(--text2);font-weight:700;}
+  .toggle{background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;width:100%;}
+  .note{font-size:11px;color:var(--text3);text-align:center;margin-top:18px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>WODLY</h1>
+    <div class="sub">Public Lobby · play the world</div>
+    <a class="back" href="/">← back to home</a>
+  </div>
+
+  <button class="toggle" id="createToggle">＋ Create a public match</button>
+  <div class="card" id="createCard" style="display:none;margin-top:12px;">
+    <div class="row">
+      <div><label>Match title</label><input id="f-title" maxlength="40" placeholder="Friday Worldwide WOD"></div>
+      <div><label>Your name (host)</label><input id="f-host" maxlength="24" placeholder="Coach Justin"></div>
+    </div>
+    <label>Date & time (your local time)</label>
+    <input type="datetime-local" id="f-when">
+    <div class="row">
+      <div><label>Deck size</label><select id="f-deck"><option value="quick">Fast · 1 deck</option><option value="standard" selected>Standard · 2 decks</option><option value="large">Beast · 2½ decks</option></select></div>
+      <div><label>Difficulty</label><select id="f-diff"><option value="easy">Beginner</option><option value="medium" selected>Rx</option><option value="hard">Elite</option></select></div>
+      <div><label>Finish</label><select id="f-finish"><option value="all" selected>Everyone finishes</option><option value="first">First to finish wins</option></select></div>
+      <div><label>Board theme</label><select id="f-board"></select></div>
+    </div>
+    <label>Workout preset</label>
+    <select id="presetSel"><option value="">Custom — set your own</option></select>
+    <div id="presetNote" style="font-size:12px;color:var(--green);min-height:14px;margin-top:6px;"></div>
+    <label>Movements per suit (leave blank for defaults)</label>
+    <div class="row">
+      <div><input id="m-hearts" maxlength="22" placeholder="♥ Push-ups"></div>
+      <div><input id="m-diamonds" maxlength="22" placeholder="♦ Air Squats"></div>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <div><input id="m-clubs" maxlength="22" placeholder="♣ Burpees"></div>
+      <div><input id="m-spades" maxlength="22" placeholder="♠ Sit-ups"></div>
+    </div>
+    <div class="row">
+      <div><label>Ace penalty reps</label><input id="m-acereps" type="number" min="1" max="200" value="10"></div>
+      <div><label>Ace penalty movement</label><input id="m-acemove" maxlength="22" placeholder="Burpees"></div>
+    </div>
+    <button class="btn" id="createBtn">Create match →</button>
+    <div class="err" id="createErr"></div>
+    <div class="note">Your match runs automatically at the scheduled time — no host needs to stay online. You'll join as a player, and everyone sees the live board on their own device.</div>
+  </div>
+
+  <a href="/leaderboard" style="display:block;text-align:center;margin:16px 0 4px;font-size:13.5px;color:var(--gold);text-decoration:none;font-weight:700;">🏆 Community movement leaderboard →</a>
+
+  <div class="sec">Upcoming &amp; live matches</div>
+  <div id="list"><div class="empty">Loading…</div></div>
+
+  <div class="note">Times shown in your local timezone. A match goes live when its host starts it.</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="wodly-core.js"></script>
+<script>
+const W=window.WODLY, sb=W.makeClient();
+const $=id=>document.getElementById(id);
+function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const DECK_LBL={quick:'Fast',standard:'Standard',large:'Beast'};
+const DIFF_LBL={easy:'Beginner',medium:'Rx',hard:'Elite'};
+
+$('createToggle').onclick=()=>{const c=$('createCard');const open=c.style.display!=='none';c.style.display=open?'none':'block';$('createToggle').textContent=open?'＋ Create a public match':'× Close';};
+
+$('createBtn').onclick=async()=>{
+  $('createErr').textContent='';
+  const title=$('f-title').value.trim(), host=$('f-host').value.trim(), when=$('f-when').value;
+  if(!title){$('createErr').textContent='Give your match a title.';return;}
+  if(!when){$('createErr').textContent='Pick a date & time.';return;}
+  const mv={hearts:($('m-hearts').value.trim()||'Push-ups'),diamonds:($('m-diamonds').value.trim()||'Air Squats'),clubs:($('m-clubs').value.trim()||'Burpees'),spades:($('m-spades').value.trim()||'Sit-ups')};
+  const settings={mv,aceReps:Math.max(1,parseInt($('m-acereps').value)||10),aceMove:($('m-acemove').value.trim()||'Burpees'),
+    deckSz:$('f-deck').value,diff:$('f-diff').value,finishMode:$('f-finish').value,boardId:$('f-board').value||'classic',useTimer:false,turnSec:60,penSec:45,cap:false,capMin:20,
+    presetId:($('presetSel').value||''),presetName:(function(){var s=$('presetSel'),p=(s&&s.value&&W.PRESETS)?W.PRESETS.find(x=>x.id===s.value):null;return p?p.name:'Custom';})(),source:'online'};
+  $('createBtn').disabled=true;
+  let room=null;
+  for(let a=0;a<6;a++){const code=W.genCode();
+    const{data,error}=await sb.from('rooms').insert({code,status:'lobby',host_id:W.clientId(),settings,
+      is_public:true,scheduled_at:new Date(when).toISOString(),title,host_name:host||'Host'}).select().single();
+    if(!error){room=data;break;} if(error&&!/duplicate|unique/i.test(error.message)){$('createErr').textContent=error.message;$('createBtn').disabled=false;return;}}
+  if(!room){$('createErr').textContent='Could not create match.';$('createBtn').disabled=false;return;}
+  location.href='play?room='+room.code;
+};
+
+function fmtCountdown(ms){if(ms<=0)return 'now';const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sec=s%60;
+  if(d>0)return d+'d '+h+'h '+m+'m';if(h>0)return h+'h '+m+'m';return m+'m '+sec+'s';}
+
+let rooms=[], counts={}, expanded={};
+const FIN_LBL={all:'Everyone finishes',first:'First to finish wins'};
+const SUIT=[['hearts','♥','#E8363D'],['diamonds','♦','#F5A623'],['clubs','♣','#4CAF50'],['spades','♠','#2196F3']];
+function buildDetails(r){
+  const s=r.settings||{}, mv=s.mv||{}, u=s.units||{};
+  const rows=SUIT.map(([k,sym,col])=>`<div class="s"><span style="color:${col};font-weight:800">${sym}</span> ${esc(mv[k]||'—')}${u[k]&&u[k]!=='reps'?' <span style="color:var(--text3)">('+esc(u[k])+')</span>':''}</div>`).join('');
+  const board=(W.BOARDS&&s.boardId)?((W.BOARDS.find(b=>b.id===s.boardId)||{}).name||''):'';
+  const preset=(s.presetName&&s.presetName!=='Custom')?s.presetName:'Custom';
+  return `<div class="mv">${rows}</div>
+    <div class="dk">🅰 Ace penalty: <b>${esc(String(s.aceReps||10))} ${esc(s.aceMove||'Burpees')}</b></div>
+    <div class="dk">${DECK_LBL[s.deckSz]||'Standard'} deck · ${DIFF_LBL[s.diff]||'Rx'} · ${FIN_LBL[s.finishMode]||'Everyone finishes'}${board?' · '+esc(board)+' board':''}</div>
+    <div class="dk">Preset: <b>${esc(preset)}</b></div>`;
+}
+async function load(){
+  try{
+    const{data}=await sb.from('rooms').select('*').eq('is_public',true).in('status',['lobby','playing']).order('scheduled_at',{nullsFirst:false});
+    rooms=data||[];
+    const{data:pl}=await sb.from('players').select('room_id');
+    counts={};(pl||[]).forEach(p=>{counts[p.room_id]=(counts[p.room_id]||0)+1;});
+  }catch(e){rooms=[];}
+  render();
+}
+function render(){
+  const l=$('list');
+  if(!rooms.length){l.innerHTML='<div class="empty">No public matches yet. Create one above!</div>';return;}
+  l.innerHTML='';
+  rooms.forEach(r=>{
+    const live=r.status==='playing';
+    const sched=r.scheduled_at?new Date(r.scheduled_at).getTime():0;
+    const badge=live?'<span class="badge live">● Live</span>':(sched?'<span class="badge up">Upcoming</span>':'<span class="badge open">Open</span>');
+    const whenStr=sched?new Date(r.scheduled_at).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'';
+    const deck=r.settings&&r.settings.deckSz?DECK_LBL[r.settings.deckSz]:'';
+    const diff=r.settings&&r.settings.diff?DIFF_LBL[r.settings.diff]:'';
+    const n=counts[r.id]||0;
+    const isOpen=!!expanded[r.code];
+    const wrap=document.createElement('div');wrap.className='matchwrap';
+    const d=document.createElement('div');d.className='match';
+    d.innerHTML=`<div class="info">
+        <div class="ttl">${esc(r.title||'WODLY match')}</div>
+        <div class="meta">${esc(r.host_name||'Host')} · ${deck}${diff?' · '+diff:''} · ${n} joined</div>
+        ${live?'<div class="when"><b>In progress</b></div>':(sched?`<div class="when">${whenStr} · <b class="cd" data-t="${sched}">…</b></div>`:'<div class="when">Waiting for host</div>')}
+        <button class="dtoggle" type="button">${isOpen?'▴ Hide workout':'▾ Workout details'}</button>
+      </div>
+      ${badge}
+      <a class="join" href="play?room=${encodeURIComponent(r.code)}">${live?'Watch / Join':'Join'}</a>`;
+    const det=document.createElement('div');det.className='details'+(isOpen?' open':'');det.innerHTML=buildDetails(r);
+    d.querySelector('.dtoggle').onclick=()=>{const nowOpen=!det.classList.contains('open');det.classList.toggle('open',nowOpen);expanded[r.code]=nowOpen;d.querySelector('.dtoggle').innerHTML=nowOpen?'▴ Hide workout':'▾ Workout details';};
+    wrap.appendChild(d);wrap.appendChild(det);l.appendChild(wrap);
+  });
+  tickAll();
+}
+function tickAll(){document.querySelectorAll('.cd').forEach(el=>{const t=+el.dataset.t;el.textContent=fmtCountdown(t-Date.now());});}
+(function(){const sel=$('presetSel');if(!sel)return;
+  const SMART={};
+  (function(){const bs=$('f-board');if(bs&&W.BOARDS)W.BOARDS.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.name;bs.appendChild(o);});})();
+  function applyP(p){$('m-hearts').value=p.mv.hearts;$('m-diamonds').value=p.mv.diamonds;$('m-clubs').value=p.mv.clubs;$('m-spades').value=p.mv.spades;$('m-acereps').value=p.aceReps;$('m-acemove').value=p.aceMove;$('presetNote').textContent='✓ '+p.name+(p.note?' — '+p.note:'');}
+  if(W.PRESETS){const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
+    Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});}
+  sel.onchange=()=>{const v=sel.value;if(!v){$('presetNote').textContent='';return;}const p=SMART[v]||(W.PRESETS&&W.PRESETS.find(x=>x.id===v));if(p)applyP(p);};
+  (async function(){try{if(!W.smartPresets)return;const sp=await W.smartPresets(sb);if(!sp||!sp.length)return;
+    const og=document.createElement('optgroup');og.label='⚡ From the community data';
+    sp.forEach(p=>{SMART[p.id]=p;const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});
+    sel.insertBefore(og,sel.children[1]||null);}catch(e){}})();
+})();
+setInterval(tickAll,1000);
+setInterval(load,15000);
+load();
+</script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

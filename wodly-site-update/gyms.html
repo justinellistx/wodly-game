@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WODLY — Gym Leaderboard</title>
+<meta name="description" content="Which box is grinding hardest? See how gyms stack up on WODLY.">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:title" content="WODLY — Gym Leaderboard">
+<meta property="og:description" content="Which box is grinding hardest? Gym-vs-gym on WODLY.">
+<meta property="og:image" content="https://wodlygame.com/assets/og-image.png">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--gold:#F5A623;--bg:#0a0a0b;--surface:#161616;--surface2:#1f1f1f;--border:#333;--text:#fff;--text2:#aaa;--text3:#777;}
+  body{font-family:system-ui,sans-serif;background:radial-gradient(circle at 50% -8%,#1d1d22,#0a0a0b 60%);color:#fff;min-height:100vh;padding:26px 18px 60px;}
+  .wrap{max-width:640px;margin:0 auto;}
+  .top{text-align:center;margin-bottom:20px;}
+  h1{font-size:30px;font-weight:900;letter-spacing:4px;}
+  .sub{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-top:6px;}
+  .back{display:inline-block;margin-top:12px;font-size:12px;color:var(--text3);text-decoration:none;}
+  .headline{background:linear-gradient(150deg,#241a06,#120d04);border:1px solid rgba(245,166,35,.4);border-radius:16px;padding:18px;text-align:center;margin-bottom:8px;}
+  .headline b{display:block;font-size:40px;font-weight:900;color:var(--gold);line-height:1.1;font-variant-numeric:tabular-nums;}
+  .headline span{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#e8d3a8;}
+  .note{font-size:12px;color:var(--text3);text-align:center;margin:14px 0 16px;line-height:1.5;}
+  .row{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 16px;margin-bottom:10px;}
+  .row.top1{border-color:var(--gold);box-shadow:0 0 20px rgba(245,166,35,.16);}
+  .row.top2{border-color:#c9c9d0;}
+  .row.top3{border-color:#c8924e;}
+  .rank{width:40px;flex-shrink:0;text-align:center;font-size:22px;font-weight:900;color:var(--text3);}
+  .rank .medal{font-size:26px;}
+  .info{flex:1;min-width:0;}
+  .gname{font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .gmeta{font-size:12px;color:var(--text3);margin-top:2px;}
+  .reps{flex-shrink:0;text-align:right;}
+  .reps b{font-size:24px;font-weight:900;color:var(--orange);font-variant-numeric:tabular-nums;}
+  .reps span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);}
+  .empty{color:var(--text3);font-size:14px;text-align:center;padding:34px 10px;line-height:1.6;}
+  .foot{text-align:center;margin-top:22px;font-size:12px;color:var(--text3);}
+  .foot a{color:var(--orange);text-decoration:none;font-weight:700;}
+  .refreshed{font-size:11px;color:var(--text3);text-align:center;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>🏋️ GYM LEADERBOARD</h1>
+    <div class="sub">Which box grinds hardest</div>
+    <a class="back" href="/">← back to home</a>
+  </div>
+
+  <div class="headline"><b id="totGyms">—</b><span>gyms on the board</span></div>
+  <div class="note">Reps from every athlete count toward their gym. Enter your gym when you save a workout to put it on the board.</div>
+
+  <div id="list"><div class="empty">Loading…</div></div>
+
+  <div class="foot">🔥 <a href="/daily">Today's Daily Workout</a> · 🏆 <a href="/leaderboard">Movement leaderboard</a></div>
+  <div class="foot">Rep for your box — <a href="/board">start a game →</a></div>
+  <div class="refreshed" id="refreshed"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL='https://ynznwosssctxbdiauekj.supabase.co';
+const PUB='sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq';
+const sb=supabase.createClient(SUPA_URL,PUB);
+const $=id=>document.getElementById(id);
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const nfmt=n=>Number(n||0).toLocaleString();
+const MEDAL=['🥇','🥈','🥉'];
+
+async function load(){
+  let data=[];
+  try{const r=await sb.rpc('gym_leaderboard');if(!r.error&&Array.isArray(r.data))data=r.data;}catch(e){}
+  $('totGyms').textContent=nfmt(data.length);
+  const l=$('list');
+  if(!data.length){l.innerHTML='<div class="empty">No gyms on the board yet.<br>Add your gym when you save a workout and put your box on the map! 🏋️</div>';$('refreshed').textContent='';return;}
+  l.innerHTML=data.map((x,i)=>{
+    const cls=i<3?' top'+(i+1):'';
+    const rank=i<3?`<span class="medal">${MEDAL[i]}</span>`:(i+1);
+    const players=+x.players||0, workouts=+x.workouts||0, reps=+x.reps||0;
+    return `<div class="row${cls}">
+      <div class="rank">${rank}</div>
+      <div class="info"><div class="gname">${esc(x.gym)}</div><div class="gmeta">${players} athlete${players===1?'':'s'} · ${workouts} workout${workouts===1?'':'s'}</div></div>
+      <div class="reps"><b>${nfmt(reps)}</b><span>reps</span></div>
+    </div>`;
+  }).join('');
+  $('refreshed').textContent='Updated '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+}
+load();
+setInterval(load,30000);
+</script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

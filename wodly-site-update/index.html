@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WODLY — The Fitness Adventure Board Game</title>
+<meta name="description" content="WODLY turns your workout into a board game. Start a game on the big screen, join from your phone. Train. Play. Compete.">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="WODLY">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="WODLY">
+<meta property="og:title" content="WODLY — The Fitness Adventure Board Game">
+<meta property="og:description" content="Turn your workout into a board game. Start on the big screen, join from your phone.">
+<meta property="og:url" content="https://wodlygame.com/">
+<meta property="og:image" content="https://wodlygame.com/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://wodlygame.com/assets/og-image.png">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--red:#E8363D;--orange:#F5A623;--green:#4CAF50;--blue:#2196F3;--gold:#F5A623;--bg:#0a0a0b;--surface:#161616;--border:#333;--text:#fff;--text2:#aaa;--text3:#777;}
+  body{font-family:system-ui,sans-serif;background:radial-gradient(circle at 50% -8%,#1d1d22,#0a0a0b 62%);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px 20px;position:relative;overflow-x:hidden;}
+  /* gold frame accents echoing the board */
+  body::before,body::after{content:'';position:fixed;left:0;right:0;height:3px;z-index:5;
+    background:linear-gradient(90deg,transparent,rgba(245,166,35,.7) 22%,rgba(245,166,35,.95) 50%,rgba(245,166,35,.7) 78%,transparent);
+    box-shadow:0 0 18px rgba(245,166,35,.45);}
+  body::before{top:0;} body::after{bottom:0;}
+  .wrap{width:100%;max-width:470px;text-align:center;position:relative;z-index:2;}
+  .suits{font-size:23px;letter-spacing:7px;margin-bottom:6px;}
+  .suits .h{color:var(--red);}.suits .d{color:var(--orange);}.suits .c{color:var(--green);}.suits .s{color:var(--blue);}
+  h1{font-size:54px;font-weight:900;letter-spacing:11px;text-shadow:0 2px 0 #000,0 0 28px rgba(245,166,35,.35);}
+  .tagline{font-size:12px;font-weight:800;letter-spacing:3px;margin:8px 0 16px;}
+  .tagline .t1{color:var(--green);}.tagline .t2{color:var(--orange);}.tagline .t3{color:var(--red);}
+  .heroes{display:flex;justify-content:center;align-items:flex-end;gap:1px;margin:2px 0 24px;}
+  .heroes img{width:clamp(38px,12.5vw,56px);height:clamp(38px,12.5vw,56px);object-fit:contain;filter:drop-shadow(0 5px 7px rgba(0,0,0,.6));}
+  .heroes img:nth-child(even){transform:translateY(-5px);}
+  .hero-vid{margin:2px auto 22px;border-radius:20px;overflow:hidden;border:2px solid rgba(245,166,35,.4);box-shadow:0 0 30px rgba(245,166,35,.18);line-height:0;width:fit-content;max-width:100%;}
+  .hero-vid video{display:block;height:min(46vh,470px);width:auto;max-width:100%;background:#0d0d0d;}
+  .choice{display:block;width:100%;text-decoration:none;border-radius:18px;padding:18px 20px;margin-bottom:14px;cursor:pointer;text-align:left;position:relative;overflow:hidden;transition:transform .12s;}
+  .choice:active{transform:scale(.985);}
+  .choice .tag{position:absolute;top:13px;right:14px;font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:3px 9px;border-radius:20px;z-index:2;}
+  .choice .ttl{font-size:21px;font-weight:900;letter-spacing:.5px;display:flex;align-items:center;gap:10px;position:relative;z-index:2;}
+  .choice .sub{font-size:12.5px;margin-top:5px;line-height:1.45;max-width:90%;position:relative;z-index:2;}
+  /* START = the big-screen board */
+  .start{background:linear-gradient(150deg,#241a06,#120d04);border:2px solid var(--gold);box-shadow:0 0 26px rgba(245,166,35,.22),inset 0 0 32px rgba(245,166,35,.05);}
+  .start::before{content:'';position:absolute;inset:0;opacity:.5;pointer-events:none;
+    background:repeating-linear-gradient(90deg,rgba(245,166,35,.06) 0 1px,transparent 1px 24px),repeating-linear-gradient(0deg,rgba(245,166,35,.06) 0 1px,transparent 1px 24px);}
+  .start .ttl{color:var(--gold);}.start .sub{color:#e8d3a8;}
+  .start .tag{background:rgba(245,166,35,.16);color:var(--gold);border:1px solid rgba(245,166,35,.4);}
+  /* JOIN = the phone card */
+  .join{background:linear-gradient(150deg,#15171c,#0c0d10);border:2px solid var(--blue);box-shadow:0 0 22px rgba(33,150,243,.16);}
+  .join .ttl{color:#fff;}.join .sub{color:var(--text2);}
+  .join .tag{background:rgba(33,150,243,.16);color:#8cc6ff;border:1px solid rgba(33,150,243,.4);}
+  .join .pips{position:absolute;bottom:11px;right:15px;font-size:15px;letter-spacing:3px;opacity:.55;z-index:2;}
+  .join .pips .h{color:var(--red);}.join .pips .d{color:var(--orange);}.join .pips .c{color:var(--green);}.join .pips .s{color:var(--blue);}
+  .online{background:linear-gradient(150deg,#0c1a12,#0a0f0c);border:2px solid var(--green);box-shadow:0 0 20px rgba(76,175,80,.15);}
+  .online .ttl{color:#fff;}.online .sub{color:var(--text2);}
+  .online .tag{background:rgba(76,175,80,.16);color:#9be0a0;border:1px solid rgba(76,175,80,.4);}
+  .solo{background:linear-gradient(150deg,#17111f,#0d0a12);border:2px solid #9b59b6;box-shadow:0 0 20px rgba(155,89,182,.16);}
+  .solo .ttl{color:#fff;}.solo .sub{color:var(--text2);}
+  .solo .tag{background:rgba(155,89,182,.16);color:#c9a0e0;border:1px solid rgba(155,89,182,.4);}
+  /* unified option cards — Bingo-promo style */
+  @keyframes optFloat{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-5px) rotate(3deg);}}
+  @keyframes optPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+  @keyframes optShine{0%{background-position:-140% 0;}100%{background-position:240% 0;}}
+  @keyframes glowGold{0%,100%{box-shadow:0 0 16px rgba(245,166,35,.14);}50%{box-shadow:0 0 32px rgba(245,166,35,.42);}}
+  @keyframes glowPurple{0%,100%{box-shadow:0 0 16px rgba(155,89,182,.14);}50%{box-shadow:0 0 32px rgba(155,89,182,.42);}}
+  @keyframes glowBlue{0%,100%{box-shadow:0 0 16px rgba(33,150,243,.14);}50%{box-shadow:0 0 32px rgba(33,150,243,.42);}}
+  @keyframes glowGreen{0%,100%{box-shadow:0 0 16px rgba(76,175,80,.14);}50%{box-shadow:0 0 32px rgba(76,175,80,.42);}}
+  .opt{display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;border-radius:18px;padding:15px 17px;margin-bottom:14px;text-decoration:none;border:1.5px solid;transition:transform .12s;}
+  .opt:active{transform:scale(.985);}
+  .opt-em{flex-shrink:0;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 6px 14px rgba(0,0,0,.45),inset 0 -6px 10px rgba(0,0,0,.28),inset 0 5px 8px rgba(255,255,255,.28);animation:optFloat 2.6s ease-in-out infinite;}
+  .opt-em span{filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));}
+  .opt-txt{flex:1;min-width:0;}
+  .opt-tag{display:inline-block;font-size:9.5px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;padding:2px 9px;border-radius:20px;animation:optPulse 2.2s ease-in-out infinite;}
+  .opt-h{color:#fff;font-weight:900;font-size:19px;margin:5px 0 2px;}
+  .opt-s{color:var(--text2);font-size:12.5px;line-height:1.4;}
+  .opt-cta{flex-shrink:0;font-weight:900;font-size:15px;color:#111;padding:10px 14px;border-radius:12px;white-space:nowrap;background-size:220% 100%;animation:optShine 2.8s linear infinite;}
+  @media(max-width:520px){.opt-cta{display:none;}}
+  .opt.start{background:linear-gradient(135deg,#2c1c04,#3c2707 55%,#191002);border-color:rgba(245,166,35,.6);box-shadow:0 0 24px rgba(245,166,35,.16);animation:glowGold 3.2s ease-in-out infinite;}
+  .opt.start .opt-em{background:radial-gradient(circle at 34% 28%,#ffe0a0,#F5A623 52%,#c47f12);}
+  .opt.start .opt-tag{background:var(--gold);color:#111;}
+  .opt.start .opt-cta{background:linear-gradient(90deg,#F5A623,#fff0cf,#F5A623);}
+  .opt.solo{background:linear-gradient(135deg,#1e132b,#281640 55%,#120b1c);border-color:rgba(155,89,182,.6);box-shadow:0 0 24px rgba(155,89,182,.16);animation:glowPurple 3.2s ease-in-out .8s infinite;}
+  .opt.solo .opt-em{animation-delay:.5s;}.opt.solo .opt-tag{animation-delay:.5s;}
+  .opt.solo .opt-em{background:radial-gradient(circle at 34% 28%,#e6c9f5,#9b59b6 52%,#6a2f86);}
+  .opt.solo .opt-tag{background:#c9a0e0;color:#20112b;}
+  .opt.solo .opt-cta{background:linear-gradient(90deg,#b06fd0,#f0e0fa,#b06fd0);}
+  .opt.join{background:linear-gradient(135deg,#0e1622,#132338 55%,#0a0f18);border-color:rgba(33,150,243,.6);box-shadow:0 0 24px rgba(33,150,243,.16);animation:glowBlue 3.2s ease-in-out 1.6s infinite;}
+  .opt.join .opt-em{animation-delay:1s;}.opt.join .opt-tag{animation-delay:1s;}
+  .opt.join .opt-em{background:radial-gradient(circle at 34% 28%,#bfe0ff,#2196F3 52%,#125a9c);}
+  .opt.join .opt-tag{background:#8cc6ff;color:#0a1c2e;}
+  .opt.join .opt-cta{background:linear-gradient(90deg,#3aa0f5,#d4ecff,#3aa0f5);}
+  .opt.online{background:linear-gradient(135deg,#0c1a12,#123420 55%,#0a0f0c);border-color:rgba(76,175,80,.6);box-shadow:0 0 24px rgba(76,175,80,.16);animation:glowGreen 3.2s ease-in-out 2.4s infinite;}
+  .opt.online .opt-em{animation-delay:1.5s;}.opt.online .opt-tag{animation-delay:1.5s;}
+  @media(prefers-reduced-motion:reduce){.opt,.opt-em,.opt-tag,.opt-cta,.bgo-promo,.bgo-ball,.bgo-new,.bgo-cta{animation:none !important;}}
+  .opt.online .opt-em{background:radial-gradient(circle at 34% 28%,#c6f0c9,#4CAF50 52%,#2b7d2f);}
+  .opt.online .opt-tag{background:#9be0a0;color:#0d2410;}
+  .opt.online .opt-cta{background:linear-gradient(90deg,#5cc063,#d4f5d6,#5cc063);}
+  .foot{margin-top:16px;}
+  .foot button{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit;}
+  .foot .footlink{color:var(--text3);font-size:11px;text-decoration:underline;}
+  .updates{margin-top:16px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:left;}
+  .up-ttl{font-size:13px;font-weight:800;margin-bottom:8px;}
+  .up-row{display:flex;gap:8px;}
+  .up-row input{flex:1;min-width:0;font-size:14px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;}
+  .up-row button{padding:10px 14px;font-size:13px;font-weight:800;background:var(--orange);border:none;border-radius:10px;color:#000;cursor:pointer;white-space:nowrap;}
+  .up-row button:disabled{opacity:.5;}
+  .up-msg{font-size:11px;margin-top:6px;min-height:13px;}.up-msg.ok{color:var(--green);}.up-msg.err{color:var(--red);}
+  .up-consent{display:flex;align-items:flex-start;gap:6px;font-size:10px;color:var(--text3);margin-top:8px;}.up-consent a{color:var(--text2);}
+  /* disclaimer */
+  .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:18px;}
+  .disc-overlay.show{display:flex;}
+  .disc-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:22px 20px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto;text-align:left;}
+  .disc-box h2{font-size:20px;font-weight:900;letter-spacing:2px;text-align:center;margin-bottom:4px;}
+  .disc-box .disc-sub{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--orange);text-align:center;margin-bottom:14px;}
+  .disc-box p{font-size:13px;line-height:1.6;color:var(--text2);margin-bottom:11px;}
+  .disc-box p strong{color:#fff;}
+  .disc-accept{width:100%;padding:13px;font-size:14px;font-weight:700;background:var(--orange);border:none;border-radius:12px;color:#000;cursor:pointer;letter-spacing:.5px;margin-top:6px;}
+  .disc-note{font-size:10px;color:var(--text3);text-align:center;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="disc-overlay" id="discOverlay">
+  <div class="disc-box">
+    <h2>WODLY</h2>
+    <div class="disc-sub">Before you play</div>
+    <p>WODLY is a fitness game that prompts physical exercise. <strong>Exercise carries risk of injury.</strong></p>
+    <p>Consult a physician before starting any exercise program, especially if you have a medical condition, are pregnant, or have been inactive. Stop immediately if you feel pain, dizziness, or discomfort.</p>
+    <p>You play at your own risk. By continuing, you agree that <strong>you are responsible for exercising safely</strong> within your own ability, and that the creators of WODLY are not liable for any injury, loss, or damage arising from use of this game.</p>
+    <button class="disc-accept" id="discAccept">I understand — let's go</button>
+    <div class="disc-note">You can re-read this anytime from the link at the bottom.</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="suits"><span class="h">♥</span> <span class="d">♦</span> <span class="c">♣</span> <span class="s">♠</span></div>
+  <h1>WODLY</h1>
+  <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
+
+  <div class="heroes">
+    <img src="assets/characters/ninja.png" alt="">
+    <img src="assets/characters/lifter.png" alt="">
+    <img src="assets/characters/runner.png" alt="">
+    <img src="assets/characters/dragon.png" alt="">
+    <img src="assets/characters/gymnast.png" alt="">
+    <img src="assets/characters/champ.png" alt="">
+    <img src="assets/characters/coach.png" alt="">
+  </div>
+
+  <div class="hero-vid">
+    <video src="assets/wodly-home.mp4" poster="assets/wodly-home-poster.jpg"
+           autoplay muted loop playsinline preload="metadata"
+           aria-label="WODLY feature preview"></video>
+  </div>
+
+  <style>
+    @keyframes bgoGlow{0%,100%{box-shadow:0 0 20px rgba(245,166,35,.22);}50%{box-shadow:0 0 36px rgba(245,166,35,.55);}}
+    @keyframes bgoPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+    @keyframes bgoBob{0%,100%{transform:translateY(0) rotate(-7deg);}50%{transform:translateY(-5px) rotate(7deg);}}
+    @keyframes bgoShine{0%{background-position:-140% 0;}100%{background-position:240% 0;}}
+    .bgo-promo{display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;background:linear-gradient(135deg,#2c1c04,#3c2707 55%,#191002);border:1.5px solid rgba(245,166,35,.6);border-radius:18px;padding:15px 17px;margin-bottom:14px;text-decoration:none;animation:bgoGlow 2.4s ease-in-out infinite;}
+    .bgo-ball{flex-shrink:0;width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ffe0a0,#F5A623 52%,#c47f12);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(0,0,0,.45),inset 0 -6px 10px rgba(0,0,0,.22),inset 0 5px 8px rgba(255,255,255,.4);animation:bgoBob 2.2s ease-in-out infinite;}
+    .bgo-ball i{width:33px;height:33px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:900;color:#111;font-size:17px;}
+    .bgo-txt{flex:1;min-width:0;}
+    .bgo-new{display:inline-block;font-size:10px;font-weight:900;letter-spacing:1.5px;color:#111;background:var(--gold);padding:2px 9px;border-radius:20px;animation:bgoPulse 1.5s ease-in-out infinite;}
+    .bgo-h{color:#fff;font-weight:900;font-size:19px;margin:5px 0 1px;}
+    .bgo-h b{color:var(--gold);}
+    .bgo-s{color:var(--text2);font-size:12.5px;line-height:1.4;}
+    .bgo-cta{flex-shrink:0;font-weight:900;font-size:14px;color:#000;background:linear-gradient(90deg,#F5A623,#fff0cf,#F5A623);background-size:220% 100%;padding:10px 15px;border-radius:12px;white-space:nowrap;animation:bgoShine 2.6s linear infinite;}
+    @media(max-width:520px){.bgo-cta{display:none;}}
+  </style>
+  <div id="installWrap" style="display:none;margin-bottom:14px;">
+    <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#141414,#0b0b0b);border:1px solid rgba(245,166,35,.45);border-radius:16px;padding:12px 14px;">
+      <img src="assets/icon-512.png" alt="" width="42" height="42" style="width:42px;height:42px;border-radius:10px;flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:800;font-size:14px;color:#fff;">Add WODLY to your home screen</div>
+        <div style="font-size:12px;color:var(--text2);">One tap to play anytime — just like an app.</div>
+      </div>
+      <button id="installBtn" style="flex-shrink:0;background:var(--gold);color:#000;border:none;border-radius:10px;font-weight:800;font-size:13px;padding:9px 15px;cursor:pointer;font-family:inherit;">Add</button>
+      <button id="installX" aria-label="Dismiss" style="flex-shrink:0;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:0 2px;">×</button>
+    </div>
+    <div id="iosHint" style="display:none;margin-top:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:12.5px;color:var(--text2);line-height:1.55;">
+      On iPhone/iPad in <b style="color:#fff;">Safari</b>: tap the <b style="color:#fff;">Share</b> button at the bottom, scroll down, then choose <b style="color:var(--gold);">“Add to Home Screen.”</b>
+    </div>
+  </div>
+  <a href="/daily" style="display:block;text-align:center;background:linear-gradient(150deg,#2a1e07,#140e04);border:1px solid rgba(245,166,35,.5);border-radius:16px;padding:13px;margin-bottom:14px;text-decoration:none;box-shadow:0 0 20px rgba(245,166,35,.12);">
+    <span style="color:var(--gold);font-weight:800;font-size:15px;">🔥 Today's Daily Workout</span>
+    <span style="display:block;color:var(--text2);font-size:12.5px;margin-top:2px;">The workout everyone's doing today — play it & climb the daily board →</span>
+  </a>
+
+  <a class="opt start" href="board">
+    <div class="opt-em"><span>▶️</span></div>
+    <div class="opt-txt">
+      <span class="opt-tag">Big screen</span>
+      <div class="opt-h">Start a game</div>
+      <div class="opt-s">This screen becomes the board — players join from their phones. One player or a whole class.</div>
+    </div>
+    <span class="opt-cta">Start →</span>
+  </a>
+  <a class="opt solo" href="board?solo=1">
+    <div class="opt-em"><span>🎲</span></div>
+    <div class="opt-txt">
+      <span class="opt-tag">1 device</span>
+      <div class="opt-h">Play solo</div>
+      <div class="opt-s">Just you — set up a workout and play right here. Pass &amp; play with friends too.</div>
+    </div>
+    <span class="opt-cta">Play →</span>
+  </a>
+  <a class="opt join" href="play">
+    <div class="opt-em"><span>📲</span></div>
+    <div class="opt-txt">
+      <span class="opt-tag">Your phone</span>
+      <div class="opt-h">Join a game</div>
+      <div class="opt-s">Enter the room code shown on the board and jump in.</div>
+    </div>
+    <span class="opt-cta">Join →</span>
+  </a>
+  <a class="opt online" href="lobby">
+    <div class="opt-em"><span>🌐</span></div>
+    <div class="opt-txt">
+      <span class="opt-tag">Worldwide</span>
+      <div class="opt-h">Play online</div>
+      <div class="opt-s">Public lobby — schedule a match or join players anywhere.</div>
+    </div>
+    <span class="opt-cta">Go →</span>
+  </a>
+
+  <a class="bgo-promo" href="/bingo">
+    <div class="bgo-ball"><i>B</i></div>
+    <div class="bgo-txt">
+      <span class="bgo-new">✨ BRAND NEW</span>
+      <div class="bgo-h">Fitness <b>Bingo</b></div>
+      <div class="bgo-s">Bingo meets the gym — everyone races their own card, first to a line wins. Try it now →</div>
+    </div>
+    <span class="bgo-cta">Try it →</span>
+  </a>
+
+  <a class="bgo-promo wild-promo" href="/wild">
+    <div class="bgo-ball"><i>W</i></div>
+    <div class="bgo-txt">
+      <span class="bgo-new">✨ BRAND NEW</span>
+      <div class="bgo-h">WODLY <b>Wild</b></div>
+      <div class="bgo-s">A UNO-style card battle — play a card, everyone else does the reps. Empty your hand first to win. Big screen + phones →</div>
+    </div>
+    <span class="bgo-cta">Try it →</span>
+  </a>
+
+  <div style="display:flex;gap:18px;justify-content:center;margin:4px 0 18px;flex-wrap:wrap;">
+    <a href="/leaderboard" style="font-size:13.5px;color:var(--gold);text-decoration:none;font-weight:700;">🏆 Leaderboard</a>
+    <a href="/gyms" style="font-size:13.5px;color:var(--gold);text-decoration:none;font-weight:700;">🏋️ Gyms</a>
+    <a href="/me" style="font-size:13.5px;color:var(--gold);text-decoration:none;font-weight:700;">📈 My stats</a>
+  </div>
+
+  <div class="updates">
+    <div class="up-ttl">🔔 Get updates</div>
+    <div class="up-row"><input id="upEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email"><button id="upBtn">Notify me</button></div>
+    <div class="up-msg" id="upMsg"></div>
+    <label class="up-consent"><input type="checkbox" id="upConsent"> Email me about new boards &amp; worldwide matches. <a href="/privacy">Privacy</a></label>
+  </div>
+
+  <div class="foot"><button id="discLink">Health &amp; safety disclaimer</button> &nbsp;·&nbsp; <a href="/terms" class="footlink">Terms</a> &nbsp;·&nbsp; <a href="/privacy" class="footlink">Privacy</a> &nbsp;·&nbsp; <a href="/admin" class="footlink">Admin</a></div>
+</div>
+
+<script>
+  const DISC_KEY='wodly_disc_v1';
+  const ov=document.getElementById('discOverlay');
+  document.getElementById('discAccept').onclick=()=>{try{localStorage.setItem(DISC_KEY,'1');}catch(e){}ov.classList.remove('show');};
+  document.getElementById('discLink').onclick=()=>ov.classList.add('show');
+  (function(){let seen=false;try{seen=localStorage.getItem(DISC_KEY)==='1';}catch(e){}if(!seen)ov.classList.add('show');})();
+
+  const SUPA_URL='https://ynznwosssctxbdiauekj.supabase.co',SUPA_KEY='sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq';
+  const $$=id=>document.getElementById(id);
+  $$('upBtn').onclick=async()=>{const em=($$('upEmail').value||'').trim(),msg=$$('upMsg');
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='Enter a valid email.';msg.className='up-msg err';return;}
+    if(!$$('upConsent').checked){msg.textContent='Please tick the consent box.';msg.className='up-msg err';return;}
+    $$('upBtn').disabled=true;msg.textContent='…';msg.className='up-msg';
+    try{const r=await fetch(SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({email:em,source:'home',consent:true})});
+      if(r.status<300){msg.textContent="You're on the list ✓";msg.className='up-msg ok';}
+      else if(r.status===409){msg.textContent="You're already subscribed ✓";msg.className='up-msg ok';}
+      else{msg.textContent='Could not subscribe — try again later.';msg.className='up-msg err';$$('upBtn').disabled=false;}
+    }catch(e){msg.textContent='Network error.';msg.className='up-msg err';$$('upBtn').disabled=false;}
+  };
+
+  // ── Add to Home Screen (PWA install) ──
+  (function(){
+    const wrap=$$('installWrap'),btn=$$('installBtn'),x=$$('installX'),iosHint=$$('iosHint');
+    if(!wrap)return;
+    let deferred=null;
+    const standalone=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+    const iOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    let dismissed=false;try{dismissed=localStorage.getItem('wodly_a2hs')==='x';}catch(e){}
+    function reveal(){if(!standalone&&!dismissed)wrap.style.display='block';}
+    x.onclick=function(){wrap.style.display='none';try{localStorage.setItem('wodly_a2hs','x');}catch(e){}};
+    if(iOS&&!standalone){reveal();btn.textContent='How?';btn.onclick=function(){iosHint.style.display=(iosHint.style.display==='none'||!iosHint.style.display)?'block':'none';};}
+    window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;btn.textContent='Add';iosHint.style.display='none';reveal();btn.onclick=async function(){if(!deferred)return;deferred.prompt();const r=await deferred.userChoice;deferred=null;if(r&&r.outcome==='accepted')wrap.style.display='none';};});
+    window.addEventListener('appinstalled',function(){wrap.style.display='none';try{localStorage.setItem('wodly_a2hs','x');}catch(e){}});
+  })();
+  if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
+</script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}
+(function(){var map=[['.opt.start','board'],['.opt.solo','solo'],['.opt.join','join'],['.opt.online','online'],['.bgo-promo:not(.wild-promo)','bingo'],['.wild-promo','wild']];map.forEach(function(p){var el=document.querySelector(p[0]);if(el)el.addEventListener('click',function(){wtrack('home_mode',{mode:p[1]});});});})();</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

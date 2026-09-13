@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WODLY WILD — Play</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  :root{--red:#E8363D;--blue:#2196F3;--green:#4CAF50;--gold:#F5A623;--bg:#0a0a0b;--surface:#161616;--surface2:#1f1f1f;--border:#333;--text:#fff;--text2:#aaa;--text3:#777;}
+  body{font-family:system-ui,sans-serif;background:radial-gradient(circle at 50% -8%,#1d1d22,#0a0a0b 60%);color:#fff;min-height:100vh;max-width:480px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));}
+  .brand{text-align:center;margin-bottom:14px;}.brand h1{font-size:22px;font-weight:900;letter-spacing:3px;}.brand h1 b{color:var(--gold);}
+  .screen{display:none;}.screen.active{display:block;}
+  label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;display:block;margin:14px 0 6px;}
+  input{width:100%;font-size:16px;padding:13px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:#fff;}
+  .btn{display:block;width:100%;margin-top:16px;padding:15px;font-size:16px;font-weight:800;letter-spacing:.5px;background:var(--gold);border:none;border-radius:14px;color:#000;cursor:pointer;font-family:inherit;}
+  .btn.ghost{background:transparent;border:2px solid var(--gold);color:var(--gold);}
+  .btn:disabled{opacity:.45;}
+  .err{color:var(--red);font-size:13px;margin-top:10px;min-height:16px;text-align:center;}
+  .hint{text-align:center;font-size:13px;color:var(--text2);margin:-4px 0 14px;line-height:1.5;}
+  .avatars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .av{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:6px;cursor:pointer;text-align:center;}
+  .av.on{border-color:var(--gold);}.av img{width:100%;aspect-ratio:1;object-fit:contain;}.av span{font-size:10px;color:var(--text3);display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .swatches{display:flex;gap:9px;flex-wrap:wrap;}.sw{width:34px;height:34px;border-radius:50%;border:2px solid var(--border);cursor:pointer;}.sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--gold);}
+  /* game */
+  .statusbar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:12px;}
+  .statusbar img{width:30px;height:30px;object-fit:contain;}.statusbar .nm{font-weight:800;flex:1;}
+  .top{text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px;}
+  .disc{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:110px;height:110px;border-radius:16px;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.5);}
+  .disc .rn{font-size:44px;font-weight:900;line-height:1;}.disc .mv{font-size:10px;font-weight:800;text-transform:uppercase;margin-top:3px;}
+  .disc.cYellow .rn,.disc.cYellow .mv{color:#3a2500;}
+  .cRed{background:linear-gradient(150deg,#f0555b,#c8262c);}.cBlue{background:linear-gradient(150deg,#42a5f5,#1976d2);}
+  .cGreen{background:linear-gradient(150deg,#66bb6a,#388e3c);}.cYellow{background:linear-gradient(150deg,#ffca4a,#e69412);color:#3a2500;}
+  .cWild{background:linear-gradient(150deg,#2a2a2e,#111);border:1.5px solid var(--gold);}
+  .cue{font-size:14px;color:var(--text2);margin-top:10px;}.cue b{color:#fff;}
+  .bigcue{text-align:center;padding:30px 14px;background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:12px;}
+  .bigcue .r{font-size:64px;font-weight:900;color:var(--gold);line-height:1;}.bigcue .m{font-size:24px;font-weight:900;margin-top:4px;}.bigcue .w{font-size:14px;color:var(--text2);}
+  .turnlbl{text-align:center;font-weight:900;font-size:17px;margin:6px 0 4px;}
+  .turnlbl.me{color:var(--gold);}
+  .hand{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:7px;margin-top:12px;}
+  .pc{aspect-ratio:.68;border-radius:11px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:inherit;padding:3px;box-shadow:0 3px 8px rgba(0,0,0,.4);opacity:.36;}
+  .pc.play{opacity:1;}.pc.play:active{transform:scale(.94);}
+  .pc .rn{font-size:26px;font-weight:900;line-height:1;}.pc .mv{font-size:7.5px;font-weight:800;text-transform:uppercase;text-align:center;margin-top:2px;line-height:1.05;}.pc .act{font-size:11px;font-weight:900;text-align:center;line-height:1.05;}
+  .cYellow .rn,.cYellow .mv,.cYellow .act{color:#3a2500;}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.86);display:none;align-items:center;justify-content:center;z-index:50;padding:22px;}.overlay.on{display:flex;}
+  .obox{background:var(--surface);border:2px solid var(--gold);border-radius:20px;padding:24px;text-align:center;max-width:380px;width:100%;}
+  .obox h2{font-size:22px;font-weight:900;margin-bottom:8px;}
+  .colorpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;}.colorpick button{padding:15px;border:none;border-radius:12px;font-weight:900;font-size:14px;color:#fff;cursor:pointer;font-family:inherit;}
+  .stand{display:flex;flex-direction:column;gap:7px;margin:14px 0;}.stand .sr{display:flex;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 13px;}.stand .sr .pos{font-weight:900;color:var(--gold);width:30px;}.stand .sr .nm{flex:1;font-weight:800;text-align:left;}.stand .sr .rp{color:var(--text2);font-size:12px;}
+  .foot{text-align:center;margin-top:18px;}.foot a{color:var(--text3);font-size:13px;text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="brand"><h1>WODLY <b>WILD</b></h1></div>
+
+<!-- JOIN -->
+<div id="join" class="screen active">
+  <div class="hint">Enter the code from the big screen.</div>
+  <label>Room code</label>
+  <input id="code" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;letter-spacing:3px;font-weight:800;text-align:center;">
+  <label>Your name</label>
+  <input id="pname" maxlength="16" placeholder="Your name" autocomplete="off">
+  <label>Pick a character</label>
+  <div class="avatars" id="avatars"></div>
+  <label>Daub color</label>
+  <div class="swatches" id="sw"></div>
+  <button class="btn" id="joinBtn">Join game</button>
+  <div class="err" id="joinErr"></div>
+  <div class="foot"><a href="/">← back to WODLY</a></div>
+</div>
+
+<!-- WAITING for start -->
+<div id="wait" class="screen"><div class="bigcue" style="margin-top:40px;"><div class="w">You're in! 🎉</div><div class="m" style="margin-top:10px;">Waiting for the host to start…</div></div></div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+  <div class="statusbar"><img id="sbAv" src=""><span class="nm" id="sbName"></span><span id="sbCount" style="font-size:12px;color:var(--gold);font-weight:800;"></span></div>
+  <div id="turnArea"></div>
+  <div id="handArea"></div>
+</div>
+
+<!-- WON -->
+<div id="won" class="screen"><div class="bigcue" style="margin-top:20px;"><div id="wonTitle" class="m"></div></div><div id="wonStand"></div><div class="foot"><a href="/">← back to WODLY</a></div></div>
+
+<div class="overlay" id="ov"><div class="obox" id="obox"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="wodly-core.js"></script>
+<script>
+var W=window.WODLY||{}, sb=null, $=function(id){return document.getElementById(id);};
+try{sb=supabase.createClient('https://ynznwosssctxbdiauekj.supabase.co','sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq');}catch(e){}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});$(id).classList.add('active');}
+function wtrack(n,d){try{window.va&&window.va('event',Object.assign({name:n},d||{}));}catch(e){}}
+var COLORS=['red','blue','green','yellow'];
+var CLS={red:'cRed',blue:'cBlue',green:'cGreen',yellow:'cYellow',wild:'cWild'};
+var ME={}, ROOM=null, MYID=null, MOVES={}, seq=0, myDrew=false, lastTurn=null, ending=false;
+
+// avatars + colors
+(function(){var g=$('avatars');(W.AVATARS||[]).forEach(function(a){var d=document.createElement('div');d.className='av';d.innerHTML='<img src="'+a.img+'"><span>'+a.name+'</span>';d.onclick=function(){g.querySelectorAll('.av').forEach(function(x){x.classList.remove('on');});d.classList.add('on');ME.avatar=a.id;ME.img=a.img;setColor(a.color);};g.appendChild(d);});})();
+var COLS=['#F5A623','#E8363D','#4CAF50','#2196F3','#9b59b6','#00BCD4','#FF8A65','#FFFFFF'];
+function setColor(c){ME.color=c;document.querySelectorAll('#sw .sw').forEach(function(x){x.classList.toggle('on',x.dataset.c===c);});}
+(function(){var w=$('sw');COLS.forEach(function(c){var s=document.createElement('div');s.className='sw';s.style.background=c;s.dataset.c=c;s.onclick=function(){setColor(c);};w.appendChild(s);});})();
+(function(){var p=new URLSearchParams(location.search);var c=(p.get('room')||'').toUpperCase();if(c)$('code').value=c;})();
+(function(){try{var r=sb.rpc('gym_names');}catch(e){}})();
+
+$('joinBtn').onclick=async function(){
+  var code=($('code').value||'').trim().toUpperCase();var name=($('pname').value||'').trim();
+  if(!code||code.length<4){$('joinErr').textContent='Enter the 4-letter code.';return;}
+  if(!name){$('joinErr').textContent='Enter your name.';return;}
+  if(!ME.avatar){var f=document.querySelector('.av');if(f)f.click();}
+  $('joinBtn').disabled=true;$('joinErr').textContent='';
+  try{
+    var rr=await sb.from('rooms').select('*').eq('code',code).order('created_at',{ascending:false}).limit(1).maybeSingle();
+    var room=rr.data;
+    if(!room||!room.settings||room.settings.game!=='wild'){$('joinErr').textContent='That code isn’t a WILD game.';$('joinBtn').disabled=false;return;}
+    if(room.status==='finished'){$('joinErr').textContent='That game already ended.';$('joinBtn').disabled=false;return;}
+    ROOM=room;MOVES=room.settings.moves||{};
+    var cid='c_'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+    var ins=await sb.from('players').insert({room_id:room.id,client_id:cid,name:name,avatar:ME.avatar,color:ME.color}).select().single();
+    if(ins.error){$('joinErr').textContent=ins.error.message;$('joinBtn').disabled=false;return;}
+    MYID=ins.data.id;ME.name=name;wtrack('wild_player_joined');
+    $('sbAv').src=ME.img||'';$('sbName').textContent=name;
+    show('wait');poll();
+  }catch(e){$('joinErr').textContent='Network error.';$('joinBtn').disabled=false;}
+};
+
+var pollT=null, myHand=[];
+function poll(){if(pollT)clearInterval(pollT);pollT=setInterval(tick,900);tick();}
+async function tick(){
+  if(ending)return;
+  try{
+    var rr=await sb.from('rooms').select('status,state').eq('id',ROOM.id).maybeSingle();
+    if(!rr.data)return;var st=rr.data.state||{};
+    if(rr.data.status==='finished'&&st.phase==='finished'){return finish(st);}
+    if(rr.data.status!=='playing'){show('wait');return;}
+    // fetch my hand
+    var mr=await sb.from('players').select('wild_hand').eq('id',MYID).maybeSingle();
+    myHand=(mr.data&&mr.data.wild_hand)||[];
+    render(st);
+  }catch(e){}
+}
+
+function faceInner(card,big){
+  if(card.k==='num')return '<div class="rn">'+card.v+'</div><div class="mv">'+esc(MOVES[card.c]||'')+'</div>';
+  var a={skip:'SKIP',rev:'↻',d2:'+2',wild:'WILD',allin:'ALL IN'}[card.k];
+  return '<div class="act">'+a+'</div>'+(card.c!=='wild'?'<div class="mv">'+esc(MOVES[card.c]||'')+'</div>':'');
+}
+function playable(card,top,ac){if(card.c==='wild')return true;if(card.c===ac)return true;if(top.k==='num'&&card.k==='num'&&card.v===top.v)return true;if((top.k==='skip'||top.k==='rev'||top.k==='d2')&&card.k===top.k)return true;return false;}
+
+function render(st){
+  show('game');
+  var myTurn=(st.turn===MYID);
+  if(st.turn!==lastTurn){lastTurn=st.turn;if(myTurn){/* fresh turn */}else{myDrew=false;}}
+  $('sbCount').textContent=(myHand.length)+' cards';
+  var top=st.top,ac=st.activeColor;var a=st.action;
+  var ta=$('turnArea');
+  // action cue (what the room is doing) — show when someone else just played reps
+  var cueHtml='';
+  if(a&&(a.type==='reps'||a.type==='allin')){
+    var meIncluded=(a.type==='allin')||(a.by!==MYID);
+    cueHtml='<div class="bigcue"><div class="w">'+(a.type==='allin'?'🔥 ALL IN — everybody!':(a.by===MYID?'You played it — others go':'Do it!'))+'</div><div class="r">'+a.reps+'</div><div class="m">'+esc(a.move)+'</div>'+(meIncluded?'':'<div class="w" style="margin-top:6px;color:var(--gold)">You get the break 😎</div>')+'</div>';
+  }
+  if(myTurn){
+    ta.innerHTML=cueHtml+'<div class="turnlbl me">Your turn</div><div class="top"><div class="disc '+CLS[ac]+'">'+faceInner(top)+'</div><div class="cue">Match <b>'+ac.toUpperCase()+'</b> ('+esc(MOVES[ac]||'')+')'+(top.k==='num'?' or a <b>'+top.v+'</b>':'')+'</div></div>';
+    var any=false;
+    var hand='<div class="hand">'+myHand.map(function(card,idx){var ok=playable(card,top,ac);if(ok)any=true;return '<button class="pc '+CLS[card.c]+(ok?' play':'')+'" data-i="'+idx+'"'+(ok?'':' disabled')+'>'+faceInner(card)+'</button>';}).join('')+'</div>';
+    var ctl='';
+    if(!any&&!myDrew)ctl='<button class="btn ghost" id="drawBtn">🎴 No match — draw a card</button>';
+    else if(!any&&myDrew){var rp=(top.k==='num')?Math.max(1,Math.round(top.v*mult())):Math.max(1,Math.round(3*mult()));ctl='<button class="btn" id="penBtn">Still no match — bank '+rp+' '+esc(MOVES[ac])+'</button>';}
+    $('handArea').innerHTML=hand+ctl;
+    document.querySelectorAll('#handArea .pc.play').forEach(function(b){b.onclick=function(){playCard(+b.dataset.i);};});
+    if($('drawBtn'))$('drawBtn').onclick=function(){myDrew=true;sendIntent({type:'draw'});$('drawBtn').disabled=true;};
+    if($('penBtn'))$('penBtn').onclick=function(){sendIntent({type:'penalty'});$('penBtn').disabled=true;myDrew=false;};
+  }else{
+    ta.innerHTML=cueHtml+'<div class="turnlbl">'+esc(nameOf(st,st.turn))+"'s turn</div><div class=\"top\"><div class=\"disc "+CLS[ac]+'">'+faceInner(top)+'</div><div class="cue">Active: <b>'+ac.toUpperCase()+'</b></div></div>';
+    $('handArea').innerHTML='<div class="hand">'+myHand.map(function(card){return '<button class="pc '+CLS[card.c]+'" disabled>'+faceInner(card)+'</button>';}).join('')+'</div>';
+  }
+}
+function mult(){return (ROOM&&ROOM.settings&&ROOM.settings.mult)||1;}
+function nameOf(st,pid){return (st.names&&st.names[pid])||'Someone';}
+
+function sendIntent(obj){seq++;obj.seq=seq;try{sb.from('players').update({wild_intent:obj}).eq('id',MYID);}catch(e){}}
+function playCard(idx){
+  var card=myHand[idx];
+  if(card.c==='wild'){
+    $('obox').innerHTML='<h2>'+(card.k==='allin'?'ALL IN 🔥':'WILD')+'</h2><div style="color:var(--text2);font-size:14px;">'+(card.k==='allin'?'Pick the movement the room does:':'Pick the next color:')+'</div><div class="colorpick">'+COLORS.map(function(c){return '<button class="'+CLS[c]+'" data-c="'+c+'">'+c.toUpperCase()+'<br><span style="font-size:11px;opacity:.85">'+esc(MOVES[c]||'')+'</span></button>';}).join('')+'</div>';
+    $('ov').classList.add('on');
+    $('obox').querySelectorAll('[data-c]').forEach(function(b){b.onclick=function(){$('ov').classList.remove('on');sendIntent({type:'play',idx:idx,color:b.dataset.c});lockHand();};});
+  }else{sendIntent({type:'play',idx:idx});lockHand();}
+}
+function lockHand(){document.querySelectorAll('#handArea .pc').forEach(function(b){b.classList.remove('play');b.disabled=true;});myDrew=false;}
+
+function finish(st){
+  ending=true;if(pollT)clearInterval(pollT);
+  var s=st.standings||[];var win=(st.winner===MYID);
+  $('wonTitle').innerHTML=win?'🏆 You win!':esc((s.filter(function(x){return x.win;})[0]||{}).name||'Winner')+' wins';
+  $('wonStand').innerHTML='<div class="stand">'+s.map(function(o,i){return '<div class="sr"><span class="pos">'+(o.win?'🏆':(i+1))+'</span><span class="nm">'+esc(o.name)+(o.id===MYID?' (you)':'')+'</span><span class="rp">'+o.reps+' reps</span></div>';}).join('')+'</div>';
+  show('won');
+}
+</script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
