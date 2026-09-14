@@ -89,6 +89,7 @@
       <datalist id="moveList"></datalist>
       <label>Hand size</label>
       <div class="seg" id="handSeg"><button data-v="5">5</button><button data-v="7" class="on">7</button><button data-v="9">9</button></div>
+      <div id="wildEst" style="margin-top:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.5;"></div>
       <label>Gym / box name <span style="text-transform:none;letter-spacing:0;color:var(--text3);">optional — counts toward the gym leaderboard</span></label>
       <input type="text" id="gymName" list="gymList" placeholder="e.g. CrossFit Willis" maxlength="40" autocomplete="off"><datalist id="gymList"></datalist>
       <button class="btn block" id="hostBtn">📱 Host for phones →</button>
@@ -149,8 +150,11 @@ var PREDECKS=[
 var S={mult:1,hand:7,moves:Object.assign({},PREDECKS[0].mv),gym:null};
 
 function segWire(id,cb){$(id).querySelectorAll('button').forEach(function(b){b.onclick=function(){$(id).querySelectorAll('button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');cb(b.dataset.v);};});}
-segWire('diffSeg',function(v){S.mult=parseFloat(v);});
-segWire('handSeg',function(v){S.hand=parseInt(v,10);});
+segWire('diffSeg',function(v){S.mult=parseFloat(v);updateEst();});
+segWire('handSeg',function(v){S.hand=parseInt(v,10);updateEst();});
+var WREF={1:{5:{min:5,reps:55},7:{min:8,reps:85},9:{min:10,reps:110}},2:{5:{min:9,reps:130},7:{min:11,reps:160},9:{min:14,reps:200}},3:{5:{min:14,reps:200},7:{min:16,reps:245},9:{min:21,reps:320}}};
+function updateEst(){var el=$('wildEst');if(!el)return;var r=(WREF[S.mult]||WREF[2])[S.hand]||WREF[2][7];var eff=r.reps<90?'Quick':(r.reps<170?'Moderate':(r.reps<260?'Tough':'Grind'));el.innerHTML='<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px;">What to expect (per player)</div><span style="color:#fff;font-weight:800;">~'+r.reps+' reps</span> · <span style="color:#fff;font-weight:800;">~'+r.min+' min</span> · <span style="color:var(--gold);font-weight:700;">'+eff+'</span><br><span style="color:var(--text3);font-size:11.5px;">Estimated at ~4 players — more players means a bit more per person and a longer game.</span>';}
+updateEst();
 $('preset').innerHTML='<option value="-1">Custom — set your own</option>'+PREDECKS.map(function(p,i){return '<option value="'+i+'">'+p.name+'</option>';}).join('');
 $('preset').value='0';
 $('preset').onchange=function(){var i=+$('preset').value;if(i>=0){S.moves=Object.assign({},PREDECKS[i].mv);buildMoveInputs();}};
@@ -170,7 +174,7 @@ function repsFor(v){return Math.max(1,Math.round(v*S.mult));}
 function buildDeck(){var d=[];COLORS.forEach(function(c){for(var v=1;v<=9;v++){d.push({c:c,k:'num',v:v});d.push({c:c,k:'num',v:v});}for(var kk=0;kk<2;kk++){d.push({c:c,k:'skip'});d.push({c:c,k:'rev'});d.push({c:c,k:'d2'});}});for(var w=0;w<4;w++){d.push({c:'wild',k:'wild'});d.push({c:'wild',k:'allin'});}return shuffle(d);}
 function playable(card,top,activeColor){if(card.c==='wild')return true;if(card.c===activeColor)return true;if(top.k==='num'&&card.k==='num'&&card.v===top.v)return true;if((top.k==='skip'||top.k==='rev'||top.k==='d2')&&card.k===top.k)return true;return false;}
 
-var HOST=null, POLL=null, PL=[], deck=[], hands={}, order=[], turn=0, dir=1, activeColor='red', top=null, pen={}, done={}, drew=false, lastSeq={}, aseq=0, over=false;
+var HOST=null, POLL=null, PL=[], deck=[], hands={}, order=[], turn=0, dir=1, activeColor='red', top=null, pen={}, done={}, drew=false, lastSeq={}, aseq=0, over=false, starting=false;
 
 function genCode(){var C='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';for(var i=0;i<4;i++)s+=C[rint(0,C.length-1)];return s;}
 
@@ -199,19 +203,22 @@ $('hostBtn').onclick=async function(){
 };
 function clearPoll(){if(POLL){clearInterval(POLL);POLL=null;}}
 function pollLobby(){clearPoll();POLL=setInterval(async function(){
+  if(document.hidden)return;
   try{var r=await sb.from('players').select('id,name,color,avatar').eq('room_id',HOST.id).order('created_at');PL=r.data||[];
     $('hCount').textContent=PL.length;
     $('hPlayers').innerHTML=PL.length?PL.map(function(p){return '<div class="pchip"><span class="pdot" style="background:'+(p.color||'#F5A623')+'"></span>'+esc(p.name||'Player')+'</div>';}).join(''):'<div class="note">Waiting for players…</div>';
   }catch(e){}
 },1500);}
 $('hCancel').onclick=async function(){try{if(HOST)await sb.from('rooms').update({status:'finished'}).eq('id',HOST.id);}catch(e){}reset();};
-function reset(){clearPoll();show('setup');HOST=null;over=false;}
+function reset(){clearPoll();show('setup');HOST=null;over=false;starting=false;var b=$('hStart');if(b){b.disabled=false;b.textContent='Start game';}}
 
 $('hStart').onclick=async function(){
-  if(PL.length<2){if(!confirm('Need 2+ players. Start anyway?'))return;if(PL.length<1)return;}
+  if(starting)return; // guard against double-taps
+  if(PL.length<2){var b=$('hStart');b.textContent='Need at least 2 players…';setTimeout(function(){b.textContent='Start game';},1800);return;}
+  starting=true;$('hStart').disabled=true;
   deck=buildDeck();hands={};order=PL.map(function(p){return p.id;});pen={};done={};lastSeq={};dir=1;turn=0;over=false;
   order.forEach(function(pid){hands[pid]=deck.splice(0,S.hand);pen[pid]={};done[pid]={};lastSeq[pid]=0;});
-  while(deck.length){top=deck.shift();if(top.k==='num')break;deck.push(top);top=null;}
+  var _g=0;while(deck.length){if(++_g>500)break;top=deck.shift();if(top.k==='num')break;deck.push(top);top=null;}
   activeColor=top.c;
   // write hands to each player privately
   for(var i=0;i<order.length;i++){await sb.from('players').update({wild_hand:hands[order[i]],wild_intent:null}).eq('id',order[i]);}
@@ -230,7 +237,7 @@ function pName(pid){var p=PL.filter(function(x){return x.id===pid;})[0];return p
 function moveOf(color){return S.moves[color];}
 
 function pollIntents(){clearPoll();POLL=setInterval(async function(){
-  if(over)return;
+  if(over||document.hidden)return;
   try{var r=await sb.from('players').select('id,wild_intent').eq('room_id',HOST.id);var rows=r.data||[];
     var cur=curId();
     rows.forEach(function(row){
