@@ -197,6 +197,12 @@
   .mini .mr{font-size:18px;font-weight:900;color:#fff;}
   .mini .mm{font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .mini .mtime{font-size:9px;color:var(--text3);margin-top:4px;font-variant-numeric:tabular-nums;}
+  .solorecap{max-width:440px;margin:22px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:left;}
+  .solorecap .srttl{font-size:16px;font-weight:900;margin-bottom:4px;}
+  .solorecap .srsub{font-size:12.5px;color:var(--text2);margin-bottom:10px;line-height:1.5;}
+  .solorecap input[type=email],.solorecap select{width:100%;font-size:15px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:#fff;margin-bottom:8px;}
+  .solorecap .srmsg{font-size:12.5px;margin-top:8px;min-height:16px;}.solorecap .srmsg.ok{color:var(--green);}.solorecap .srmsg.err{color:var(--red);}
+  .solorecap .srconsent{display:block;font-size:11.5px;color:var(--text3);margin-top:8px;line-height:1.5;}.solorecap .srconsent a{color:var(--text2);}
   .winwrap{text-align:center;padding:40px 16px;}
   .winwrap img{width:160px;height:160px;object-fit:contain;}
   .winwrap h2{font-size:34px;font-weight:900;margin-top:10px;}
@@ -452,6 +458,15 @@
       <h2 id="winName">Winner!</h2>
       <div class="wt" id="winTime"></div>
       <div id="winStandings" class="winstand"></div>
+      <div id="soloRecap" class="solorecap" style="display:none;">
+        <div class="srttl">📧 Email me my results</div>
+        <div class="srsub">Get your reps, time &amp; workout recap emailed to you. Plus alerts for new boards &amp; worldwide matches. No spam.</div>
+        <select id="srPlayer" style="display:none;"></select>
+        <input id="srEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
+        <button class="bigbtn inline" id="srBtn" style="width:100%;margin-top:8px;">Email it to me</button>
+        <div id="srMsg" class="srmsg"></div>
+        <label class="srconsent"><input type="checkbox" id="srConsent"> I agree to receive occasional WODLY emails. <a href="/privacy" target="_blank">Privacy</a></label>
+      </div>
       <button class="bigbtn inline" id="againBtn" style="margin-top:24px;">NEW GAME</button>
     </div>
   </div>
@@ -772,7 +787,7 @@ function startSolo(){
   const s=soloSettings||gatherSettings();soloSettings=s;
   s.gym=(($('soloGym')&&$('soloGym').value.trim())||null);registerMovements(s);
   const total=W.DECK_SPACES[s.deckSz]||52;
-  game={ players:soloRoster.map((p,i)=>({id:'L'+i,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[],finished:false,place:null,finishSec:null})),
+  game={ players:soloRoster.map((p,i)=>({id:'L'+i,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[],finished:false,place:null,finishSec:null,dblUsed:false})),
     total, diff:s.diff||'easy', mv:s.mv, units:(s.units||{}), ace:{reps:s.aceReps,move:s.aceMove,unit:(s.aceUnit||'reps')}, finishMode:(s.finishMode==='first'?'first':'all'), boardId:s.boardId||'classic',
     useTimer:false, turnSec:s.turnSec||60, penSec:s.penSec||45, timeCap:(s.cap?(s.capMin||20)*60:0),
     deck:W.buildDeck(), landed:{}, log:[], winner:null, results:null, finishedCount:0, ended:false, startTime:Date.now(),
@@ -804,7 +819,17 @@ function animateSoloDie(dv,cb){
   function paint(v){var h='';for(var i=0;i<9;i++)h+='<span class="sp'+(DIE_FACES[v-1].indexOf(i)>=0?' on':'')+'"></span>';die.innerHTML=h;}
   var t=0,iv=setInterval(function(){paint(1+Math.floor(Math.random()*6));t+=80;if(t>=560){clearInterval(iv);paint(dv);die.classList.add('land');setTimeout(function(){wrap.classList.add('out');setTimeout(function(){wrap.remove();cb();},250);},450);}},80);
 }
-function soloRoll(){if(soloBusy)return;const p=soloCurrent();if(!p)return;soloBusy=true;soloSync();var dv=1+Math.floor(Math.random()*6);animateSoloDie(dv,function(){onRoll(p.id,dv);});}
+function animateSoloDice(a,b,cb){
+  var wrap=document.createElement('div');wrap.className='soloDieWrap';wrap.style.gap='22px';
+  var d1=document.createElement('div'),d2=document.createElement('div');d1.className='soloDie';d2.className='soloDie';wrap.appendChild(d1);wrap.appendChild(d2);document.body.appendChild(wrap);
+  function paint(d,v){var h='';for(var i=0;i<9;i++)h+='<span class="sp'+(DIE_FACES[v-1].indexOf(i)>=0?' on':'')+'"></span>';d.innerHTML=h;}
+  var t=0,iv=setInterval(function(){paint(d1,1+Math.floor(Math.random()*6));paint(d2,1+Math.floor(Math.random()*6));t+=80;if(t>=560){clearInterval(iv);paint(d1,a);paint(d2,b);d1.classList.add('land');d2.classList.add('land');setTimeout(function(){wrap.classList.add('out');setTimeout(function(){wrap.remove();cb();},250);},450);}},80);
+}
+function soloRoll(dbl){if(soloBusy)return;const p=soloCurrent();if(!p)return;
+  if(dbl&&p.dblUsed)dbl=false;
+  soloBusy=true;soloSync();
+  if(dbl){p.dblUsed=true;var a=1+Math.floor(Math.random()*6),b=1+Math.floor(Math.random()*6);animateSoloDice(a,b,function(){onRoll(p.id,a+b);});}
+  else{var dv=1+Math.floor(Math.random()*6);animateSoloDie(dv,function(){onRoll(p.id,dv);});}}
 function soloSync(){
   if(!SOLO)return;const el=$('soloControls');if(!el)return;
   if(game&&game.ended){el.style.display='none';return;}
@@ -815,8 +840,8 @@ function soloSync(){
     el.innerHTML=who+'<div class="card"><div class="mv" style="color:'+(c.kind==='ace'?'#9b59b6':'#F5A623')+'">'+esc(c.reps+unitSuffix(c.unit)+' '+c.move)+'</div><div class="mvsub">'+(c.kind==='ace'?'Ace penalty — do the work, then continue':'Do the reps, then tap done')+'</div><button class="donebtn" id="soloDoneBtn">✓ Done — next</button></div>';
     const db=$('soloDoneBtn');if(db)db.onclick=soloDone;
   }else{
-    el.innerHTML=who+'<button class="rollbtn" id="soloRollBtn"'+(soloBusy?' disabled':'')+'>'+(soloBusy?'…rolling':'🎲 Roll')+'</button>'+(multi?'':'<div class="skipnote">Land on a movement, do the reps, roll again — first to the WIN square takes it.</div>');
-    const rb=$('soloRollBtn');if(rb)rb.onclick=soloRoll;
+    el.innerHTML=who+'<button class="rollbtn" id="soloRollBtn"'+(soloBusy?' disabled':'')+'>'+(soloBusy?'…rolling':'🎲 Roll')+'</button>'+(p.dblUsed?'<div class="skipnote" style="text-transform:uppercase;letter-spacing:1px;font-size:12px;">Double dice used</div>':'<button class="ghost" id="soloDblBtn" style="width:100%;max-width:420px;margin-top:10px;padding:14px;font-size:14px;font-weight:800;letter-spacing:.5px;color:var(--orange);border:2px solid var(--orange);border-radius:14px;background:transparent;cursor:pointer;"'+(soloBusy?' disabled':'')+'>🎲🎲 DOUBLE DICE · once per game</button>')+(multi?'':'<div class="skipnote">Land on a movement, do the reps, roll again — first to the WIN square takes it.</div>');
+    const rb=$('soloRollBtn');if(rb)rb.onclick=function(){soloRoll(false);};const dbb=$('soloDblBtn');if(dbb)dbb.onclick=function(){soloRoll(true);};
   }}
 function logSoloRecaps(){
   if(soloRecapDone)return;soloRecapDone=true;
@@ -827,6 +852,27 @@ function logSoloRecaps(){
     if(r.place)summary.place=r.place;if(r.finishSec!=null)summary.timeSec=r.finishSec;
     try{fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:null,name:pl.name||null,deck:null,summary,image_url:null,gym,daily})});}catch(e){}
   });}
+function soloSummary(r){const hist=r.hist||[],byMove={};let total=0;hist.forEach(e=>{byMove[e.m]=(byMove[e.m]||0)+e.r;total+=e.r;});
+  const sm={byMove,total,count:hist.length,order:hist,solo:true};if(r.place)sm.place=r.place;if(r.finishSec!=null)sm.timeSec=r.finishSec;return sm;}
+function setupSoloRecap(){const box=$('soloRecap');if(!box)return;
+  if(!SOLO||!game||!game.results){box.style.display='none';return;}
+  const rows=game.results.filter(r=>(r.hist||[]).length);
+  if(!rows.length){box.style.display='none';return;}
+  box.style.display='';$('srMsg').textContent='';$('srMsg').className='srmsg';$('srBtn').disabled=false;
+  const sel=$('srPlayer');sel.innerHTML=rows.map(r=>'<option value="'+esc(r.id)+'">'+esc(r.name)+'</option>').join('');sel.style.display=rows.length>1?'':'none';
+  $('srBtn').onclick=sendSoloRecap;}
+async function sendSoloRecap(){const msg=$('srMsg'),em=($('srEmail').value||'').trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='Enter a valid email.';msg.className='srmsg err';return;}
+  if(!$('srConsent').checked){msg.textContent='Please tick the box to consent.';msg.className='srmsg err';return;}
+  const r=(game.results||[]).find(x=>x.id===$('srPlayer').value)||(game.results||[]).find(x=>(x.hist||[]).length);if(!r)return;
+  $('srBtn').disabled=true;msg.textContent='Sending…';msg.className='srmsg';
+  const a=(W.AVATARS||[]).find(x=>x.id===r.avatar),sp=(typeof chosenSponsor!=='undefined'&&chosenSponsor)?{id:chosenSponsor.id||null,name:chosenSponsor.name,website_url:chosenSponsor.website_url||chosenSponsor.social_url||null,tagline:chosenSponsor.tagline||null}:null;
+  const H={apikey:W.SUPA_KEY,'Content-Type':'application/json'};let ok=false,reason='';
+  try{const res=await fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:H,body:JSON.stringify({email:em,name:r.name||null,image_url:null,summary:soloSummary(r),avatar:a?a.img:null,sponsor:sp})});
+    const j=await res.json().catch(()=>({}));ok=!!j.ok;reason=j.reason||'';}catch(e){reason='network';}
+  try{fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:r.name||null,source:'recap',consent:true})});}catch(e){}
+  if(ok){msg.textContent="Sent! Check your inbox ✓";msg.className='srmsg ok';}
+  else{msg.textContent=reason==='rate_limited'?'Just sent one — try again in a minute.':(reason==='daily_limit'?'Daily email limit reached for this address.':'Could not send — try again.');msg.className='srmsg err';$('srBtn').disabled=false;}}
 // Deep-link: /board?solo=1 opens solo setup straight away
 if(new URLSearchParams(location.search).get('solo')==='1'){setTimeout(()=>{try{$('soloBtn').click();}catch(e){}},80);}
 
@@ -1020,6 +1066,7 @@ function renderResults(reason){
     row.innerHTML=`<span class="wsplace">${medal}</span><img src="${a?a.img:''}" alt=""><span class="wsname">${esc(r.name)}</span><span class="wstime">${time}</span>`;
     sb2.appendChild(row);});
   show('winScreen');
+  try{setupSoloRecap();}catch(e){}
   try{const nm=(game.finishMode==='first'||game.players.length<2)?((game.results[0]||{}).name||''):'';JUICE.win(nm);}catch(e){}
 }
 function triggerCap(){if(capFired||!game||game.ended)return;capFired=true;
