@@ -119,7 +119,7 @@
   .disc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:18px;}
   .disc-overlay.show{display:flex;}
   .disc-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:22px 20px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto;text-align:left;}
-  .disc-box h2{font-size:20px;font-weight:900;letter-spacing:2px;text-align:center;margin-bottom:4px;}
+  .disc-box .disc-h,.disc-box h2{font-size:20px;font-weight:900;letter-spacing:2px;text-align:center;margin-bottom:4px;}
   .disc-box .disc-sub{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--orange);text-align:center;margin-bottom:14px;}
   .disc-box p{font-size:13px;line-height:1.6;color:var(--text2);margin-bottom:11px;}
   .disc-box p strong{color:#fff;}
@@ -130,7 +130,7 @@
 <body>
 <div class="disc-overlay" id="discOverlay">
   <div class="disc-box">
-    <h2>WODLY</h2>
+    <div class="disc-h">WODLY</div>
     <div class="disc-sub">Before you play</div>
     <p>WODLY is a fitness game that prompts physical exercise. <strong>Exercise carries risk of injury.</strong></p>
     <p>Consult a physician before starting any exercise program, especially if you have a medical condition, are pregnant, or have been inactive. Stop immediately if you feel pain, dizziness, or discomfort.</p>
@@ -184,7 +184,7 @@
         <div style="font-weight:800;font-size:14px;color:#fff;">Add WODLY to your home screen</div>
         <div style="font-size:12px;color:var(--text2);">One tap to play anytime — just like an app.</div>
       </div>
-      <button id="installBtn" style="flex-shrink:0;background:var(--gold);color:#000;border:none;border-radius:10px;font-weight:800;font-size:13px;padding:9px 15px;cursor:pointer;font-family:inherit;">Add</button>
+      <button id="installBtn" aria-label="Add WODLY to your home screen" style="flex-shrink:0;background:var(--gold);color:#000;border:none;border-radius:10px;font-weight:800;font-size:13px;padding:9px 15px;cursor:pointer;font-family:inherit;">Add</button>
       <button id="installX" aria-label="Dismiss" style="flex-shrink:0;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:0 2px;">×</button>
     </div>
     <div id="iosHint" style="display:none;margin-top:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:12.5px;color:var(--text2);line-height:1.55;">
@@ -243,6 +243,7 @@
     <span class="bgo-cta">Try it →</span>
   </a>
 
+  <!-- WODLY Wild promo card temporarily removed from home while in testing. Re-add this block to relist it.
   <a class="bgo-promo wild-promo" href="/wild">
     <div class="bgo-ball"><i>W</i></div>
     <div class="bgo-txt">
@@ -252,6 +253,7 @@
     </div>
     <span class="bgo-cta">Try it →</span>
   </a>
+  -->
 
   <div style="display:flex;gap:18px;justify-content:center;margin:4px 0 18px;flex-wrap:wrap;">
     <a href="/leaderboard" style="font-size:13.5px;color:var(--gold);text-decoration:none;font-weight:700;">🏆 Leaderboard</a>
@@ -306,7 +308,7 @@
   if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
 </script>
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}
-(function(){var map=[['.opt.start','board'],['.opt.solo','solo'],['.opt.join','join'],['.opt.online','online'],['.bgo-promo:not(.wild-promo)','bingo'],['.wild-promo','wild']];map.forEach(function(p){var el=document.querySelector(p[0]);if(el)el.addEventListener('click',function(){wtrack('home_mode',{mode:p[1]});});});})();</script>
+(function(){var map=[['.opt.start','board'],['.opt.solo','solo'],['.opt.join','join'],['.opt.online','online'],['.bgo-promo','bingo']];map.forEach(function(p){var el=document.querySelector(p[0]);if(el)el.addEventListener('click',function(){wtrack('home_mode',{mode:p[1]});});});})();</script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
