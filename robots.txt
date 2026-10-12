@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /unsubscribe
+Disallow: /go
+
+Sitemap: https://wodlygame.com/sitemap.xml

@@ -62,6 +62,7 @@
     <a class="back" href="/">← back to home</a>
   </div>
 
+  <div class="note" style="margin:0 0 14px;text-align:left;line-height:1.6;"><b style="color:#fff;">New here?</b> This page shows your streak, total reps, badges and favorite movements — but only after you've saved a workout. Play a game (<a href="/board?solo=1">try solo</a>), tap <b>“Email me my results”</b> at the end, then enter that same email below.</div>
   <div class="enter">
     <label>Your email (the one you use at the end of a game)</label>
     <div class="row">
@@ -128,7 +129,7 @@ async function load(email){
   let d=null;
   try{const r=await sb.rpc('player_stats',{p_email:email});d=r.data;}catch(e){}
   $('go').disabled=false;
-  if(!d||!d.found){msg.className='msg err';msg.textContent='No workouts found for that email yet. Play a game, save your recap, and check back!';$('results').style.display='none';return;}
+  if(!d||!d.found){msg.className='msg err';msg.textContent='No stats yet for that email. Play a game, choose “Email me my results” at the end with this same address, then check back!';$('results').style.display='none';return;}
   msg.textContent='';try{localStorage.setItem('wodly_email',email);}catch(e){}
   d.streak=streakWeeks(d.active_weeks);
   $('pname').textContent=esc(d.name);
