@@ -37,7 +37,7 @@
   .sc .si{font-size:22px;margin-bottom:4px;}.sc label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px;font-weight:600;}
   .sc input{width:100%;font-size:14px;padding:8px;background:rgba(0,0,0,.4);border:1px solid #444;border-radius:7px;color:#fff;}
   .mvunit{margin-top:6px;width:100%;font-size:12px;padding:6px;background:rgba(0,0,0,.4);border:1px solid #444;border-radius:7px;color:#cfcfcf;}
-  /* Quick Start: advanced options collapsed by default for new users */
+  /* Advanced options open by default so new users can find them; toggle collapses */
   #setupScreen .adv{display:none;}
   #setupScreen.adv-open .adv{display:block;}
   .qhint{background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.35);border-radius:12px;padding:12px 14px;font-size:13.5px;color:#cfe8cf;line-height:1.5;margin:4px 0 14px;}
@@ -252,7 +252,7 @@
 
 <div class="wrap">
   <!-- SETUP -->
-  <div id="setupScreen" class="screen active">
+  <div id="setupScreen" class="screen active adv-open">
     <h1>WODLY</h1>
     <div class="tagline"><span class="t1">TRAIN.</span> <span class="t2">PLAY.</span> <span class="t3">COMPETE.</span></div>
 
@@ -327,8 +327,8 @@
         <div class="sec"><span class="snum">1</span>Workout preset</div>
         <select id="presetSel" style="width:100%;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;"><option value="">Custom — set your own</option></select>
         <div id="presetNote" style="font-size:12px;color:#4CAF50;min-height:15px;margin:7px 0 16px;"></div>
-        <div class="qhint">👋 <b>New here?</b> Pick a workout above (or leave it Custom for a quick bodyweight game), then hit <b>Start</b> — that's it. Want to change the movements, difficulty or timers? Open Advanced below.</div>
-        <button class="advtoggle" id="advToggle">⚙ Advanced options — movements, difficulty, timers, board theme ▾</button>
+        <div class="qhint">👋 <b>New here?</b> Pick a workout above (or leave it Custom for a quick bodyweight game), then hit <b>Start</b> — that's it. Want to change the movements, difficulty or timers? Adjust them in Advanced options below.</div>
+        <button class="advtoggle" id="advToggle">⚙ Advanced options — movements, difficulty, timers, board theme ▴</button>
         <div class="adv">
         <div class="sec"><span class="snum">2</span>Movements per suit <span style="text-transform:none;letter-spacing:0;color:var(--text3);font-weight:400;">— pick one or type your own; set its unit</span></div>
         <datalist id="moveList"></datalist>
@@ -548,7 +548,7 @@ function paintBoardSel(){document.querySelectorAll('#boardRow .bcard').forEach(e
 $('turnTimerToggle').addEventListener('change',function(){$('timerSettings').classList.toggle('show',this.checked);});
 if($('ace-reps'))$('ace-reps').addEventListener('input',function(){if(typeof updateWEstimate==='function')updateWEstimate();});
 setTimeout(function(){if(typeof updateWEstimate==='function')updateWEstimate();},50);
-// Quick Start: advanced options collapsed by default; toggle reveals them
+// Advanced options open by default; toggle collapses/expands them
 $('advToggle').onclick=function(){const s=$('setupScreen');const open=s.classList.toggle('adv-open');this.textContent=open?'⚙ Advanced options — movements, difficulty, timers, board theme ▴':'⚙ Advanced options — movements, difficulty, timers, board theme ▾';};
 function selVal(id){const e=document.querySelector('#'+id+' .ob.sel');return e?e.dataset.v:null;}
 function _v(id){const e=$(id);return e?e.value:'';}
