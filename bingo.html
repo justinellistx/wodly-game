@@ -132,6 +132,8 @@
   label .opt-tag{font-weight:600;font-size:11px;color:var(--text3);text-transform:none;letter-spacing:0;}
   .start-point{text-align:center;color:var(--orange);font-size:13px;font-weight:800;margin:16px 0 -6px;animation:htBob 1.15s ease-in-out infinite;}
   @media(max-width:460px){.ht-cap{font-size:10.5px;}.ht-arrow{font-size:16px;}}
+  .stampslam{animation:stampSlam .6s cubic-bezier(.2,.9,.3,1.3);}
+  @keyframes stampSlam{0%{transform:scale(2.6) rotate(-14deg);opacity:0;}65%{transform:scale(.92) rotate(3deg);opacity:1;}100%{transform:scale(1) rotate(-4deg);}}
 </style>
 </head>
 <body>
@@ -298,6 +300,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="wodly-fx.js"></script>
 <script>
 var $=function(id){return document.getElementById(id);};
 function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});$(id).classList.add('active');}
@@ -516,7 +519,7 @@ function finish(p){
   $('winWho').textContent=p.name+' wins!';
   $('winWho').style.color=p.color;
   $('winSub').textContent=(S.win>=25?'Blackout — full card':(S.win>1?S.win+' lines':'First line')+' complete')+' · '+squaresFor(p)+' squares done';
-  renderBSponsor();$('overlay').classList.add('on');
+  renderBSponsor();bingoFx(p.name,p.color,(S.win>=25?'Blackout!':''));
   if(!ONLINE&&!LOGGED){LOGGED=true;S.players.forEach(function(pl){var bm=byMoveFor(pl),tot=0;for(var k in bm)tot+=bm[k];if(tot>0)logRecap(pl.name,{byMove:bm,total:tot,count:squaresFor(pl),place:(pl===p)?1:null,game:'bingo',order:(pl.wl||[])},S.gym);});}
 }
 function finishAll(){
@@ -527,6 +530,10 @@ function finishAll(){
   if(!ONLINE&&!LOGGED){LOGGED=true;S.players.forEach(function(pl){var bm=byMoveFor(pl),tot=0;for(var k in bm)tot+=bm[k];if(tot>0)logRecap(pl.name,{byMove:bm,total:tot,count:squaresFor(pl),place:pl.place||null,game:'bingo',order:(pl.wl||[])},S.gym);});}
   renderCards();
 }
+// BINGO celebration, then the results card with a stamp slam
+function bingoFx(name,color,sub){var ov=$('overlay');
+  function reveal(){ov.classList.add('on');var s=$('winStamp');if(s&&s.style.display!=='none'){s.classList.remove('stampslam');void s.offsetWidth;s.classList.add('stampslam');}}
+  if(window.WODLYFX){WODLYFX.bingo({name:name,color:color,sub:sub||'',onDone:reveal});}else reveal();}
 function showStandings(rows){
   var stmp=$('winStamp');if(stmp)stmp.style.display='none';
   $('winWho').textContent='🏆 Everyone finished!';$('winWho').style.color='#F5A623';
@@ -623,10 +630,10 @@ function renderWall(pl){
     }else{
       var winner=pl.filter(function(p){return p.id===FINORDER[0];})[0]||pl[0];
       var st=$('winStand');if(st)st.style.display='none';var stmp=$('winStamp');if(stmp)stmp.style.display='';
-      speak(winner.name+' bingo!');$('winWho').textContent=winner.name+' wins!';$('winWho').style.color=winner.color||'#F5A623';$('winSub').textContent='First to bingo on the wall!';
+      window.__fxWin={n:winner.name,c:winner.color||'#F5A623'};speak(winner.name+' bingo!');$('winWho').textContent=winner.name+' wins!';$('winWho').style.color=winner.color||'#F5A623';$('winSub').textContent='First to bingo on the wall!';
       pl.forEach(function(p){var b=p.bingo||{},bm=b.byMove||{},tot=b.total||0;if(tot>0)logRecap(p.name,{byMove:bm,total:tot,count:b.sq||0,place:(p.id===winner.id)?1:null,game:'bingo',order:(b.wl||[])},gGym);});
     }
-    renderBSponsor();$('overlay').classList.add('on');
+    renderBSponsor();if(window.__fxWin){var fw=window.__fxWin;window.__fxWin=null;bingoFx(fw.n,fw.c,'First to bingo on the wall');}else $('overlay').classList.add('on');
     try{if(HOST)sb.from('rooms').update({status:'finished'}).eq('id',HOST.id);}catch(e){}}
 }
 

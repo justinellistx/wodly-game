@@ -158,6 +158,16 @@
   .disc-box .disc-sub{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--orange);text-align:center;margin-bottom:12px;}
   .disc-box p{font-size:12.5px;line-height:1.55;color:var(--text2);margin-bottom:10px;}.disc-box p strong{color:#fff;}
   .disc-accept{width:100%;padding:13px;font-size:14px;font-weight:700;background:var(--orange);border:none;border-radius:12px;color:#000;cursor:pointer;margin-top:4px;}
+  .dbltoast{position:fixed;left:50%;top:50%;z-index:9997;transform:translate(-50%,-50%) scale(.3);opacity:0;text-align:center;pointer-events:none;
+    background:radial-gradient(circle at 50% 30%,#3a2a05,#120d02 70%);border:3px solid #F5A623;border-radius:22px;padding:22px 34px;box-shadow:0 0 60px rgba(245,166,35,.55);
+    animation:dblIn .55s cubic-bezier(.2,.9,.3,1.35) forwards;}
+  .dbltoast.out{animation:dblOut .45s ease forwards;}
+  .dbltoast .dt-dice{font-size:54px;line-height:1;animation:dblSpin .9s ease-out;}
+  .dbltoast .dt-big{font-size:34px;font-weight:900;letter-spacing:3px;color:#F5A623;text-shadow:0 2px 0 #000,0 0 20px rgba(245,166,35,.6);margin-top:6px;}
+  .dbltoast .dt-sub{font-size:14px;color:#fff;margin-top:6px;font-weight:700;}
+  @keyframes dblIn{to{transform:translate(-50%,-50%) scale(1);opacity:1;}}
+  @keyframes dblOut{to{transform:translate(-50%,-50%) scale(1.25);opacity:0;}}
+  @keyframes dblSpin{0%{transform:rotate(-200deg) scale(.4);}70%{transform:rotate(15deg) scale(1.15);}100%{transform:rotate(0) scale(1);}}
 </style>
 </head>
 <body>
@@ -322,6 +332,11 @@ function enterPlay(){
 function sendIntent(type,payload){return sb.from('intents').insert({room_id:room.id,player_id:me.id,type,payload:payload||{}}).then(({error})=>{if(error)console.warn('intent failed:',error.message);});}
 
 function myPlayer(state){return (state.players||[]).find(p=>p.id===me.id);}
+// Double Dice left: the server tracks a count (start 1, +1 per 🎲🎲 space collected); older games fall back to the once-per-game flag
+function myDbl(mp){return (mp&&typeof mp.dbl==='number')?mp.dbl:(dblUsed?0:1);}
+let seenDblGot=null;
+function dblToastP(){buzz([60,40,60,40,120]);const el=document.createElement('div');el.className='dbltoast';el.innerHTML='<div class="dt-dice">🎲🎲</div><div class="dt-big">DOUBLE DICE!</div><div class="dt-sub">You earned an extra Double Dice. Still do this space\'s movement.</div>';
+  document.body.appendChild(el);el.onclick=()=>el.remove();setTimeout(()=>el.classList.add('out'),2600);setTimeout(()=>el.remove(),3100);}
 
 function computeRecap(mp){const h=(mp&&mp.hist)||[];const byMove={};let total=0;h.forEach(e=>{byMove[e.m]=(byMove[e.m]||0)+e.r;total+=e.r;});return {byMove,total,count:h.length,order:h};}
 function buzz(pat){try{if(navigator.vibrate)navigator.vibrate(pat);}catch(e){}}
@@ -405,9 +420,10 @@ function renderState(state){
   const _hasBoard=!!(phase==='playing'&&state.total),mw=$('miniWrap');
   if(_hasBoard){mw.style.display='';const c=$('miniBoard'),want=((mw.clientWidth||340)*2);if(!mw.classList.contains('focus')&&Math.abs(c.width-want)>4)sizeMini();else drawMini();}else if(!mw.classList.contains('focus')){mw.style.display='none';}
   if(mp)$('mePos').textContent=mp.pos;
+  if(mp){const g=mp.dblGot||0;if(seenDblGot===null)seenDblGot=g;else if(g!==seenDblGot){seenDblGot=g;setTimeout(dblToastP,900);}}
   if(mp&&mp.event&&(mp.event.type==='back'||mp.event.type==='skip')&&mp.event.eid!==seenEid){seenEid=mp.event.eid;showEvent(mp.event);}
   renderStandings(state);renderRecentLog(state);renderSponsorBar(state);
-  const sig=phase+'|'+(mp?(mp.status+'|'+mp.pos+'|'+(mp.finished?'F'+mp.place:'')+'|'+(mp.card?(mp.card.kind+mp.card.reps+(mp.card.move||'')):'no')):'nomp')+'|'+(state.winner?state.winner.id:'')+'|'+((state.results||[]).length);
+  const sig=phase+'|'+(mp?(mp.status+'|'+mp.pos+'|'+(mp.finished?'F'+mp.place:'')+'|'+(mp.card?(mp.card.kind+mp.card.reps+(mp.card.move||'')):'no')+'|d'+myDbl(mp)):'nomp')+'|'+(state.winner?state.winner.id:'')+'|'+((state.results||[]).length);
   if(sig===bodySig&&!rolling)return; // body unchanged — don't disturb countdown/animations on poll
   if(rolling)return;
   bodySig=sig;clearInterval(schedInt);schedInt=null;
@@ -464,9 +480,9 @@ function renderState(state){
   clearCd();
   body.innerHTML=`<div class="rollwrap">${tipHTML('roll','👆 Tap <b>ROLL</b> — you\'ll move ahead and land on a movement to do')}<div class="die" id="die">${renderDie(mp.lastRoll||5)}</div>
     <button class="rollbtn" id="rollBtn">🎲 ROLL</button>
-    ${dblUsed?'<div class="dblspent">Double dice used</div>':'<button class="dblbtn" id="dblBtn">🎲🎲 DOUBLE DICE · once per game</button>'}</div>`;
+    ${myDbl(mp)>0?`<button class="dblbtn" id="dblBtn">🎲🎲 DOUBLE DICE${myDbl(mp)>1?' ×'+myDbl(mp):''}</button>`:'<div class="dblspent">No Double Dice left · land on a 🎲🎲 space to earn one</div>'}</div>`;
   $('rollBtn').onclick=()=>{seenTip('roll');doRoll(false);};
-  if(!dblUsed&&$('dblBtn'))$('dblBtn').onclick=()=>doRoll(true);
+  if(myDbl(mp)>0&&$('dblBtn'))$('dblBtn').onclick=()=>doRoll(true);
   lastStatus='idle';
 }
 
@@ -478,8 +494,8 @@ function doRoll(dbl){
   let ticks=0;const iv=setInterval(()=>{die.innerHTML=renderDie(1+Math.floor(Math.random()*6));if(++ticks>10){clearInterval(iv);
     die.innerHTML = dbl ? ('<div class="dvsum">'+dv+'</div>') : renderDie(dv);
     die.classList.remove('rolling');
-    if(isOnline()){callMatch('roll',{dv}).then(()=>{rolling=false;pollOnce();}).catch(()=>{rolling=false;pollOnce();});}
-    else{sendIntent('roll',{dv});setTimeout(()=>{rolling=false;renderState(room.state||{});},700);}}},70);
+    if(isOnline()){callMatch('roll',{dv,dbl:!!dbl}).then(()=>{rolling=false;pollOnce();}).catch(()=>{rolling=false;pollOnce();});}
+    else{sendIntent('roll',{dv,dbl:!!dbl});setTimeout(()=>{rolling=false;renderState(room.state||{});},700);}}},70);
 }
 
 function startCd(state,isAce){clearCd();if(!state.useTimer)return;let rem=isAce?(state.penSec||45):(state.turnSec||60);const el=$('cd');if(!el)return;

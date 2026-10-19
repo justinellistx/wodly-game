@@ -93,6 +93,8 @@
   .subconsent a{color:var(--orange);}
   .submsg{font-size:13px;margin-top:8px;text-align:center;min-height:16px;}
   .submsg.ok{color:var(--green);} .submsg.err{color:var(--red);}
+  .stampslam{animation:stampSlam .6s cubic-bezier(.2,.9,.3,1.3);}
+  @keyframes stampSlam{0%{transform:scale(2.6) rotate(-14deg);opacity:0;}65%{transform:scale(.92) rotate(3deg);opacity:1;}100%{transform:scale(1) rotate(-4deg);}}
 </style>
 </head>
 <body>
@@ -165,6 +167,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="wodly-core.js"></script>
+<script src="wodly-fx.js"></script>
 <script>
 var W=window.WODLY, sb=W.makeClient(), $=function(id){return document.getElementById(id);};
 var PUB='sb_publishable_SjuVDLR6qX9JGjaQ3uK3fQ_hmy_t6Nq';
@@ -324,7 +327,7 @@ function onCell(i){
 function markCell(i){if(i==null||marks[i]||i===12)return false;marks[i]=1;var mv=S.moves[i%5];if(mv){var un=unitOf(i);var rr=reps(card[i]);var sc=scoreReps(mv,rr,un);byMove[mv]=(byMove[mv]||0)+sc;totalReps+=sc;var st=CLASSMODE?(callTs[card[i]]||Date.now()):(moveStart||Date.now());var sec=Math.min(600,Math.max(1,Math.round((Date.now()-st)/1000)));wlog.push({m:mv,r:sc,s:sec,u:un});}return true;}
 function afterMark(){var w=won();render();save(w);if(w)winScreen();}
 var lastSummary=null;
-function winScreen(){ownWon=true;if(statePoll)clearInterval(statePoll);var everyone=(S.finish==='all'&&!SOLO);lastSummary={byMove:byMove,total:totalReps,count:squares(),place:everyone?null:1,game:'bingo',order:wlog.slice()};if(SOLO)logRecap(ME.name,lastSummary,SOLOGYM);var im=$('winImg');if(im)im.style.display='';var t=$('winTitle');if(t)t.style.display='none';var bk=$('backBtn');if(bk)bk.style.display='none';$('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares · '+totalReps+' reps.'+(everyone?'  🎉 Waiting for the rest to finish…':'');var b=$('bSubBtn');if(b)b.onclick=doBingoSub;show('won');}
+function winScreen(){ownWon=true;if(statePoll)clearInterval(statePoll);var everyone=(S.finish==='all'&&!SOLO);lastSummary={byMove:byMove,total:totalReps,count:squares(),place:everyone?null:1,game:'bingo',order:wlog.slice()};if(SOLO)logRecap(ME.name,lastSummary,SOLOGYM);var im=$('winImg');if(im)im.style.display='';var t=$('winTitle');if(t)t.style.display='none';var bk=$('backBtn');if(bk)bk.style.display='none';$('winSub').textContent=(S.win>=25?'Blackout — full card!':(S.win>1?S.win+' lines':'First line')+' complete!')+' '+squares()+' squares · '+totalReps+' reps.'+(everyone?'  🎉 Waiting for the rest to finish…':'');var b=$('bSubBtn');if(b)b.onclick=doBingoSub;show('won');if(window.WODLYFX)WODLYFX.bingo({title:'YOU GOT BINGO!',color:'#F5A623',sub:squares()+' squares · '+totalReps+' reps',onDone:function(){var im=$('winImg');if(im){im.classList.remove('stampslam');void im.offsetWidth;im.classList.add('stampslam');}}});}
 function showRecap(){lastSummary={byMove:byMove,total:totalReps,count:squares(),place:null,game:'bingo',order:wlog.slice()};var im=$('winImg');if(im)im.style.display='none';var t=$('winTitle');if(t){t.style.display='block';t.textContent='💪 Nice work!';}var bk=$('backBtn');if(bk)bk.style.display=ownWon?'none':'block';$('winSub').textContent=squares()+' squares · '+totalReps+' reps'+(ownWon?'.':' so far.');var b=$('bSubBtn');if(b)b.onclick=doBingoSub;show('won');}
 async function doBingoSub(){
   var em=(($('bEmail')||{}).value||'').trim(),msg=$('bSubMsg');if(!msg)return;

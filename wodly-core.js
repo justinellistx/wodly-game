@@ -82,6 +82,19 @@
     return d;
   }
 
+  // Double Dice cards: 4 random collectible spots, one per quarter of the track (never on the first 5 or last 3 spaces).
+  function pickDblSpots(total){ const lo=5, hi=Math.max(lo+4,total-4), span=(hi-lo)/4, out=[];
+    for(let q=0;q<4;q++){ const a=Math.floor(lo+span*q), b=Math.max(a,Math.floor(lo+span*(q+1))-1); let v=a+Math.floor(Math.random()*(b-a+1)); if(out.indexOf(v)>=0)v=Math.min(hi,v+1); out.push(v); }
+    return out; }
+  // Draws a small two-dice badge (used on board spaces holding an uncollected Double Dice card).
+  function drawDblBadge(ctx,px,py,s,onCard){ ctx.save();
+    const w=s*(onCard?0.5:0.78), h=w*0.5, x=px-w/2, y=onCard?(py-s/2-h*0.55):(py-h/2);
+    ctx.shadowColor='#F5A623'; ctx.shadowBlur=onCard?8:14; ctx.fillStyle='#F5A623'; ctx.beginPath(); ctx.roundRect(x,y,w,h,h*0.3); ctx.fill(); ctx.shadowBlur=0;
+    const d=h*0.72, gap=(w-2*d)/3; ctx.fillStyle='#fff';
+    [0,1].forEach(function(k){ const dx=x+gap+k*(d+gap), dy=y+(h-d)/2; ctx.beginPath(); ctx.roundRect(dx,dy,d,d,d*0.22); ctx.fill(); });
+    ctx.fillStyle='#111'; const r=d*0.1;
+    [0,1].forEach(function(k){ const dx=x+gap+k*(d+gap), dy=y+(h-d)/2; const pts=k===0?[[.5,.5]]:[[.27,.27],[.73,.73]]; pts.forEach(function(pt){ ctx.beginPath(); ctx.arc(dx+d*pt[0],dy+d*pt[1],r,0,Math.PI*2); ctx.fill(); }); });
+    ctx.restore(); }
   // ── Misc helpers ──────────────────────────────────────────────────────────
   // 4-char join code, avoiding ambiguous chars (no O/0/I/1)
   function genCode(){ const a='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<4;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; }
@@ -171,6 +184,6 @@
     SUPA_URL, SUPA_KEY, makeClient,
     BRAND, SUITS, SYM, SCOL, FACE_LABELS, DECK_SPACES, DIFF_MULT, PCOLS, AVATARS, PRESETS, BOARDS,
     DAILY_WODS, dailyKey, dailyWod, smartPresets,
-    cardType, getReps, isMeters, repScore, buildDeck, genCode, clientId
+    cardType, getReps, isMeters, repScore, buildDeck, genCode, clientId, pickDblSpots, drawDblBadge
   };
 })(typeof window !== 'undefined' ? window : globalThis);

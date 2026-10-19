@@ -132,6 +132,7 @@
   .sp-qrwrap{display:flex;align-items:center;gap:9px;margin-left:6px;border-left:1px solid var(--border);padding-left:18px;}
   .sp-qr{background:#fff;padding:6px;border-radius:8px;width:130px;height:130px;display:flex;align-items:center;justify-content:center;}
   .sp-scan{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;max-width:72px;line-height:1.3;}
+  @media(max-width:600px){.sponsor{flex-wrap:wrap;gap:8px 12px;padding:10px 14px;}.sp-qrwrap{display:none;}.sp-logo{max-width:150px;}}
   #boardWrap{position:relative;margin:0 auto 18px;line-height:0;}
   #boardCanvas{width:100%;border-radius:14px;display:block;}
   #tokenCanvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:14px;pointer-events:none;}
@@ -213,7 +214,7 @@
   .solorecap .srttl{font-size:16px;font-weight:900;margin-bottom:4px;}
   .solorecap .srsub{font-size:12.5px;color:var(--text2);margin-bottom:10px;line-height:1.5;}
   .solorecap input[type=email],.solorecap select{width:100%;font-size:15px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:#fff;margin-bottom:8px;}
-  .solorecap .srmsg{font-size:12.5px;margin-top:8px;min-height:16px;}.solorecap .srmsg.ok{color:var(--green);}.solorecap .srmsg.err{color:var(--red);}
+  .solorecap .srmsg{font-size:12.5px;margin-top:8px;min-height:16px;}.solorecap .srmsg.ok{color:var(--green);}.solorecap .srmsg.err{color:var(--red);}.solorecap .srmsg a{color:inherit;font-weight:800;}
   .solorecap .srconsent{display:block;font-size:11.5px;color:var(--text3);margin-top:8px;line-height:1.5;}.solorecap .srconsent a{color:var(--text2);}
   .winwrap{text-align:center;padding:40px 16px;}
   .winwrap img{width:160px;height:160px;object-fit:contain;}
@@ -237,6 +238,16 @@
   @keyframes dieShake{0%{transform:rotate(-14deg) scale(.7);}45%{transform:rotate(12deg) scale(1.06);}75%{transform:rotate(-5deg) scale(.98);}100%{transform:rotate(0) scale(1);}}
   @keyframes diePop{0%{transform:scale(1.2);}100%{transform:scale(1);}}
   @media(prefers-reduced-motion:reduce){.soloDie,.soloDie.land{animation:none;}}
+  .dbltoast{position:fixed;left:50%;top:50%;z-index:9997;transform:translate(-50%,-50%) scale(.3);opacity:0;text-align:center;pointer-events:none;
+    background:radial-gradient(circle at 50% 30%,#3a2a05,#120d02 70%);border:3px solid #F5A623;border-radius:22px;padding:22px 34px;box-shadow:0 0 60px rgba(245,166,35,.55);
+    animation:dblIn .55s cubic-bezier(.2,.9,.3,1.35) forwards;}
+  .dbltoast.out{animation:dblOut .45s ease forwards;}
+  .dbltoast .dt-dice{font-size:54px;line-height:1;animation:dblSpin .9s ease-out;}
+  .dbltoast .dt-big{font-size:34px;font-weight:900;letter-spacing:3px;color:#F5A623;text-shadow:0 2px 0 #000,0 0 20px rgba(245,166,35,.6);margin-top:6px;}
+  .dbltoast .dt-sub{font-size:14px;color:#fff;margin-top:6px;font-weight:700;}
+  @keyframes dblIn{to{transform:translate(-50%,-50%) scale(1);opacity:1;}}
+  @keyframes dblOut{to{transform:translate(-50%,-50%) scale(1.25);opacity:0;}}
+  @keyframes dblSpin{0%{transform:rotate(-200deg) scale(.4);}70%{transform:rotate(15deg) scale(1.15);}100%{transform:rotate(0) scale(1);}}
 </style>
 </head>
 <body>
@@ -429,6 +440,8 @@
       <input id="soloName" maxlength="18" placeholder="Name" style="flex:1;min-width:140px;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;">
       <button class="bigbtn inline" id="soloAdd" style="padding:12px 18px;">+ Add</button>
     </div>
+    <input id="soloEmail" type="email" autocomplete="email" inputmode="email" maxlength="120" placeholder="Email (optional) — saves this game to your stats" style="width:100%;font-size:15px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:#fff;margin:0 0 4px;">
+    <div style="font-size:11.5px;color:var(--text3);margin:0 0 10px;line-height:1.5;">Add your email and every solo game shows up on <a href="/me" target="_blank" style="color:var(--text2);">My Stats</a>. Only used for your stats. <a href="/privacy" target="_blank" style="color:var(--text2);">Privacy</a></div>
     <div class="board-grid" id="soloAvatars" style="margin-bottom:10px;"></div>
     <div class="roster" id="soloRoster"><div class="empty">No players yet — add one above.</div></div>
     <div class="bar">
@@ -478,6 +491,7 @@
         <button class="bigbtn inline" id="srBtn" style="width:100%;margin-top:8px;">Email it to me</button>
         <button class="ghost" id="srShare" style="width:100%;margin-top:8px;padding:13px;font-size:15px;font-weight:800;">📸 Share my card</button>
         <div id="srMsg" class="srmsg"></div>
+        <div id="srSaved" class="srmsg ok"></div>
         <label class="srconsent"><input type="checkbox" id="srConsent"> I agree to receive occasional WODLY emails. <a href="/privacy" target="_blank">Privacy</a></label>
       </div>
       <button class="bigbtn inline" id="againBtn" style="margin-top:24px;">NEW GAME</button>
@@ -665,9 +679,9 @@ function renderRoster(){const r=$('roster');$('pcount').textContent=players.leng
 
 $('editBtn').onclick=async()=>{if(room){await sb.from('rooms').delete().eq('id',room.id);room=null;}show('setupScreen');setStatus('setup');};
 $('newRoomBtn').onclick=async()=>{if(room)await sb.from('rooms').delete().eq('id',room.id);room=null;$('openLobbyBtn').click();};
-$('quitBtn').onclick=async()=>{stopClocks();if(SOLO){game=null;$('soloControls').style.display='none';show('soloScreen');return;}if(SERVED){SERVED=false;clearInterval(servedPoll);if(channel){sb.removeChannel(channel);channel=null;}}if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}game=null;subscribe();await refreshPlayers();show('lobbyScreen');};
+$('quitBtn').onclick=async()=>{flushSoloPending();stopClocks();if(SOLO){game=null;$('soloControls').style.display='none';show('soloScreen');return;}if(SERVED){SERVED=false;clearInterval(servedPoll);if(channel){sb.removeChannel(channel);channel=null;}}if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}game=null;subscribe();await refreshPlayers();show('lobbyScreen');};
 $('endResultsBtn').onclick=()=>{if(!game||game.ended||servedEnded)return;const left=game.players.filter(p=>!p.finished).length;if(left>0&&!confirm(left+' team'+(left>1?'s':'')+" haven't finished. End now and show results?"))return;if(SERVED){callMatch('end').then(pullServed);}else endGame('manual');};
-$('againBtn').onclick=async()=>{game=null;if(SOLO){$('soloControls').style.display='none';show('soloScreen');return;}if(SERVED){SERVED=false;clearInterval(servedPoll);if(channel){sb.removeChannel(channel);channel=null;}}if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}subscribe();await refreshPlayers();renderRoster();show('lobbyScreen');};
+$('againBtn').onclick=async()=>{flushSoloPending();game=null;if(SOLO){$('soloControls').style.display='none';show('soloScreen');return;}if(SERVED){SERVED=false;clearInterval(servedPoll);if(channel){sb.removeChannel(channel);channel=null;}}if(room){await sb.from('rooms').update({status:'lobby',state:{}}).eq('id',room.id);}subscribe();await refreshPlayers();renderRoster();show('lobbyScreen');};
 
 // ── START GAME ──
 // ── Game juice: synthesized SFX + announcer + confetti (board = the big-screen show) ──
@@ -706,6 +720,7 @@ const JUICE=(function(){
     start(){tone(330,0.12,'square',0.18,0);tone(440,0.12,'square',0.18,0.12);tone(660,0.22,'square',0.2,0.24);say('WODLY! Game on!');},
     dice(){noise(0.16,0.11);tone(190,0.08,'triangle',0.11,0,95);},
     finish(name,place){tone(523,0.1,'sine',0.18,0);tone(784,0.2,'sine',0.2,0.1);say((name||'A team')+' finishes'+(place?' '+ord(place)+'!':'!'));},
+    dbl(name){[660,880,1320].forEach((f,i)=>tone(f,0.14,'square',0.16,i*0.08));say((name?name+' grabs ':'')+'double dice!');},
     win(name){[523,659,784,1047].forEach((f,i)=>tone(f,0.3,'sawtooth',0.18,i*0.14));say((name?name+' wins! ':'')+'What a game!');confetti();}
   };
 })();
@@ -758,6 +773,7 @@ function onServed(state){
   const cv=$('boardCanvas');
   if(firstRender){sizeCanvas();}
   else if(cv&&cv.width&&(!game.path||game.path.length!==game.total))game.path=genPath(game.total,cv.width,cv.height);
+  state.players.forEach(p=>{if(p.dblGot&&!firstRender&&p.dblGot!==(servedPrev['d_'+p.id]||0)){const pp=p;setTimeout(()=>dblToast(pp),1100);}servedPrev['d_'+p.id]=p.dblGot||0;});
   state.players.forEach(p=>{const prev=servedPrev[p.id];if(prev!=null&&prev!==p.pos)animateServedMove(p.id,prev,p.pos);servedPrev[p.id]=p.pos;});
   if(pacerOnFor(state)&&state.phase==='playing'){game.players=state.players.concat([makePacer(game.total||2)]);startPacerTick();}else{PACER.t0=0;stopPacerTick();}
   drawBoard();drawTokens();renderStandings();renderRecent();
@@ -772,7 +788,7 @@ function startServedClock(){clearInterval(gameClockInt);gameClockInt=setInterval
 
 // ── SOLO / PASS-AND-PLAY (one device, no phones, reuses the same engine) ──
 let SOLO=false, soloSettings=null, soloRoster=[], soloSelAvatar=null, soloOrder=[], soloIdx=0, soloBusy=false, soloRecapDone=false;
-$('soloBtn').onclick=()=>{ const s=gatherSettings();try{localStorage.setItem(SET_KEY,JSON.stringify(s));}catch(e){} soloSettings=s;SOLO=true;buildSoloAvatars();renderSoloRoster();const sg=$('soloGym');if(sg&&!sg.value)sg.value=s.gym||'';show('soloScreen'); };
+$('soloBtn').onclick=()=>{ const s=gatherSettings();try{localStorage.setItem(SET_KEY,JSON.stringify(s));}catch(e){} soloSettings=s;SOLO=true;buildSoloAvatars();renderSoloRoster();const sg=$('soloGym');if(sg&&!sg.value)sg.value=s.gym||'';const se=$('soloEmail');if(se&&!se.value&&!soloRoster.length){try{se.value=localStorage.getItem('wodly_email')||'';}catch(e){}}show('soloScreen'); };
 $('soloBack').onclick=()=>{SOLO=false;show('setupScreen');};
 function buildSoloAvatars(){const row=$('soloAvatars');if(!row)return;row.innerHTML='';
   (W.AVATARS||[]).forEach(a=>{const d=document.createElement('div');d.className='bcard';d.dataset.id=a.id;
@@ -782,15 +798,19 @@ function buildSoloAvatars(){const row=$('soloAvatars');if(!row)return;row.innerH
 function paintSoloAvatars(){document.querySelectorAll('#soloAvatars .bcard').forEach(e=>e.classList.toggle('sel',e.dataset.id===soloSelAvatar));}
 $('soloAdd').onclick=()=>{
   const nm=(($('soloName').value||'').trim()||('Player '+(soloRoster.length+1))).slice(0,18);
-  soloRoster.push({name:nm,avatar:soloSelAvatar,color:W.PCOLS[soloRoster.length%6]});
-  $('soloName').value='';
+  const emRaw=(($('soloEmail')&&$('soloEmail').value)||'').trim().toLowerCase(),em=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emRaw)?emRaw:null;
+  if(emRaw&&!em){$('soloEmail').style.borderColor='var(--red)';$('soloEmail').focus();return;}
+  if($('soloEmail'))$('soloEmail').style.borderColor='';
+  if(em&&!soloRoster.length){try{localStorage.setItem('wodly_email',em);}catch(e){}}
+  soloRoster.push({name:nm,avatar:soloSelAvatar,color:W.PCOLS[soloRoster.length%6],email:em});
+  $('soloName').value='';if($('soloEmail'))$('soloEmail').value='';
   const taken=soloRoster.map(p=>p.avatar);const nextAv=(W.AVATARS||[]).map(a=>a.id).find(id=>taken.indexOf(id)<0);if(nextAv){soloSelAvatar=nextAv;paintSoloAvatars();}
   renderSoloRoster();$('soloName').focus();};
 $('soloName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('soloAdd').click();}});
 function renderSoloRoster(){const r=$('soloRoster');if(!r)return;
   if(!soloRoster.length){r.innerHTML='<div class="empty">No players yet — add one above.</div>';$('soloStart').disabled=true;return;}
   r.innerHTML='';soloRoster.forEach((p,i)=>{const av=W.AVATARS.find(a=>a.id===p.avatar);const d=document.createElement('div');d.className='pcard';d.style.borderColor=p.color;d.style.position='relative';
-    d.innerHTML='<img src="'+(av?av.img:'')+'" alt=""><div class="pn">'+esc(p.name)+'</div><div class="pa">'+(av?av.name:'')+'</div><button class="pdel" data-i="'+i+'" style="position:absolute;top:2px;right:6px;background:none;border:none;color:#999;font-size:18px;line-height:1;cursor:pointer;">×</button>';
+    d.innerHTML='<img src="'+(av?av.img:'')+'" alt=""><div class="pn">'+esc(p.name)+'</div><div class="pa">'+(av?av.name:'')+(p.email?' · 📊 stats on':'')+'</div><button class="pdel" data-i="'+i+'" style="position:absolute;top:2px;right:6px;background:none;border:none;color:#999;font-size:18px;line-height:1;cursor:pointer;">×</button>';
     r.appendChild(d);});
   r.querySelectorAll('.pdel').forEach(b=>b.onclick=()=>{soloRoster.splice(+b.dataset.i,1);renderSoloRoster();});
   $('soloStart').disabled=false;}
@@ -800,12 +820,12 @@ function startSolo(){
   const s=soloSettings||gatherSettings();soloSettings=s;
   s.gym=(($('soloGym')&&$('soloGym').value.trim())||null);registerMovements(s);
   const total=W.DECK_SPACES[s.deckSz]||52;
-  game={ players:soloRoster.map((p,i)=>({id:'L'+i,name:p.name,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[],finished:false,place:null,finishSec:null,dblUsed:false})),
+  game={ players:soloRoster.map((p,i)=>({id:'L'+i,name:p.name,email:p.email||null,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[],finished:false,place:null,finishSec:null,dbl:1})),
     total, diff:s.diff||'easy', mv:s.mv, units:(s.units||{}), ace:{reps:s.aceReps,move:s.aceMove,unit:(s.aceUnit||'reps')}, finishMode:(s.finishMode==='first'?'first':'all'), boardId:s.boardId||'classic',
     useTimer:false, turnSec:s.turnSec||60, penSec:s.penSec||45, timeCap:(s.cap?(s.capMin||20)*60:0),
-    deck:W.buildDeck(), landed:{}, log:[], winner:null, results:null, finishedCount:0, ended:false, startTime:Date.now(),
+    deck:W.buildDeck(), landed:{}, dbl:W.pickDblSpots(total), log:[], winner:null, results:null, finishedCount:0, ended:false, startTime:Date.now(),
     seed:(Math.floor(Math.random()*2e9))>>>0, path:null, nodeSize:44 };
-  capFired=false;vpos={};soloOrder=game.players.map(p=>p.id);soloIdx=0;soloBusy=false;soloRecapDone=false;
+  flushSoloPending();capFired=false;vpos={};soloOrder=game.players.map(p=>p.id);soloIdx=0;soloBusy=false;soloRecapDone=false;
   {const bdef=(W.BOARDS||[]).find(b=>b.id===game.boardId)||(W.BOARDS||[])[0];if(bdef&&BOARDBG.src.indexOf(bdef.file)<0)BOARDBG.src=bdef.file;}
   try{JUICE.unlock();JUICE.start();}catch(e){}
   show('gameScreen');const gc=$('gameCode');if(gc)gc.textContent='SOLO';
@@ -839,13 +859,13 @@ function animateSoloDice(a,b,cb){
   var t=0,iv=setInterval(function(){paint(d1,1+Math.floor(Math.random()*6));paint(d2,1+Math.floor(Math.random()*6));t+=80;if(t>=560){clearInterval(iv);paint(d1,a);paint(d2,b);d1.classList.add('land');d2.classList.add('land');setTimeout(function(){wrap.classList.add('out');setTimeout(function(){wrap.remove();cb();},250);},450);}},80);
 }
 function soloRoll(dbl){if(soloBusy)return;const p=soloCurrent();if(!p)return;
-  if(dbl&&p.dblUsed)dbl=false;
+  if(dbl&&!(p.dbl>0))dbl=false;
   soloBusy=true;soloSync();
-  if(dbl){p.dblUsed=true;var a=1+Math.floor(Math.random()*6),b=1+Math.floor(Math.random()*6);animateSoloDice(a,b,function(){onRoll(p.id,a+b);});}
+  if(dbl){p.dbl--;var a=1+Math.floor(Math.random()*6),b=1+Math.floor(Math.random()*6);animateSoloDice(a,b,function(){onRoll(p.id,a+b);});}
   else{var dv=1+Math.floor(Math.random()*6);animateSoloDie(dv,function(){onRoll(p.id,dv);});}}
 function soloTip(key,html){try{if(localStorage.getItem('wodly_tip_'+key))return '';}catch(e){}return '<div class="solotip" data-tip="'+key+'">'+html+'</div>';}
 function soloTipSeen(key){try{localStorage.setItem('wodly_tip_'+key,'1');}catch(e){}}
-const SOLO_LEGEND='<details class="sololegend"><summary>How the cards work ▾</summary><div><b style="color:#fff">Roll</b> → you move ahead and land on a card. <b style="color:#fff">Do the reps</b> shown, then tap Done.<br><span style="color:#F5A623">Suit card</span> = do that movement. <span style="color:#4CAF50">↑+2</span> = bonus, jump ahead 2 spaces. <span style="color:#E8363D">↓N</span> = go back N spaces. <span style="color:#9b59b6">A (Ace)</span> = penalty movement. First to the ★ WIN square wins. 🎲🎲 Double Dice: once per game, roll two dice.</div></details>';
+const SOLO_LEGEND='<details class="sololegend"><summary>How the cards work ▾</summary><div><b style="color:#fff">Roll</b> → you move ahead and land on a card. <b style="color:#fff">Do the reps</b> shown, then tap Done.<br><span style="color:#F5A623">Suit card</span> = do that movement. <span style="color:#4CAF50">↑+2</span> = bonus, jump ahead 2 spaces. <span style="color:#E8363D">↓N</span> = go back N spaces. <span style="color:#9b59b6">A (Ace)</span> = penalty movement. First to the ★ WIN square wins. 🎲🎲 Double Dice: roll two dice. You start with one, and landing on a gold 🎲🎲 space earns another (you still do that space\'s movement).</div></details>';
 function soloSync(){
   if(!SOLO)return;const el=$('soloControls');if(!el)return;
   if(game&&game.ended){el.style.display='none';return;}
@@ -856,7 +876,7 @@ function soloSync(){
     el.innerHTML=who+soloTip('solo_done','💪 Do the reps shown below, then tap <b>Done</b>.')+'<div class="card"><div class="mv" style="color:'+(c.kind==='ace'?'#9b59b6':'#F5A623')+'">'+esc(c.reps+unitSuffix(c.unit)+' '+c.move)+'</div><div class="mvsub">'+(c.kind==='ace'?'Ace penalty — do the work, then continue':'Do the reps, then tap done')+'</div><button class="donebtn" id="soloDoneBtn">✓ Done — next</button></div>';
     const db=$('soloDoneBtn');if(db)db.onclick=function(){soloTipSeen('solo_done');soloDone();};
   }else{
-    el.innerHTML=who+soloTip('solo_roll','👆 Tap <b>ROLL</b> — you\'ll move ahead and land on a movement to do. Stuck? Open “How the cards work” below.')+'<button class="rollbtn" id="soloRollBtn"'+(soloBusy?' disabled':'')+'>'+(soloBusy?'…rolling':'🎲 Roll')+'</button>'+(p.dblUsed?'<div class="skipnote" style="text-transform:uppercase;letter-spacing:1px;font-size:12px;">Double dice used</div>':'<button class="ghost" id="soloDblBtn" style="width:100%;max-width:420px;margin-top:10px;padding:14px;font-size:14px;font-weight:800;letter-spacing:.5px;color:var(--orange);border:2px solid var(--orange);border-radius:14px;background:transparent;cursor:pointer;"'+(soloBusy?' disabled':'')+'>🎲🎲 DOUBLE DICE · once per game</button>')+(multi?'':'<div class="skipnote">Land on a movement, do the reps, roll again — first to the WIN square takes it.</div>');
+    el.innerHTML=who+soloTip('solo_roll','👆 Tap <b>ROLL</b> — you\'ll move ahead and land on a movement to do. Stuck? Open “How the cards work” below.')+'<button class="rollbtn" id="soloRollBtn"'+(soloBusy?' disabled':'')+'>'+(soloBusy?'…rolling':'🎲 Roll')+'</button>'+(!(p.dbl>0)?'<div class="skipnote" style="text-transform:uppercase;letter-spacing:1px;font-size:12px;">No Double Dice left · land on a 🎲🎲 space to earn one</div>':'<button class="ghost" id="soloDblBtn" style="width:100%;max-width:420px;margin-top:10px;padding:14px;font-size:14px;font-weight:800;letter-spacing:.5px;color:var(--orange);border:2px solid var(--orange);border-radius:14px;background:transparent;cursor:pointer;"'+(soloBusy?' disabled':'')+'>🎲🎲 DOUBLE DICE'+(p.dbl>1?' ×'+p.dbl:'')+'</button>')+(multi?'':'<div class="skipnote">Land on a movement, do the reps, roll again — first to the WIN square takes it.</div>');
     el.insertAdjacentHTML('beforeend',SOLO_LEGEND);
     const rb=$('soloRollBtn');if(rb)rb.onclick=function(){soloTipSeen('solo_roll');soloRoll(false);};const dbb=$('soloDblBtn');if(dbb)dbb.onclick=function(){soloTipSeen('solo_roll');soloRoll(true);};
   }}
@@ -867,8 +887,15 @@ function logSoloRecaps(){
     if(!hist.length)return;const byMove={};let total=0;hist.forEach(e=>{byMove[e.m]=(byMove[e.m]||0)+e.r;total+=e.r;});
     const summary={byMove,total,count:hist.length,order:hist,solo:true};
     if(r.place)summary.place=r.place;if(r.finishSec!=null)summary.timeSec=r.finishSec;
-    try{fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:null,name:pl.name||null,deck:null,summary,image_url:null,gym,daily})});}catch(e){}
+    const row={email:pl.email||null,name:pl.name||null,deck:null,summary,image_url:null,gym,daily};
+    if(row.email)postSoloRecap(row);else soloPending[pl.id]=row;   // no email yet — hold it in case they add one on the results screen
   });}
+// Players without an email are saved when they enter one on the results screen, or anonymously when they leave/play again.
+let soloPending={};
+function postSoloRecap(row){try{fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',keepalive:true,headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(row)});}catch(e){}}
+function flushSoloPending(){const p=soloPending;soloPending={};Object.keys(p).forEach(k=>postSoloRecap(p[k]));}
+window.addEventListener('pagehide',flushSoloPending);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)flushSoloPending();});
 function soloSummary(r){const hist=r.hist||[],byMove={};let total=0;hist.forEach(e=>{byMove[e.m]=(byMove[e.m]||0)+e.r;total+=e.r;});
   const sm={byMove,total,count:hist.length,order:hist,solo:true};if(r.place)sm.place=r.place;if(r.finishSec!=null)sm.timeSec=r.finishSec;return sm;}
 function soloLoadImg(src){return new Promise(res=>{if(!src){res(null);return;}const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src;});}
@@ -912,6 +939,9 @@ function setupSoloRecap(){const box=$('soloRecap');if(!box)return;
   if(!rows.length){box.style.display='none';return;}
   box.style.display='';$('srMsg').textContent='';$('srMsg').className='srmsg';$('srBtn').disabled=false;
   const sel=$('srPlayer');sel.innerHTML=rows.map(r=>'<option value="'+esc(r.id)+'">'+esc(r.name)+'</option>').join('');sel.style.display=rows.length>1?'':'none';
+  const fillEm=function(){const r=(game.players||[]).find(x=>x.id===sel.value)||{};let v=r.email||'';if(!v&&rows.length===1){try{v=localStorage.getItem('wodly_email')||'';}catch(e){}}$('srEmail').value=v;
+    $('srSaved').innerHTML=r.email?('✓ Saved to your stats · <a href="/me" target="_blank">View My Stats</a>'):'';};
+  sel.onchange=fillEm;fillEm();
   $('srBtn').onclick=sendSoloRecap;
   $('srShare').onclick=function(){const r=(game.results||[]).find(x=>x.id===$('srPlayer').value)||rows[0];soloShareCard(soloSummary(r),{name:r.name,avatar:r.avatar});};}
 async function sendSoloRecap(){const msg=$('srMsg'),em=($('srEmail').value||'').trim();
@@ -919,12 +949,15 @@ async function sendSoloRecap(){const msg=$('srMsg'),em=($('srEmail').value||'').
   if(!$('srConsent').checked){msg.textContent='Please tick the box to consent.';msg.className='srmsg err';return;}
   const r=(game.results||[]).find(x=>x.id===$('srPlayer').value)||(game.results||[]).find(x=>(x.hist||[]).length);if(!r)return;
   $('srBtn').disabled=true;msg.textContent='Sending…';msg.className='srmsg';
+  // save this game to their stats under the email they just entered (only if it wasn't already saved with one)
+  if(soloPending[r.id]){const row=soloPending[r.id];delete soloPending[r.id];row.email=em.toLowerCase();postSoloRecap(row);}
+  try{localStorage.setItem('wodly_email',em.toLowerCase());}catch(e){}
   const a=(W.AVATARS||[]).find(x=>x.id===r.avatar),sp=(typeof chosenSponsor!=='undefined'&&chosenSponsor)?{id:chosenSponsor.id||null,name:chosenSponsor.name,website_url:chosenSponsor.website_url||chosenSponsor.social_url||null,tagline:chosenSponsor.tagline||null}:null;
   const H={apikey:W.SUPA_KEY,'Content-Type':'application/json'};let ok=false,reason='';
   try{const res=await fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:H,body:JSON.stringify({email:em,name:r.name||null,image_url:null,summary:soloSummary(r),avatar:a?a.img:null,sponsor:sp})});
     const j=await res.json().catch(()=>({}));ok=!!j.ok;reason=j.reason||'';}catch(e){reason='network';}
   try{fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:r.name||null,source:'recap',consent:true})});}catch(e){}
-  if(ok){msg.textContent="Sent! Check your inbox ✓";msg.className='srmsg ok';}
+  if(ok){msg.textContent="Sent! Check your inbox ✓";msg.className='srmsg ok';$('srSaved').innerHTML='✓ Saved to your stats · <a href="/me" target="_blank">View My Stats</a>';}
   else{msg.textContent=reason==='rate_limited'?'Just sent one — try again in a minute.':(reason==='daily_limit'?'Daily email limit reached for this address.':'Could not send — try again.');msg.className='srmsg err';$('srBtn').disabled=false;}}
 // Deep-link: /board?solo=1 opens solo setup straight away
 if(new URLSearchParams(location.search).get('solo')==='1'){setTimeout(()=>{try{$('soloBtn').click();}catch(e){}},80);}
@@ -991,9 +1024,14 @@ function drawBoard(){const cv=$('boardCanvas'),ctx=cv.getContext('2d'),W2=cv.wid
       const sg=ctx.createLinearGradient(hx,hy,hx,hy+s);sg.addColorStop(0,zone.accent+'33');sg.addColorStop(1,'#0c0c0d');
       ctx.fillStyle=sg;rr(9);ctx.fill();ctx.restore();
       ctx.strokeStyle=zone.accent+'66';ctx.lineWidth=1.5;rr(9);ctx.stroke();
-      ctx.fillStyle=zone.accent+'88';ctx.font='900 '+Math.round(s*0.34)+'px system-ui';ctx.fillText('W',px,py+s*0.12);}
+      if((game.dbl||[]).indexOf(i)<0){ctx.fillStyle=zone.accent+'88';ctx.font='900 '+Math.round(s*0.34)+'px system-ui';ctx.fillText('W',px,py+s*0.12);}}
+    if(i>0&&i<total-1&&(game.dbl||[]).indexOf(i)>=0)W.drawDblBadge(ctx,px,py,s,!!lc);
   }
 }
+// Double Dice card collected — big on-screen pop + sound
+function dblToast(p){try{JUICE.dbl(p&&p.name);}catch(e){}
+  const el=document.createElement('div');el.className='dbltoast';el.innerHTML='<div class="dt-dice">🎲🎲</div><div class="dt-big">DOUBLE DICE!</div><div class="dt-sub">'+esc((p&&p.name)||'')+' earned an extra Double Dice</div>';
+  document.body.appendChild(el);setTimeout(()=>el.classList.add('out'),2200);setTimeout(()=>el.remove(),2700);}
 function drawTokens(){const cv=$('tokenCanvas'),ctx=cv.getContext('2d'),W2=cv.width,H=cv.height;ctx.clearRect(0,0,W2,H);if(!game||!game.path)return;
   const total=game.total,ns=game.nodeSize||48,offs=[[-.5,-.5],[.5,-.5],[-.5,.5],[.5,.5],[0,-.65],[0,.65]];
   game.players.forEach((p,pi)=>{const ap=(vpos[p.id]!=null)?vpos[p.id]:p.pos,fp=Math.floor(ap),fr=ap-fp;let cx,cy;
@@ -1045,6 +1083,7 @@ function onRoll(pid,dvRaw){
     let lc=game.landed[pos];const wasEmpty=!lc;
     if(!lc){if(!game.deck.length)game.deck=W.buildDeck();const c=game.deck.pop();let kind=W.cardType(c.val);
       if((pos<=4||pos>=total-3)&&kind==='back')kind='workout';   // no go-back trap at the very start or end
+      if((game.dbl||[]).indexOf(pos)>=0&&(kind==='back'||kind==='skip'))kind='workout'; // a Double Dice spot always stops you so it can be collected
       lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],unit:((game.units&&game.units[c.suit])||'reps'),num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
     if(lc.kind==='skip'){if(seen.has(pos)){res={none:true,pos};break;}seen.add(pos);logPush(p,{kind:'skip',suit:lc.suit,label:lc.label,gs:gnow()});skipHit={suit:lc.suit};pos=Math.min(pos+2,total-1);continue;}
     if(lc.kind==='back'){if(seen.has(pos)){res={none:true,pos};break;}seen.add(pos);logPush(p,{kind:'back',suit:lc.suit,label:lc.label,val:lc.val,gs:gnow()});backHit={val:lc.val,suit:lc.suit};pos=Math.max(pos-lc.val,0);continue;}
@@ -1056,6 +1095,8 @@ function onRoll(pid,dvRaw){
   p.lastRoll=dv;p.pos=res.pos;
   p.event=backHit?{type:'back',val:backHit.val,suit:backHit.suit,eid:(game.eid=(game.eid||0)+1)}:skipHit?{type:'skip',suit:skipHit.suit,eid:(game.eid=(game.eid||0)+1)}:null;
   if(res.win||res.none){p.card=null;p.status='idle';}else{p.card=res.card;p.status='working';}
+  let gotDbl=false;
+  if((res.kind==='workout'||res.kind==='ace')&&game.dbl&&game.dbl.indexOf(res.pos)>=0){game.dbl=game.dbl.filter(x=>x!==res.pos);p.dbl=(p.dbl||0)+1;p.dblGot=(game.eid=(game.eid||0)+1);gotDbl=true;}
   if(res.kind==='workout'||res.kind==='ace'){(p.hist=p.hist||[]).push({m:res.card.move,r:W.repScore(res.card.move,res.card.reps,res.card.unit),u:(res.card.unit||'reps'),t0:gnow()});}
   // keep the freshly-revealed destination card face-down until the token actually lands on it
   if(!game.hidden)game.hidden=new Set();
@@ -1066,7 +1107,7 @@ function onRoll(pid,dvRaw){
   if(!game.ended&&game.rolls>game.total*game.players.length*6){endGame('stuck');return;}
   // cosmetic: walk through each landing in order — forward to a back/skip card, pause, then move.
   vpos[p.id]=from;drawTokens();
-  animateHops(p.id,from,hops,()=>{if(game.hidden)game.hidden.delete(res.pos);drawBoard();drawTokens();if(res.win)playerFinish(p);if(SOLO)soloAfterRoll();});
+  animateHops(p.id,from,hops,()=>{if(game.hidden)game.hidden.delete(res.pos);drawBoard();drawTokens();if(gotDbl)dblToast(p);if(res.win)playerFinish(p);if(SOLO)soloAfterRoll();});
 }
 function animateHops(pid,from,hops,done){let prev=from,i=0;
   (function next(){if(i>=hops.length){delete vpos[pid];drawBoard();drawTokens();if(done)done();return;}

@@ -64,6 +64,8 @@
       }
       else { const sg=ctx.createLinearGradient(hx,hy,hx,hy+s); sg.addColorStop(0,zone.accent+'33'); sg.addColorStop(1,'#0c0c0d'); ctx.fillStyle=sg; rr(ctx,hx,hy,s,s,9); ctx.fill(); ctx.strokeStyle=zone.accent+'66'; ctx.lineWidth=1.5; rr(ctx,hx,hy,s,s,9); ctx.stroke(); ctx.fillStyle=zone.accent+'88'; ctx.font='900 '+Math.round(s*0.34)+'px system-ui'; ctx.fillText('W',px,py+s*0.12); }
     }
+    // uncollected Double Dice cards
+    (state.dbl||[]).forEach(function(i){ if(i>0&&i<total-1&&P[i]&&global.WODLY&&global.WODLY.drawDblBadge) global.WODLY.drawDblBadge(ctx,P[i].x,P[i].y,ns,!!landed[i]); });
     // tokens
     const offs=[[-.5,-.5],[.5,-.5],[-.5,.5],[.5,.5],[0,-.65],[0,.65]];
     players.forEach((pl,pi)=>{ const node=P[Math.max(0,Math.min(pl.pos||0,total-1))]; if(!node) return;
