@@ -249,6 +249,7 @@
   @keyframes dblOut{to{transform:translate(-50%,-50%) scale(1.25);opacity:0;}}
   @keyframes dblSpin{0%{transform:rotate(-200deg) scale(.4);}70%{transform:rotate(15deg) scale(1.15);}100%{transform:rotate(0) scale(1);}}
 </style>
+<script src="/wodly-halloween.js"></script>
 </head>
 <body>
 <div class="disc-overlay" id="discOverlay">
@@ -623,6 +624,13 @@ loadSettings();
     sp.forEach(p=>{SMART[p.id]=p;const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});
     sel.insertBefore(og,sel.children[1]||null);}catch(e){}})();
 })();
+// Seasonal defaults: ?board=<id>&preset=<id> preselect a theme/deck; during Halloween weekend the spooky board is the default.
+(function(){try{const p=new URLSearchParams(location.search);const HW=window.WODLY_HW||{};
+  let b=p.get('board');if(!b&&HW.on)b=HW.board;
+  if(b&&(W.BOARDS||[]).some(x=>x.id===b)){selBoard=b;paintBoardSel();}
+  const pr=p.get('preset');const sel=$('presetSel');
+  if(pr&&sel&&(W.PRESETS||[]).some(x=>x.id===pr)){sel.value=pr;sel.onchange();}
+}catch(e){}})();
 
 $('openLobbyBtn').onclick=async()=>{ try{wtrack('wodly_open_lobby');}catch(e){}
   SOLO=false;

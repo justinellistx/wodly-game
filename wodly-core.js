@@ -45,7 +45,8 @@
     { id:'arena',   name:'Arena',   file:'assets/board-arena.jpg' },
     { id:'box',     name:'The Box', file:'assets/board-box.jpg' },
     { id:'vintage', name:'Vintage', file:'assets/board-vintage.jpg' },
-    { id:'july4th', name:'July 4th', file:'assets/board-july4th.jpg' }
+    { id:'july4th', name:'July 4th', file:'assets/board-july4th.jpg' },
+    { id:'halloween', name:'Halloween', file:'assets/board-halloween.jpg' }
   ];
 
   // Pre-made workout decks. Movements are generic; names are playful homages, not official.
@@ -54,6 +55,7 @@
     { id:'merph',  name:'Merph',  cat:'Benchmark', note:'Hero tribute', mv:{hearts:'Pull-ups',diamonds:'Push-ups',clubs:'Air Squats',spades:'Burpees'}, aceReps:400, aceMove:'m Run' },
     { id:'cinda',  name:'Cinda',  cat:'Benchmark', note:'The bodyweight classic', mv:{hearts:'Pull-ups',diamonds:'Push-ups',clubs:'Air Squats',spades:'Sit-ups'}, aceReps:10, aceMove:'Burpees' },
     { id:'frenn',  name:'Frenn',  cat:'Benchmark', note:'Fast & spicy', mv:{hearts:'Thrusters',diamonds:'Pull-ups',clubs:'Air Squats',spades:'Push Press'}, aceReps:5, aceMove:'Burpees' },
+    { id:'monstermash', name:'Monster Mash', cat:'Holiday', note:'Halloween special — zombies, ghosts & graveyard grinders', mv:{hearts:'Zombie Walk Lunges',diamonds:'Ghost Jacks',clubs:'Grave Diggers (Burpees)',spades:'Mummy Sit-ups'}, aceReps:13, aceMove:'Haunted Air Squats' },
     { id:'hellen', name:'Hellen', cat:'Benchmark', note:'Swing & sweat', mv:{hearts:'KB Swings',diamonds:'Pull-ups',clubs:'Box Jumps',spades:'Push-ups'}, aceReps:200, aceMove:'m Run' },
     { id:'classroom',name:'Classroom (kid-safe)', cat:'Classroom & schools', note:'Bodyweight brain break — K–8 friendly, no equipment', mv:{hearts:'Jumping Jacks',diamonds:'Air Squats',clubs:'High Knees',spades:'Arm Circles'}, aceReps:6, aceMove:'Toe Touches', diff:'easy' },
     { id:'bwblast',name:'Bodyweight Blast', cat:'Bodyweight (no gear)', note:'Anywhere, no equipment', mv:{hearts:'Push-ups',diamonds:'Air Squats',clubs:'Sit-ups',spades:'Burpees'}, aceReps:8, aceMove:'50ft Shuttle Runs' },

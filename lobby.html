@@ -55,6 +55,7 @@
   .toggle{background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;width:100%;}
   .note{font-size:11px;color:var(--text3);text-align:center;margin-top:18px;line-height:1.5;}
 </style>
+<script src="/wodly-halloween.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -194,7 +195,7 @@ function render(){
 function tickAll(){document.querySelectorAll('.cd').forEach(el=>{const t=+el.dataset.t;el.textContent=fmtCountdown(t-Date.now());});}
 (function(){const sel=$('presetSel');if(!sel)return;
   const SMART={};
-  (function(){const bs=$('f-board');if(bs&&W.BOARDS)W.BOARDS.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.name;bs.appendChild(o);});})();
+  (function(){const bs=$('f-board');if(bs&&W.BOARDS)W.BOARDS.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.name;bs.appendChild(o);});if(bs&&window.WODLY_HW&&WODLY_HW.on)bs.value=WODLY_HW.board;})();
   function applyP(p){$('m-hearts').value=p.mv.hearts;$('m-diamonds').value=p.mv.diamonds;$('m-clubs').value=p.mv.clubs;$('m-spades').value=p.mv.spades;$('m-acereps').value=p.aceReps;$('m-acemove').value=p.aceMove;$('presetNote').textContent='✓ '+p.name+(p.note?' — '+p.note:'');}
   if(W.PRESETS){const cats={};W.PRESETS.forEach(p=>{(cats[p.cat]=cats[p.cat]||[]).push(p);});
     Object.keys(cats).forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;cats[cat].forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;og.appendChild(o);});sel.appendChild(og);});}
