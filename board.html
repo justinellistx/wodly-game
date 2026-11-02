@@ -250,6 +250,7 @@
   @keyframes dblSpin{0%{transform:rotate(-200deg) scale(.4);}70%{transform:rotate(15deg) scale(1.15);}100%{transform:rotate(0) scale(1);}}
 </style>
 <script src="/wodly-halloween.js"></script>
+<script src="/wodly-thanksgiving.js"></script>
 </head>
 <body>
 <div class="disc-overlay" id="discOverlay">
@@ -625,7 +626,7 @@ loadSettings();
     sel.insertBefore(og,sel.children[1]||null);}catch(e){}})();
 })();
 // Seasonal defaults: ?board=<id>&preset=<id> preselect a theme/deck; during Halloween weekend the spooky board is the default.
-(function(){try{const p=new URLSearchParams(location.search);const HW=window.WODLY_HW||{};
+(function(){try{const p=new URLSearchParams(location.search);const HW=window.WODLY_SEASON||window.WODLY_HW||{};
   let b=p.get('board');if(!b&&HW.on)b=HW.board;
   if(b&&(W.BOARDS||[]).some(x=>x.id===b)){selBoard=b;paintBoardSel();}
   const pr=p.get('preset');const sel=$('presetSel');

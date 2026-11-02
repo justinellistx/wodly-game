@@ -15,6 +15,7 @@
   var on = force !== null ? force : inWindow();
   window.WODLY_HW = { on: on, board: 'halloween', preset: 'monstermash' };
   if (!on) return;
+  window.WODLY_SEASON = { on: true, name: 'halloween', board: 'halloween', preset: 'monstermash' };
 
   var css = ''
     + '.hw-fx{position:fixed;inset:0;pointer-events:none;z-index:9000;overflow:hidden;}'
