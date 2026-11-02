@@ -219,7 +219,7 @@
 </div>
 <div id="connPill" class="conn" style="display:none;"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="wodly-core.js"></script>
 <script src="wodly-board.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -400,7 +400,7 @@ async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim
     let imageUrl=null;
     try{const blob=await makeRecapImage(lastRecap,me);
       if(blob){const path='r_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.png';
-        const up=await sb.storage.from('recaps').upload(path,blob,{contentType:'image/png',upsert:true});
+        const up=await sb.storage.from('recaps').upload(path,blob,{contentType:'image/png',upsert:false}); // upsert needs UPDATE rights the public role doesn't have
         if(!up.error)imageUrl=sb.storage.from('recaps').getPublicUrl(path).data.publicUrl;}
     }catch(e){}
     const gym=((($('subGym')||{}).value)||'').trim()||null;if(gym){try{localStorage.setItem('wodly_gym',gym);}catch(e){}}
