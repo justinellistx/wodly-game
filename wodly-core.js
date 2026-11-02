@@ -39,15 +39,17 @@
   ];
 
   // Board background themes (square art drawn behind the spiral path). To add one, drop a
-  // square PNG (2048x2048+) in assets/boards/ and add an entry here.
+  // 1254x1254 JPG in assets/ plus a 240px copy in assets/boards-thumb/ (used by the setup picker),
+  // then add an entry here.
+  function bd(id, name, f) { return { id:id, name:name, file:'assets/'+f, thumb:'assets/boards-thumb/'+f }; }
   const BOARDS = [
-    { id:'classic', name:'Classic', file:'assets/board-bg.png' },
-    { id:'arena',   name:'Arena',   file:'assets/board-arena.jpg' },
-    { id:'box',     name:'The Box', file:'assets/board-box.jpg' },
-    { id:'vintage', name:'Vintage', file:'assets/board-vintage.jpg' },
-    { id:'july4th', name:'July 4th', file:'assets/board-july4th.jpg' },
-    { id:'halloween', name:'Halloween', file:'assets/board-halloween.jpg' },
-    { id:'thanksgiving', name:'Thanksgiving', file:'assets/board-thanksgiving.jpg' }
+    bd('classic', 'Classic', 'board-bg.jpg'),
+    bd('arena', 'Arena', 'board-arena.jpg'),
+    bd('box', 'The Box', 'board-box.jpg'),
+    bd('vintage', 'Vintage', 'board-vintage.jpg'),
+    bd('july4th', 'July 4th', 'board-july4th.jpg'),
+    bd('halloween', 'Halloween', 'board-halloween.jpg'),
+    bd('thanksgiving', 'Thanksgiving', 'board-thanksgiving.jpg')
   ];
 
   // Pre-made workout decks. Movements are generic; names are playful homages, not official.

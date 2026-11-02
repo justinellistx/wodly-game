@@ -251,12 +251,12 @@ async function callMatch(action,extra){
   }
   return {error:'failed'};
 }
-const BOARDBG=new Image();BOARDBG.onload=()=>drawMini();BOARDBG.src='assets/board-bg.png';
+const BOARDBG=new Image();BOARDBG.onload=()=>drawMini();BOARDBG.src='assets/board-bg.jpg';
 const TOKIMG={};(W.AVATARS||[]).forEach(a=>{const im=new Image();im.onload=()=>drawMini();im.src=a.img;TOKIMG[a.id]=im;});
 function sizeMini(){const c=$('miniBoard');if(!c)return;const wrap=$('miniWrap'),focus=wrap.classList.contains('focus');
   const side=focus?Math.round(Math.min(window.innerWidth,window.innerHeight)*0.96):((wrap.clientWidth)||340);
   c.width=side*2;c.height=side*2;c.style.width=focus?side+'px':'100%';c.style.height=focus?side+'px':'auto';drawMini();}
-function boardFileFor(id){const b=(W.BOARDS||[]).find(x=>x.id===id);return b?b.file:'assets/board-bg.png';}
+function boardFileFor(id){const b=(W.BOARDS||[]).find(x=>x.id===id);return b?b.file:'assets/board-bg.jpg';}
 function drawMini(){const c=$('miniBoard');if(!c||!window.WODLYBoard||!lastState||!lastState.total)return;
   const want=boardFileFor(lastState.boardId||'classic');if(BOARDBG.src.indexOf(want)<0){BOARDBG.src=want;return;}
   WODLYBoard.render(c,lastState,{boardImg:BOARDBG,tokenImgs:TOKIMG});}

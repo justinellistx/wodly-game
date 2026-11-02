@@ -514,7 +514,7 @@ const PLAY_URL=location.origin+'/play';
 const SYM=W.SYM, SCOL=W.SCOL, BRAND=W.BRAND;
 const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const TOKIMG={};(W.AVATARS||[]).forEach(a=>{const im=new Image();im.onload=()=>{if(game)drawTokens();};im.src=a.img;TOKIMG[a.id]=im;});
-const BOARDBG=new Image();BOARDBG.onload=()=>{if(game)drawBoard();};BOARDBG.src='assets/board-bg.png';
+const BOARDBG=new Image();BOARDBG.onload=()=>{if(game)drawBoard();};BOARDBG.src='assets/board-bg.jpg';
 function setStatus(t,cls){const s=$('status');s.textContent=t;s.className='status'+(cls?' '+cls:'');}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
 function fmt(s){const m=Math.floor(s/60),sc=s%60;return m+':'+(sc<10?'0':'')+sc;}
@@ -558,7 +558,7 @@ let selBoard='classic';
 function paintBoardSel(){document.querySelectorAll('#boardRow .bcard').forEach(e=>e.classList.toggle('sel',e.dataset.id===selBoard));}
 (function(){const row=$('boardRow');if(!row||!W.BOARDS)return;
   W.BOARDS.forEach(b=>{const d=document.createElement('div');d.className='bcard';d.dataset.id=b.id;
-    d.innerHTML='<img src="'+b.file+'" alt=""><div class="bn">'+esc(b.name)+'</div>';
+    d.innerHTML='<img src="'+(b.thumb||b.file)+'" alt="" loading="lazy"><div class="bn">'+esc(b.name)+'</div>';
     d.onclick=()=>{selBoard=b.id;paintBoardSel();};row.appendChild(d);});
   paintBoardSel();})();
 $('turnTimerToggle').addEventListener('change',function(){$('timerSettings').classList.toggle('show',this.checked);});

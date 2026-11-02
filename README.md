@@ -42,8 +42,13 @@ Last checked in sync: 2026-11-02.
 - **Security model:** RLS on every table; public reads/writes go through specific RPCs. Admin-only functions are
   revoked from `anon`. The site's publishable key is public by design.
 - **Storage:** public bucket `recaps` holds shareable recap cards. Uploads must use `upsert:false` — the public
-  role can insert but not update.
+  role can insert but not update. Public bucket `sponsor-logos` holds email copies of sponsor logos (written only by
+  the email functions; see below).
 - **Email:** sent through Resend. `RESEND_FROM`, `WODLY_POSTAL_ADDR`, `WODLY_CONTACT_EMAIL` are edge-function secrets.
+  - The `List-Unsubscribe` header points at the `unsubscribe` **edge function** (one-click POST from Gmail/Yahoo),
+    plus a mailto fallback. The footer link points at the `/unsubscribe` page. Both use the subscriber's `unsub_token`.
+  - Sponsor logos are stored as data URIs in `sponsors.logo`; Gmail won't show those, so `send-recap` and
+    `weekly-digest` upload them to `sponsor-logos/<content-hash>.<ext>` on first use and link the hosted file.
 
 ## Seasonal themes
 
@@ -77,9 +82,7 @@ Fixed in this pass:
 - Pinned `@supabase/supabase-js` to `2.118.0` on every page (was the floating `@2`).
 
 Open items (not changed):
-1. **One-click unsubscribe is broken.** Emails' `List-Unsubscribe` header points at `/unsubscribe?token=…`, a static
-   page that answers POST with 405. Point the header at the `unsubscribe` edge function instead (`send-recap`,
-   `weekly-digest`). The visible unsubscribe link in the email footer still works.
+1. ~~One-click unsubscribe broken~~ — fixed 2026-11-02.
 2. **First recap email can carry a token-less unsubscribe link** — `play.html` calls `send-recap` before the
    subscriber row exists. Insert the subscriber first, then send.
 3. **`/me` shows anyone's stats by email** (no login). Low-sensitivity data; fix = emailed magic link.
@@ -87,11 +90,10 @@ Open items (not changed):
    movement dropdown. Add a length cap and a simple blocklist.
 5. **Emails send from `wodly@complegends.com`** (the `RESEND_FROM` secret), not a wodlygame.com address. Verify
    wodlygame.com in Resend and switch.
-6. **Page weight:** `/board` ~6.5 MB, `/play` ~4.9 MB on first load. Biggest wins: `assets/board-bg.png` (2.5 MB, the
-   default Classic board → JPG ≈300 KB) and the 12 character PNGs (~200 KB each → WebP). Unused:
-   `board-forge.png`, `board-midnight.png`, `board-steel.png`.
-7. **`wodly-site-update/` is deployed publicly** (an old copy of the site, e.g. `/wodly-site-update/admin`). Delete it
-   from the repo or add it to `.vercelignore`.
-8. Sponsor logos stored as base64 data URIs don't render in Gmail; host them as files.
+6. ~~Page weight~~ — fixed 2026-11-02: `/board` 6.5 MB → ~0.8 MB, `/play` 4.9 MB → ~0.7 MB (Classic board as JPG,
+   palette-compressed character/bingo PNGs, 240px picker thumbnails, unused boards removed). The bingo tile images
+   (`cell-*.png`) were left uncompressed on purpose — compression showed grain on their texture.
+7. ~~Old site copy deployed publicly~~ — `wodly-site-update/` removed 2026-11-02.
+8. ~~Sponsor logos missing in Gmail~~ — fixed 2026-11-02 (hosted copies, see Email above).
 9. Supabase advisor notes (low): `citext` / `pg_net` in public schema, 2 unindexed foreign keys, 4 unused indexes.
 10. Usage: 3 hosted rooms and 6 recaps in the last 30 days; nobody joined an Open Play room in 30 days.
