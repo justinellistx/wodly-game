@@ -59,7 +59,7 @@ included on every page. Nothing needs redeploying when a season starts or ends.
 | Season | Board / preset | Decorations | Defaults (board pre-selected, Open Play rooms) |
 |---|---|---|---|
 | Halloween | `halloween` / `monstermash` | Oct 29 – Nov 1 | same window |
-| Thanksgiving | `thanksgiving` / `gobble` | Nov 2 – Sunday after Thanksgiving (themed homepage too) | Thanksgiving week, Mon–Sun |
+| Thanksgiving | `thanksgiving` / `gobble` (home, bodyweight) + `turkeyburn` (in-gym: wall balls, KB swings, row, box jumps) | Nov 2 – Sunday after Thanksgiving (themed homepage too) | Thanksgiving week, Mon–Sun |
 
 Preview any time with `?halloween=1` or `?thanksgiving=1` on any page. Deep link to a themed game:
 `/board?board=thanksgiving&preset=gobble`. Open Play seasonal logic lives in the SQL function `seed_public_rooms()`.
