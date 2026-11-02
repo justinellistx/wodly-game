@@ -37,7 +37,8 @@ Last checked in sync: 2026-11-02.
 
 - **Edge functions:** `match` (multiplayer game engine), `send-recap` (post-game email), `weekly-digest`
   (Monday email), `unsubscribe`, `go` (sponsor click redirect, proxied at `/go`), `email-events`, `sponsor-admin`.
-- **Cron:** `seed-public-rooms` every 5 min (keeps Open Play rooms scheduled 5am–8pm Central); `weekly-digest`
+- **Cron:** `seed-public-rooms` every 5 min keeps Open Play rooms at three fixed times a day, 6am / noon / 6pm
+  Central (changed 2026-11-02 from every 30 min, so the few online players meet in one room); `weekly-digest`
   Mondays 13:00 UTC.
 - **Security model:** RLS on every table; public reads/writes go through specific RPCs. Admin-only functions are
   revoked from `anon`. The site's publishable key is public by design.
