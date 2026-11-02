@@ -1,6 +1,7 @@
-/* WODLY Thanksgiving week decorations.
-   On from the Monday to the Sunday of US Thanksgiving week (US Central time), worked out every year,
-   then off again — no redeploy needed. Force for testing: ?thanksgiving=1 (or =0 to hide).
+/* WODLY Thanksgiving season.
+   Decorations + themed homepage: Nov 2 through the Sunday after Thanksgiving (US Central time).
+   Thanksgiving week itself (Mon–Sun) also makes the Thanksgiving board the default for new games.
+   Dates are worked out every year, so nothing needs redeploying. Force for testing: ?thanksgiving=1 (=0 hides).
    Purely visual: the overlay never takes clicks; leaves stay still for people who prefer reduced motion. */
 (function () {
   var force = null;
@@ -11,15 +12,15 @@
       var o = {}; p.forEach(function (x) { o[x.type] = +x.value; }); return o;
     } catch (e) { var n = new Date(); return { year: n.getFullYear(), month: n.getMonth() + 1, day: n.getDate() }; }
   }
-  function inWindow() {
-    var t = today(); if (t.month !== 11) return false;
-    var dow1 = new Date(Date.UTC(t.year, 10, 1)).getUTCDay();          // weekday of Nov 1
-    var thanks = 1 + ((4 - dow1 + 7) % 7) + 21;                         // 4th Thursday
-    return t.day >= thanks - 3 && t.day <= thanks + 3;                  // Mon..Sun of that week
-  }
-  var on = force !== null ? force : inWindow();
-  if (!on) return;
-  window.WODLY_SEASON = { on: true, name: 'thanksgiving', board: 'thanksgiving', preset: 'gobble' };
+  var T = today(), dow1 = new Date(Date.UTC(T.year, 10, 1)).getUTCDay();
+  var thanks = 1 + ((4 - dow1 + 7) % 7) + 21;                            // 4th Thursday of November
+  var isNov = T.month === 11;
+  var season = isNov && T.day >= 2 && T.day <= thanks + 3;              // Nov 2 .. Sunday after
+  var week = isNov && T.day >= thanks - 3 && T.day <= thanks + 3;       // Mon..Sun of Thanksgiving week
+  if (force !== null) { season = force; week = force; }
+  if (!season) return;
+  // `on` drives the default board on the setup screen — Thanksgiving week only.
+  window.WODLY_SEASON = { on: week, name: 'thanksgiving', board: 'thanksgiving', preset: 'gobble' };
 
   var css = ''
     + '.tg-fx{position:fixed;inset:0;pointer-events:none;z-index:9000;overflow:hidden;}'
@@ -51,13 +52,42 @@
     }
     fx.innerHTML = h; document.body.appendChild(fx);
 
+
     var path = location.pathname.replace(/\/+$/, '');
-    if (path === '' || path === '/index' || path === '/index.html') {
-      var r = document.createElement('div'); r.className = 'tg-ribbon';
-      r.innerHTML = '<span>🦃 New Thanksgiving board + Gobble Gauntlet deck</span><a href="board?board=thanksgiving&preset=gobble">Play it</a>';
-      document.body.insertBefore(r, document.body.firstChild);
-      var pt = parseFloat(getComputedStyle(document.body).paddingTop) || 0;
-      document.body.style.paddingTop = (pt + r.offsetHeight + 6) + 'px';
+    if (path === '' || path === '/index' || path === '/index.html') homepage();
+  }
+
+  // Themed homepage: warm harvest backdrop, a "Happy Thanksgiving" pill under the tagline,
+  // and a promo card for the board + deck right above the preview video.
+  function homepage() {
+    var hs = document.createElement('style');
+    hs.textContent = ''
+      + 'body.tg-home{background:radial-gradient(circle at 50% -8%,#3a200c,#120a05 58%,#0a0705) !important;}'
+      + 'body.tg-home:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:url(/assets/board-thanksgiving.jpg) center top/cover no-repeat;opacity:.16;}'
+      + '.tg-pill{display:inline-flex;align-items:center;gap:8px;margin:-6px auto 14px;padding:6px 14px;border-radius:999px;font:900 12px/1 system-ui,sans-serif;letter-spacing:2px;color:#ffd9a3;background:rgba(122,46,18,.55);border:1px solid rgba(245,166,35,.45);}'
+      + '.tg-card{display:flex;align-items:center;gap:14px;text-decoration:none;margin:0 0 16px;padding:12px 14px;border-radius:18px;background:linear-gradient(135deg,#3b1a08,#5a2a0c 55%,#2a1205);border:1.5px solid rgba(245,166,35,.65);animation:tgCardGlow 3s ease-in-out infinite;text-align:left;}'
+      + '@keyframes tgCardGlow{0%,100%{box-shadow:0 0 18px rgba(230,120,30,.2)}50%{box-shadow:0 0 34px rgba(230,120,30,.5)}}'
+      + '.tg-card img{width:74px;height:74px;border-radius:12px;object-fit:cover;flex-shrink:0;border:1px solid rgba(255,255,255,.15);}'
+      + '.tg-card .tx{flex:1;min-width:0;}'
+      + '.tg-card .nw{display:inline-block;font:900 10px/1 system-ui,sans-serif;letter-spacing:1.5px;color:#2a1205;background:#f5a623;padding:3px 9px;border-radius:20px;}'
+      + '.tg-card .h{color:#fff;font-weight:900;font-size:18px;margin:6px 0 2px;}'
+      + '.tg-card .h b{color:#f5a623;}'
+      + '.tg-card .s{color:#e8c9a8;font-size:12.5px;line-height:1.4;}'
+      + '.tg-card .go{flex-shrink:0;font-weight:900;font-size:14px;color:#2a1205;background:#fff;padding:10px 14px;border-radius:12px;white-space:nowrap;}'
+      + '@media(max-width:420px){.tg-card .go{display:none}.tg-card .h{font-size:16px}}'
+      + '@media (prefers-reduced-motion:reduce){.tg-card{animation:none}}';
+    document.head.appendChild(hs);
+    document.body.classList.add('tg-home');
+    var tag = document.querySelector('.tagline');
+    if (tag) { var p = document.createElement('div'); p.className = 'tg-pill'; p.textContent = '🍂 HAPPY THANKSGIVING 🦃'; tag.parentNode.insertBefore(p, tag.nextSibling); }
+    var vid = document.querySelector('.hero-vid');
+    if (vid) {
+      var c = document.createElement('a'); c.className = 'tg-card'; c.href = 'board?board=thanksgiving&preset=gobble';
+      c.innerHTML = '<img src="/assets/board-thanksgiving.jpg" alt="">'
+        + '<div class="tx"><span class="nw">NEW · HOLIDAY</span><div class="h">Thanksgiving <b>board</b></div>'
+        + '<div class="s">Gobble Gauntlet deck: Turkey Trot, Pie Push-ups, Stuffing Squats. Earn the pie.</div></div>'
+        + '<span class="go">Play it →</span>';
+      vid.parentNode.insertBefore(c, vid);
     }
   }
   if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount);
