@@ -102,6 +102,24 @@
     ctx.fillStyle='#111'; const r=d*0.1;
     [0,1].forEach(function(k){ const dx=x+gap+k*(d+gap), dy=y+(h-d)/2; const pts=k===0?[[.5,.5]]:[[.27,.27],[.73,.73]]; pts.forEach(function(pt){ ctx.beginPath(); ctx.arc(dx+d*pt[0],dy+d*pt[1],r,0,Math.PI*2); ctx.fill(); }); });
     ctx.restore(); }
+  // ── Partner mode ──────────────────────────────────────────────────────────
+  // teamSize 2 doubles every card and the ace penalty; the team splits the reps however it likes.
+  // Cards carry `each` (reps per partner) so screens can show "12 (6 each)".
+  function teamSizeOf(s){ return (s && Number(s.teamSize) === 2) ? 2 : 1; }
+  function eachOf(reps, team){ return team > 1 ? Math.round(reps / team) : null; }
+  // Recap from a player's history. `order` keeps the team's real reps (so time-per-rep stats stay
+  // accurate: partners alternate, one works while one rests); byMove/total are each partner's share.
+  function recapFromHist(hist, team){
+    team = team > 1 ? team : 1; const byMove = {}; let total = 0, teamTotal = 0;
+    (hist || []).forEach(function(e){ teamTotal += e.r; });
+    (hist || []).forEach(function(e){ byMove[e.m] = (byMove[e.m] || 0) + e.r; });
+    Object.keys(byMove).forEach(function(m){ byMove[m] = Math.round(byMove[m] / team); total += byMove[m]; });
+    const out = { byMove: byMove, total: total, count: (hist || []).length, order: hist || [] };
+    if (team > 1) { out.team = team; out.teamTotal = teamTotal; }
+    return out;
+  }
+  // "Justin & Cora" -> ["Justin","Cora"]; anything else -> [name]
+  function splitPartners(name){ const p = String(name || '').split(/\s*(?:&|\+|\/|\band\b)\s*/i).map(function(x){ return x.trim(); }).filter(Boolean); return p.length === 2 ? p : [String(name || '').trim()]; }
   // ── Misc helpers ──────────────────────────────────────────────────────────
   // 4-char join code, avoiding ambiguous chars (no O/0/I/1)
   function genCode(){ const a='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<4;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; }
@@ -191,6 +209,7 @@
     SUPA_URL, SUPA_KEY, makeClient,
     BRAND, SUITS, SYM, SCOL, FACE_LABELS, DECK_SPACES, DIFF_MULT, PCOLS, AVATARS, PRESETS, BOARDS,
     DAILY_WODS, dailyKey, dailyWod, smartPresets,
-    cardType, getReps, isMeters, repScore, buildDeck, genCode, clientId, pickDblSpots, drawDblBadge
+    cardType, getReps, isMeters, repScore, buildDeck, genCode, clientId, pickDblSpots, drawDblBadge,
+    teamSizeOf, eachOf, recapFromHist, splitPartners
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -73,6 +73,7 @@
   #diffRow .ob[data-v="easy"].sel{background:var(--blue);border-color:var(--blue);color:#000;}#diffRow .ob[data-v="easy"].sel b{color:#000;}
   #diffRow .ob[data-v="medium"].sel{background:var(--orange);border-color:var(--orange);color:#000;}#diffRow .ob[data-v="medium"].sel b{color:#000;}
   #diffRow .ob[data-v="hard"].sel{background:var(--red);border-color:var(--red);color:#fff;}#diffRow .ob[data-v="hard"].sel b{color:#fff;}
+  #teamRow .ob.sel{background:var(--orange);border-color:var(--orange);color:#000;}#teamRow .ob.sel b{color:#000;}
   #finishRow .ob.sel{background:var(--orange);border-color:var(--orange);color:#000;}#finishRow .ob.sel b{color:#000;}
   .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
   .toggle{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;}
@@ -98,6 +99,7 @@
   #soloControls .rollbtn:disabled{opacity:.55;cursor:default;box-shadow:none;}
   #soloControls .card{max-width:440px;margin:0 auto;}
   #soloControls .card .mv{font-size:34px;font-weight:900;line-height:1.1;margin-bottom:4px;}
+  #soloControls .card .mveach{font-size:15px;font-weight:800;color:var(--orange);margin:-2px 0 6px;}
   #soloControls .card .mvsub{font-size:14px;color:var(--text2);margin-bottom:14px;}
   #soloControls .donebtn{width:100%;max-width:420px;font-size:20px;font-weight:900;padding:18px;border:none;border-radius:14px;background:linear-gradient(150deg,#4CAF50,#3a8c3e);color:#fff;cursor:pointer;box-shadow:0 0 22px rgba(76,175,80,.28);}
   #soloControls .skipnote{font-size:13px;color:var(--text2);margin-top:8px;}
@@ -362,6 +364,11 @@
         </div>
       </div>
       <div class="adv">
+        <div class="sec">Teams</div>
+        <div class="opt-row" id="teamRow">
+          <button class="ob sel" data-v="1"><b>Solo</b><small>one athlete per phone</small></button>
+          <button class="ob" data-v="2"><b>Partners</b><small>2 per phone · reps ×2, split any way</small></button>
+        </div>
         <div class="sec"><span class="snum">3</span>Deck size</div>
         <div class="opt-row" id="deckRow">
           <button class="ob" data-v="quick"><b>Fast</b><small>1 deck · 52</small></button>
@@ -536,7 +543,11 @@ $('discLink').onclick=()=>$('discOverlay').classList.add('show');
 
 // ── Setup ──
 function mkOptRow(id){$(id).addEventListener('click',e=>{const b=e.target.closest('.ob');if(!b||!b.dataset.v)return;document.querySelectorAll('#'+id+' .ob').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');if(typeof updateWEstimate==='function')updateWEstimate();});}
-mkOptRow('deckRow');mkOptRow('diffRow');mkOptRow('finishRow');
+mkOptRow('deckRow');mkOptRow('diffRow');mkOptRow('finishRow');mkOptRow('teamRow');
+function setTeam(v,autoDeck){document.querySelectorAll('#teamRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===String(v)));
+  if(autoDeck)document.querySelectorAll('#deckRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===(String(v)==='2'?'quick':'standard')));
+  if(typeof updateWEstimate==='function')updateWEstimate();}
+$('teamRow').addEventListener('click',e=>{const b=e.target.closest('.ob');if(b&&b.dataset.v)setTeam(b.dataset.v,true);});
 // Reference expectations (2000-game simulations of the real engine); reps/movement is per-suit, scales with difficulty.
 var WREF={quick:{easy:{rolls:19,suit:27,aces:1.7},medium:{rolls:18,suit:35,aces:1.7},hard:{rolls:20,suit:45,aces:1.9}},
   standard:{easy:{rolls:38,suit:58,aces:3.6},medium:{rolls:38,suit:74,aces:3.8},hard:{rolls:38,suit:92,aces:3.6}},
@@ -546,10 +557,11 @@ function updateWEstimate(){
   var deck=selVal('deckRow')||'standard',diff=selVal('diffRow')||'easy';
   var ref=(WREF[deck]||WREF.standard)[diff]||WREF.standard.easy;
   var ace=Math.max(1,parseInt(_v('ace-reps'))||10);
-  var suit=ref.suit,acetotal=Math.round(ref.aces*ace),total=suit*4+acetotal;
+  var team=(selVal('teamRow')==='2')?2:1;
+  var suit=ref.suit*team,acetotal=Math.round(ref.aces*ace)*team,total=suit*4+acetotal;
   var mins=Math.max(4,Math.round(total*2.5/60));
   var effort=total<180?'Quick':total<340?'Moderate':total<520?'Tough':'Grind';
-  el.innerHTML='<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px;">What to expect (per player, to finish)</div>'
+  el.innerHTML='<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px;">What to expect ('+(team>1?'per team of 2, split any way':'per player')+', to finish)</div>'
     +'<span style="color:#fff;font-weight:800;">~'+ref.rolls+' rolls</span> · <span style="color:#fff;font-weight:800;">~'+suit+' reps</span>/movement · <span style="color:#fff;font-weight:800;">~'+total+' total reps</span>'
     +'<br><span style="color:var(--orange);font-weight:700;">'+effort+'</span> · about '+mins+' min · includes ~'+Math.round(ref.aces)+' ace penalties ('+acetotal+' reps)';
 }
@@ -571,7 +583,7 @@ function _v(id){const e=$(id);return e?e.value:'';}
 function _set(id,v){if(v==null||v==='')return;const e=$(id);if(e)e.value=v;}
 const SET_KEY='wodly_settings_v1';
 function upv(id,def){var e=$(id);var v=e&&e.value?e.value.trim():'';return (v||def).toUpperCase();}
-function gatherSettings(){return{mv:{hearts:upv('mv-hearts','PUSH-UPS'),diamonds:upv('mv-diamonds','AIR SQUATS'),clubs:upv('mv-clubs','BURPEES'),spades:upv('mv-spades','SIT-UPS')},units:{hearts:_v('mvu-hearts')||'reps',diamonds:_v('mvu-diamonds')||'reps',clubs:_v('mvu-clubs')||'reps',spades:_v('mvu-spades')||'reps'},aceReps:Math.max(1,parseInt(_v('ace-reps'))||10),aceMove:upv('ace-move','BURPEES'),aceUnit:_v('ace-unit')||'reps',deckSz:selVal('deckRow')||'standard',diff:selVal('diffRow')||'easy',useTimer:$('turnTimerToggle').checked,turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60),penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),cap:$('capToggle').checked,capMin:Math.max(1,parseInt(_v('capInput'))||20),finishMode:selVal('finishRow')||'all',boardId:selBoard||'classic',presetId:(($('presetSel')&&$('presetSel').value)||''),presetName:(function(){var s=$('presetSel'),p=(s&&s.value&&W.PRESETS)?W.PRESETS.find(x=>x.id===s.value):null;return p?p.name:'Custom';})(),source:'gym',gym:(($('gymName')&&$('gymName').value.trim())||null),daily:(window.__dailyKey||null),pacer:($('pacerToggle')&&$('pacerToggle').checked)||false};}
+function gatherSettings(){return{mv:{hearts:upv('mv-hearts','PUSH-UPS'),diamonds:upv('mv-diamonds','AIR SQUATS'),clubs:upv('mv-clubs','BURPEES'),spades:upv('mv-spades','SIT-UPS')},units:{hearts:_v('mvu-hearts')||'reps',diamonds:_v('mvu-diamonds')||'reps',clubs:_v('mvu-clubs')||'reps',spades:_v('mvu-spades')||'reps'},aceReps:Math.max(1,parseInt(_v('ace-reps'))||10),aceMove:upv('ace-move','BURPEES'),aceUnit:_v('ace-unit')||'reps',deckSz:selVal('deckRow')||'standard',diff:selVal('diffRow')||'easy',useTimer:$('turnTimerToggle').checked,turnSec:Math.max(10,parseInt(_v('turnTimerInput'))||60),penSec:Math.max(10,parseInt(_v('penTimerInput'))||45),cap:$('capToggle').checked,capMin:Math.max(1,parseInt(_v('capInput'))||20),finishMode:selVal('finishRow')||'all',teamSize:(selVal('teamRow')==='2'?2:1),boardId:selBoard||'classic',presetId:(($('presetSel')&&$('presetSel').value)||''),presetName:(function(){var s=$('presetSel'),p=(s&&s.value&&W.PRESETS)?W.PRESETS.find(x=>x.id===s.value):null;return p?p.name:'Custom';})(),source:'gym',gym:(($('gymName')&&$('gymName').value.trim())||null),daily:(window.__dailyKey||null),pacer:($('pacerToggle')&&$('pacerToggle').checked)||false};}
 // Movement library: dropdown of known movements + remembered units; new ones register on game start.
 let MOVEUNITS={};
 function unitFor(name){var n=String(name||'').toLowerCase();if(n.startsWith('m ')||n.endsWith(' m')||n.indexOf('meter')>=0||n.indexOf('(m)')>=0||/[0-9]\s*m(\b|$)/.test(n))return 'meters';if(n.indexOf('cal')>=0)return 'cal';if(n.indexOf('sec')>=0||n.indexOf('plank')>=0||n.indexOf('wall sit')>=0||n.indexOf('hollow hold')>=0)return 'sec';return MOVEUNITS[String(name||'').trim().toUpperCase()]||'reps';}
@@ -588,6 +600,7 @@ function loadSettings(){let s;try{s=JSON.parse(localStorage.getItem(SET_KEY)||'n
   if(s.deckSz)document.querySelectorAll('#deckRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.deckSz));
   if(s.diff)document.querySelectorAll('#diffRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.diff));
   if(s.boardId){selBoard=s.boardId;paintBoardSel();}
+  if(s.teamSize)setTeam(s.teamSize,false);
   if(s.finishMode)document.querySelectorAll('#finishRow .ob').forEach(x=>x.classList.toggle('sel',x.dataset.v===s.finishMode));
   if(typeof s.useTimer==='boolean'){$('turnTimerToggle').checked=s.useTimer;$('timerSettings').classList.toggle('show',s.useTimer);}
   _set('turnTimerInput',s.turnSec);_set('penTimerInput',s.penSec);
@@ -629,6 +642,7 @@ loadSettings();
 (function(){try{const p=new URLSearchParams(location.search);const HW=window.WODLY_SEASON||window.WODLY_HW||{};
   let b=p.get('board');if(!b&&HW.on)b=HW.board;
   if(b&&(W.BOARDS||[]).some(x=>x.id===b)){selBoard=b;paintBoardSel();}
+  if(p.get('team')==='2'||p.get('team')==='1')setTeam(p.get('team'),true);
   const pr=p.get('preset');const sel=$('presetSel');
   if(pr&&sel&&(W.PRESETS||[]).some(x=>x.id===pr)){sel.value=pr;sel.onchange();}
 }catch(e){}})();
@@ -830,7 +844,7 @@ function startSolo(){
   s.gym=(($('soloGym')&&$('soloGym').value.trim())||null);registerMovements(s);
   const total=W.DECK_SPACES[s.deckSz]||52;
   game={ players:soloRoster.map((p,i)=>({id:'L'+i,name:p.name,email:p.email||null,avatar:p.avatar,color:p.color||W.PCOLS[i%6],pos:0,lastRoll:null,card:null,status:'idle',hist:[],finished:false,place:null,finishSec:null,dbl:1})),
-    total, diff:s.diff||'easy', mv:s.mv, units:(s.units||{}), ace:{reps:s.aceReps,move:s.aceMove,unit:(s.aceUnit||'reps')}, finishMode:(s.finishMode==='first'?'first':'all'), boardId:s.boardId||'classic',
+    total, team:W.teamSizeOf(s), diff:s.diff||'easy', mv:s.mv, units:(s.units||{}), ace:{reps:s.aceReps*W.teamSizeOf(s),move:s.aceMove,unit:(s.aceUnit||'reps')}, finishMode:(s.finishMode==='first'?'first':'all'), boardId:s.boardId||'classic',
     useTimer:false, turnSec:s.turnSec||60, penSec:s.penSec||45, timeCap:(s.cap?(s.capMin||20)*60:0),
     deck:W.buildDeck(), landed:{}, dbl:W.pickDblSpots(total), log:[], winner:null, results:null, finishedCount:0, ended:false, startTime:Date.now(),
     seed:(Math.floor(Math.random()*2e9))>>>0, path:null, nodeSize:44 };
@@ -882,7 +896,7 @@ function soloSync(){
   el.style.display='';const av=W.AVATARS.find(a=>a.id===p.avatar),multi=game.players.length>1;
   const who='<div class="who">'+(av?'<img src="'+av.img+'" alt="">':'')+'<div style="text-align:left"><div class="turn">'+(multi?"Up next":'Solo')+'</div><div class="nm" style="color:'+p.color+'">'+esc(p.name)+'</div></div></div>';
   if(p.status==='working'&&p.card){const c=p.card;
-    el.innerHTML=who+soloTip('solo_done','💪 Do the reps shown below, then tap <b>Done</b>.')+'<div class="card"><div class="mv" style="color:'+(c.kind==='ace'?'#9b59b6':'#F5A623')+'">'+esc(c.reps+unitSuffix(c.unit)+' '+c.move)+'</div><div class="mvsub">'+(c.kind==='ace'?'Ace penalty — do the work, then continue':'Do the reps, then tap done')+'</div><button class="donebtn" id="soloDoneBtn">✓ Done — next</button></div>';
+    el.innerHTML=who+soloTip('solo_done','💪 Do the reps shown below, then tap <b>Done</b>.')+'<div class="card"><div class="mv" style="color:'+(c.kind==='ace'?'#9b59b6':'#F5A623')+'">'+esc(c.reps+unitSuffix(c.unit)+' '+c.move)+'</div>'+(c.each?'<div class="mveach">'+c.each+unitSuffix(c.unit)+' each · split it any way</div>':'')+'<div class="mvsub">'+(c.kind==='ace'?'Ace penalty — do the work, then continue':'Do the reps, then tap done')+'</div><button class="donebtn" id="soloDoneBtn">✓ Done — next</button></div>';
     const db=$('soloDoneBtn');if(db)db.onclick=function(){soloTipSeen('solo_done');soloDone();};
   }else{
     el.innerHTML=who+soloTip('solo_roll','👆 Tap <b>ROLL</b> — you\'ll move ahead and land on a movement to do. Stuck? Open “How the cards work” below.')+'<button class="rollbtn" id="soloRollBtn"'+(soloBusy?' disabled':'')+'>'+(soloBusy?'…rolling':'🎲 Roll')+'</button>'+(!(p.dbl>0)?'<div class="skipnote" style="text-transform:uppercase;letter-spacing:1px;font-size:12px;">No Double Dice left · land on a 🎲🎲 space to earn one</div>':'<button class="ghost" id="soloDblBtn" style="width:100%;max-width:420px;margin-top:10px;padding:14px;font-size:14px;font-weight:800;letter-spacing:.5px;color:var(--orange);border:2px solid var(--orange);border-radius:14px;background:transparent;cursor:pointer;"'+(soloBusy?' disabled':'')+'>🎲🎲 DOUBLE DICE'+(p.dbl>1?' ×'+p.dbl:'')+'</button>')+(multi?'':'<div class="skipnote">Land on a movement, do the reps, roll again — first to the WIN square takes it.</div>');
@@ -893,8 +907,7 @@ function logSoloRecaps(){
   if(soloRecapDone)return;soloRecapDone=true;
   const s=soloSettings||{},gym=(s.gym||null),daily=(s.daily||null);
   (game.results||game.players).forEach(r=>{const pl=game.players.find(x=>x.id===r.id)||r,hist=pl.hist||[];
-    if(!hist.length)return;const byMove={};let total=0;hist.forEach(e=>{byMove[e.m]=(byMove[e.m]||0)+e.r;total+=e.r;});
-    const summary={byMove,total,count:hist.length,order:hist,solo:true};
+    if(!hist.length)return;const summary=W.recapFromHist(hist,game.team||1);summary.solo=true;
     if(r.place)summary.place=r.place;if(r.finishSec!=null)summary.timeSec=r.finishSec;
     const row={email:pl.email||null,name:pl.name||null,deck:null,summary,image_url:null,gym,daily};
     if(row.email)postSoloRecap(row);else soloPending[pl.id]=row;   // no email yet — hold it in case they add one on the results screen
@@ -905,8 +918,7 @@ function postSoloRecap(row){try{fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST
 function flushSoloPending(){const p=soloPending;soloPending={};Object.keys(p).forEach(k=>postSoloRecap(p[k]));}
 window.addEventListener('pagehide',flushSoloPending);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)flushSoloPending();});
-function soloSummary(r){const hist=r.hist||[],byMove={};let total=0;hist.forEach(e=>{byMove[e.m]=(byMove[e.m]||0)+e.r;total+=e.r;});
-  const sm={byMove,total,count:hist.length,order:hist,solo:true};if(r.place)sm.place=r.place;if(r.finishSec!=null)sm.timeSec=r.finishSec;return sm;}
+function soloSummary(r){const sm=W.recapFromHist(r.hist||[],(game&&game.team)||1);sm.solo=true;if(r.place)sm.place=r.place;if(r.finishSec!=null)sm.timeSec=r.finishSec;return sm;}
 function soloLoadImg(src){return new Promise(res=>{if(!src){res(null);return;}const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src;});}
 function soloMakeQR(text,size){return new Promise(res=>{try{if(typeof QRCode==='undefined'){res(null);return;}const d=document.createElement('div');new QRCode(d,{text,width:size,height:size,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});setTimeout(()=>{const c=d.querySelector('canvas');if(c){res(c);return;}const im=d.querySelector('img');if(im){if(im.complete&&im.naturalWidth){res(im);}else{im.onload=()=>res(im);im.onerror=()=>res(null);}return;}res(null);},80);}catch(e){res(null);}});}
 async function soloMakeRecapImage(rec,mp){
@@ -1093,11 +1105,11 @@ function onRoll(pid,dvRaw){
     if(!lc){if(!game.deck.length)game.deck=W.buildDeck();const c=game.deck.pop();let kind=W.cardType(c.val);
       if((pos<=4||pos>=total-3)&&kind==='back')kind='workout';   // no go-back trap at the very start or end
       if((game.dbl||[]).indexOf(pos)>=0&&(kind==='back'||kind==='skip'))kind='workout'; // a Double Dice spot always stops you so it can be collected
-      lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],unit:((game.units&&game.units[c.suit])||'reps'),num:(kind==='workout'?W.getReps(c.val,game.diff):0)};game.landed[pos]=lc;}
+      lc={suit:c.suit,val:c.val,label:c.label,kind,wkt:game.mv[c.suit],unit:((game.units&&game.units[c.suit])||'reps'),num:(kind==='workout'?W.getReps(c.val,game.diff)*(game.team||1):0)};game.landed[pos]=lc;}
     if(lc.kind==='skip'){if(seen.has(pos)){res={none:true,pos};break;}seen.add(pos);logPush(p,{kind:'skip',suit:lc.suit,label:lc.label,gs:gnow()});skipHit={suit:lc.suit};pos=Math.min(pos+2,total-1);continue;}
     if(lc.kind==='back'){if(seen.has(pos)){res={none:true,pos};break;}seen.add(pos);logPush(p,{kind:'back',suit:lc.suit,label:lc.label,val:lc.val,gs:gnow()});backHit={val:lc.val,suit:lc.suit};pos=Math.max(pos-lc.val,0);continue;}
-    if(lc.kind==='ace'){logPush(p,{kind:'ace',suit:lc.suit,label:'A',reps:game.ace.reps,move:game.ace.move,gs:gnow()});res={kind:'ace',pos,fresh:wasEmpty,card:{kind:'ace',reps:game.ace.reps,move:game.ace.move,unit:(game.ace.unit||'reps'),suit:lc.suit}};break;}
-    logPush(p,{kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,gs:gnow()});res={kind:'workout',pos,fresh:wasEmpty,card:{kind:'workout',reps:lc.num,move:lc.wkt,unit:(lc.unit||'reps'),label:lc.label,suit:lc.suit}};break;
+    if(lc.kind==='ace'){logPush(p,{kind:'ace',suit:lc.suit,label:'A',reps:game.ace.reps,move:game.ace.move,gs:gnow()});res={kind:'ace',pos,fresh:wasEmpty,card:{kind:'ace',reps:game.ace.reps,each:W.eachOf(game.ace.reps,game.team||1),move:game.ace.move,unit:(game.ace.unit||'reps'),suit:lc.suit}};break;}
+    logPush(p,{kind:'workout',suit:lc.suit,label:lc.label,reps:lc.num,move:lc.wkt,gs:gnow()});res={kind:'workout',pos,fresh:wasEmpty,card:{kind:'workout',reps:lc.num,each:W.eachOf(lc.num,game.team||1),move:lc.wkt,unit:(lc.unit||'reps'),label:lc.label,suit:lc.suit}};break;
   }
   if(!res)res={none:true,pos:Math.max(0,Math.min(pos,total-1))};
   if(res.none&&res.pos<=from)res.pos=Math.min(from+1,total-1);
@@ -1177,7 +1189,7 @@ function triggerCap(){if(capFired||!game||game.ended)return;capFired=true;
   endGame('cap');}
 
 function unitSuffix(u){return u==='meters'?'m':(u==='cal'?' cal':(u==='sec'?' sec':''));}
-function cardText(c){if(!c)return null;return c.reps+unitSuffix(c.unit)+' '+c.move;}
+function cardText(c){if(!c)return null;return c.reps+unitSuffix(c.unit)+' '+c.move+(c.each?' ('+c.each+' each)':'');}
 function renderStandings(){const b=$('standBody');if(!game)return;b.innerHTML='';
   // finished players first (by placing), then racers by furthest position.
   const ranked=game.players.slice().sort((a,b)=>{

@@ -33,6 +33,16 @@ Multiplayer rolls are resolved server-side by the Supabase edge function **`matc
 `board.html`. Any rule change (card kinds, skip/back behaviour, Double Dice, finish logic) must be made in both.
 Last checked in sync: 2026-11-02.
 
+## Partner mode
+
+Setup has **Teams: Solo / Partners** (deep link `?team=2`). Partners (`settings.teamSize = 2`) doubles every card
+and the ace penalty in BOTH engines (`board.html` solo + the `match` edge function); cards carry `each` and show
+"12 (6 each)". Choosing Partners switches the deck to Fast — doubled reps on Fast ≈ the same work as Solo on
+Standard. Recaps (`W.recapFromHist`): `byMove`/`total` are each partner's share (leaderboards, `/me`), while
+`order` keeps the team's real reps so `movement_pace` time-per-rep stays accurate for I-go-you-go. Phones name the
+team "Ann & Bo" and take a partner email; each partner gets their own recap. The phone saves the subscriber
+before sending the recap, so the email's unsubscribe link always has a token.
+
 ## Supabase
 
 - **Edge functions:** `match` (multiplayer game engine), `send-recap` (post-game email), `weekly-digest`

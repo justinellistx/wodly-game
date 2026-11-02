@@ -82,6 +82,7 @@
   .wc-tag{font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:4px;}
   .wc-pip{width:88px;height:88px;margin:8px auto 12px;border:2px solid;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;box-shadow:inset 0 0 18px rgba(255,255,255,.06);}
   .wc-reps{font-size:66px;font-weight:900;line-height:1;color:#fff;}
+  .wc-each{font-size:16px;font-weight:800;color:#F5A623;margin-top:4px;}
   .wc-move{font-size:22px;font-weight:700;margin-top:2px;color:#fff;}
   .wc-foot{margin-top:14px;font-size:14px;letter-spacing:1px;}
   .wc-foot b{color:#fff;letter-spacing:3px;margin-left:6px;}
@@ -192,7 +193,7 @@
   <label>Room code</label>
   <input id="codeIn" maxlength="4" placeholder="ABCD" autocomplete="off" autocapitalize="characters">
   <label>Team name</label>
-  <input id="nameIn" maxlength="16" placeholder="Your team name" autocomplete="off">
+  <input id="nameIn" maxlength="20" placeholder="Name, or partners: Ann &amp; Bo" autocomplete="off">
   <button class="bigbtn" id="toAvatars">NEXT: PICK CHARACTER →</button>
   <div class="err" id="joinErr"></div>
 </div>
@@ -278,6 +279,7 @@ function cardHTML(c){const ace=c.kind==='ace';const col=ace?'#9b59b6':(W.SCOL[c.
     ${ace?`<div class="wc-tag" style="color:${col}">Ace Penalty</div>`:''}
     <div class="wc-pip" style="color:${col};border-color:${col}">${ace?'A':sym}</div>
     <div class="wc-reps">${c.reps}${c.unit==='meters'?'m':(c.unit==='cal'?' cal':'')}</div>
+    ${c.each?`<div class="wc-each">${c.each}${c.unit==='meters'?'m':(c.unit==='cal'?' cal':'')} each · split it any way</div>`:''}
     <div class="wc-move">${esc(c.move||'')}</div>
     <div class="wc-foot"><span style="color:#E8363D">♥</span><span style="color:#F5A623">♦</span><span style="color:#4CAF50">♣</span><span style="color:#2196F3">♠</span><b>WODLY</b></div>
   </div>`;}
@@ -340,7 +342,8 @@ let seenDblGot=null;
 function dblToastP(){buzz([60,40,60,40,120]);const el=document.createElement('div');el.className='dbltoast';el.innerHTML='<div class="dt-dice">🎲🎲</div><div class="dt-big">DOUBLE DICE!</div><div class="dt-sub">You earned an extra Double Dice. Still do this space\'s movement.</div>';
   document.body.appendChild(el);el.onclick=()=>el.remove();setTimeout(()=>el.classList.add('out'),2600);setTimeout(()=>el.remove(),3100);}
 
-function computeRecap(mp){const h=(mp&&mp.hist)||[];const byMove={};let total=0;h.forEach(e=>{byMove[e.m]=(byMove[e.m]||0)+e.r;total+=e.r;});return {byMove,total,count:h.length,order:h};}
+let gameTeam=1;
+function computeRecap(mp){return W.recapFromHist((mp&&mp.hist)||[],gameTeam);}
 function buzz(pat){try{if(navigator.vibrate)navigator.vibrate(pat);}catch(e){}}
 function confettiP(){try{const cv=document.createElement('canvas');cv.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:9998;';cv.width=innerWidth;cv.height=innerHeight;document.body.appendChild(cv);const x=cv.getContext('2d');const cols=['#F5A623','#E8363D','#4CAF50','#2196F3','#fff'],P=[];for(let i=0;i<110;i++)P.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*0.4,vx:(Math.random()-0.5)*6,vy:2+Math.random()*5,s:6+Math.random()*8,c:cols[i%cols.length],r:Math.random()*6,vr:(Math.random()-0.5)*0.35});const st=performance.now();let last=st;(function fr(now){const dt=Math.min(34,now-last);last=now;x.clearRect(0,0,cv.width,cv.height);let al=false;P.forEach(p=>{p.vy+=0.06*dt/16;p.x+=p.vx*dt/16;p.y+=p.vy*dt/16;p.r+=p.vr;if(p.y<cv.height+30)al=true;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62);x.restore();});if(now-st<4200&&al)requestAnimationFrame(fr);else cv.remove();})(st);}catch(e){}}
 function loadImg(src){return new Promise(res=>{if(!src){res(null);return;}const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src;});}
@@ -384,6 +387,7 @@ function subHTML(kind){const recap=kind==='recap';return `<div class="subwrap">
   <div class="subsub">${recap?'Get this workout — reps, time & your share card — emailed to you. Plus alerts for new boards & worldwide matches. No spam.':'Get an email when we release new workouts and schedule global matches. No spam.'}</div>
   ${recap?`<input id="subGym" list="gymList" maxlength="40" placeholder="Your gym / box (optional)" autocomplete="off"><datalist id="gymList"></datalist>`:''}
   <input id="subEmail" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
+  ${recap&&gameTeam>1?`<input id="subEmail2" type="email" placeholder="Partner's email (optional)" autocomplete="off" inputmode="email">`:''}
   <button class="subbtn" id="subBtn">${recap?'Email it to me':'Notify me'}</button>
   <div class="submsg" id="subMsg"></div>
   <label class="subconsent"><input type="checkbox" id="subConsent"> I agree to receive occasional WODLY emails. <a href="/privacy" target="_blank">Privacy</a></label>
@@ -392,10 +396,19 @@ function wireSub(source){const b=$('subBtn');if(b)b.onclick=()=>doSubscribe(sour
 // Gym dropdown — fill the datalist with known gyms so athletes pick an existing name (consistent spelling) or add a new one
 let __gymCache=null;
 async function fillGymList(){const list=$('gymList');if(!list)return;try{if(!__gymCache){const{data}=await sb.rpc('gym_names');__gymCache=Array.isArray(data)?data:[];}list.innerHTML=__gymCache.map(g=>'<option value="'+String(g).replace(/"/g,'&quot;')+'">').join('');}catch(e){}}
-async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim(),msg=$('subMsg');if(!msg)return;
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='Enter a valid email.';msg.className='submsg err';return;}
+async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim(),em2=(($('subEmail2')||{}).value||'').trim(),msg=$('subMsg');if(!msg)return;
+  const okEmail=x=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x);
+  if(!okEmail(em)){msg.textContent='Enter a valid email.';msg.className='submsg err';return;}
+  if(em2&&!okEmail(em2)){msg.textContent="Check your partner's email.";msg.className='submsg err';return;}
   if(!$('subConsent').checked){msg.textContent='Please tick the box to consent.';msg.className='submsg err';return;}
   $('subBtn').disabled=true;msg.textContent='…';msg.className='submsg';
+  // Partners: "Ann & Bo" -> Ann gets the first email, Bo the second; each recap is that partner's share.
+  const names=W.splitPartners(me&&me.name), people=[{email:em,name:names[0]||((me&&me.name)||null)}];
+  if(em2&&em2.toLowerCase()!==em.toLowerCase())people.push({email:em2,name:names[1]||((me&&me.name)||null)});
+  const H={apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
+  // Save the sign-up FIRST, so the recap email can carry this person's one-click unsubscribe link.
+  let status=0;
+  for(const pp of people){try{const r=await fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:H,body:JSON.stringify({email:pp.email,name:pp.name,source,consent:true})});if(pp===people[0])status=r.status;}catch(e){if(pp===people[0])status=-1;}}
   if(source==='recap'&&lastRecap){try{
     let imageUrl=null;
     try{const blob=await makeRecapImage(lastRecap,me);
@@ -405,16 +418,21 @@ async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim
     }catch(e){}
     const gym=((($('subGym')||{}).value)||'').trim()||null;if(gym){try{localStorage.setItem('wodly_gym',gym);}catch(e){}}
     const daily=(room&&room.settings&&room.settings.daily)||null;
-    fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,deck:null,summary:lastRecap,image_url:imageUrl,gym:gym,daily:daily})});
-    fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:{apikey:W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em,name:(me&&me.name)||null,image_url:imageUrl,summary:lastRecap,avatar:(function(){var a=(W.AVATARS||[]).find(function(x){return x.id===(me&&me.avatar);});return a?a.img:null;})(),sponsor:curSponsor?{id:curSponsor.id||null,name:curSponsor.name,website_url:curSponsor.website_url||curSponsor.social_url||null,tagline:curSponsor.tagline||null}:null})});
+    const avatar=(function(){var a=(W.AVATARS||[]).find(function(x){return x.id===(me&&me.avatar);});return a?a.img:null;})();
+    const sponsor=curSponsor?{id:curSponsor.id||null,name:curSponsor.name,website_url:curSponsor.website_url||curSponsor.social_url||null,tagline:curSponsor.tagline||null}:null;
+    people.forEach(pp=>{
+      fetch(W.SUPA_URL+'/rest/v1/recaps',{method:'POST',headers:H,body:JSON.stringify({email:pp.email,name:pp.name,deck:null,summary:lastRecap,image_url:imageUrl,gym:gym,daily:daily})});
+      fetch(W.SUPA_URL+'/functions/v1/send-recap',{method:'POST',headers:{apikey:W.SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:pp.email,name:pp.name,image_url:imageUrl,summary:lastRecap,avatar:avatar,sponsor:sponsor})});
+    });
   }catch(e){}}
-  try{const r=await fetch(W.SUPA_URL+'/rest/v1/subscribers',{method:'POST',headers:{apikey:W.SUPA_KEY,Authorization:'Bearer '+W.SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:em,name:(me&&me.name)||null,source,consent:true})});
-    if(r.status===201||r.status===204||r.status===200){msg.textContent="You're on the list ✓";msg.className='submsg ok';}
-    else if(r.status===409){msg.textContent="You're already subscribed ✓";msg.className='submsg ok';}
-    else{msg.textContent='Could not subscribe — try again later.';msg.className='submsg err';$('subBtn').disabled=false;}
-  }catch(e){msg.textContent='Network error.';msg.className='submsg err';$('subBtn').disabled=false;}
+  const both=people.length>1;
+  if(status===201||status===204||status===200){msg.textContent=both?"Sent to you both ✓":"You're on the list ✓";msg.className='submsg ok';}
+  else if(status===409){msg.textContent=both?"Sent to you both ✓":"You're already subscribed ✓";msg.className='submsg ok';}
+  else if(status===-1){msg.textContent='Network error.';msg.className='submsg err';$('subBtn').disabled=false;}
+  else{msg.textContent='Could not subscribe — try again later.';msg.className='submsg err';$('subBtn').disabled=false;}
 }
 function renderState(state){
+  gameTeam=(state&&state.team>1)?state.team:1;
   injectPacer(state);
   const body=$('playBody'), phase=state.phase;
   const mp=myPlayer(state);
