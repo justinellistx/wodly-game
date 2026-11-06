@@ -12,6 +12,10 @@
       var o = {}; p.forEach(function (x) { o[x.type] = +x.value; }); return o;
     } catch (e) { var n = new Date(); return { year: n.getFullYear(), month: n.getMonth() + 1, day: n.getDate() }; }
   }
+  // Turkey WOD — the in-gym Thanksgiving game day at CrossFit Willis & CrossFit Conroe.
+  // The homepage counts down to `start`, shows "today" until `end`, then the countdown disappears.
+  var EVENT = { name: 'Turkey WOD', start: '2026-11-24T05:00:00-06:00', end: '2026-11-25T00:00:00-06:00',
+                when: 'Tuesday, Nov 24', where: 'Every class at CrossFit Willis & CrossFit Conroe' };
   var T = today(), dow1 = new Date(Date.UTC(T.year, 10, 1)).getUTCDay();
   var thanks = 1 + ((4 - dow1 + 7) % 7) + 21;                            // 4th Thursday of November
   var isNov = T.month === 11;
@@ -75,6 +79,17 @@
       + '.tg-card .s{color:#e8c9a8;font-size:12.5px;line-height:1.4;}'
       + '.tg-card .go{flex-shrink:0;font-weight:900;font-size:14px;color:#2a1205;background:#fff;padding:10px 14px;border-radius:12px;white-space:nowrap;}'
       + '@media(max-width:420px){.tg-card .go{display:none}.tg-card .h{font-size:16px}}'
+      + '.tg-cd{margin:0 0 14px;padding:16px 16px 14px;border-radius:18px;text-align:center;background:linear-gradient(160deg,#5a2a0c,#2a1205);border:1.5px solid rgba(245,166,35,.7);box-shadow:0 0 30px rgba(230,120,30,.28);}'
+      + '.tg-cd .ey{font:900 11px/1 system-ui,sans-serif;letter-spacing:2.5px;color:#f5a623;}'
+      + '.tg-cd .nm{font:900 34px/1.05 system-ui,sans-serif;letter-spacing:1px;color:#fff;margin:6px 0 2px;text-transform:uppercase;}'
+      + '.tg-cd .wh{font:700 13px/1.4 system-ui,sans-serif;color:#e8c9a8;}'
+      + '.tg-cd .clock{display:flex;justify-content:center;gap:8px;margin:12px 0 10px;}'
+      + '.tg-cd .u{min-width:62px;padding:8px 6px 6px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid rgba(245,166,35,.35);}'
+      + '.tg-cd .u b{display:block;font:900 30px/1 system-ui,sans-serif;color:#fff;font-variant-numeric:tabular-nums;}'
+      + '.tg-cd .u span{display:block;font:800 9px/1 system-ui,sans-serif;letter-spacing:1.5px;color:#e8c9a8;margin-top:5px;}'
+      + '.tg-cd .today{font:900 22px/1.2 system-ui,sans-serif;color:#f5a623;margin:10px 0 8px;}'
+      + '.tg-cd .tip{font:600 12.5px/1.4 system-ui,sans-serif;color:#e8c9a8;}'
+      + '.tg-cd .tip a{color:#f5a623;font-weight:800;}'
       + '@media (prefers-reduced-motion:reduce){.tg-card{animation:none}}';
     document.head.appendChild(hs);
     document.body.classList.add('tg-home');
@@ -88,7 +103,29 @@
         + '<div class="s">Gobble Gauntlet deck: Turkey Trot, Pie Push-ups, Stuffing Squats. Earn the pie.</div></div>'
         + '<span class="go">Play it →</span>';
       vid.parentNode.insertBefore(c, vid);
+      countdown(c);
     }
+  }
+  // Turkey WOD countdown card, placed above the Thanksgiving board card. Hidden once the event day ends.
+  function countdown(before) {
+    var start = Date.parse(EVENT.start), end = Date.parse(EVENT.end);
+    if (!(start > 0) || Date.now() >= end) return;
+    var el = document.createElement('div'); el.className = 'tg-cd'; el.setAttribute('role', 'timer');
+    el.innerHTML = '<div class="ey">🦃 CROSSFIT WILLIS · CROSSFIT CONROE</div><div class="nm">' + EVENT.name + '</div>'
+      + '<div class="wh">' + EVENT.when + ' · ' + EVENT.where + '</div><div class="slot"></div>'
+      + '<div class="tip">Grab a partner. Warm up at home: <a href="board?board=thanksgiving&preset=turkeyburn&team=2">try the Turkey WOD deck →</a></div>';
+    before.parentNode.insertBefore(el, before);
+    var slot = el.querySelector('.slot'), pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    function tick() {
+      var now = Date.now();
+      if (now >= end) { el.remove(); clearInterval(iv); return; }
+      if (now >= start) { slot.innerHTML = '<div class="today">It\'s Turkey WOD day! See you in class.</div>'; return; }
+      var t = Math.floor((start - now) / 1000), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600), m = Math.floor(t % 3600 / 60), sc = t % 60;
+      slot.innerHTML = '<div class="clock">'
+        + '<div class="u"><b>' + d + '</b><span>DAYS</span></div><div class="u"><b>' + pad(h) + '</b><span>HRS</span></div>'
+        + '<div class="u"><b>' + pad(m) + '</b><span>MIN</span></div><div class="u"><b>' + pad(sc) + '</b><span>SEC</span></div></div>';
+    }
+    tick(); var iv = setInterval(tick, 1000);
   }
   if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount);
 })();
