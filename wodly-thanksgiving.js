@@ -12,15 +12,17 @@
       var o = {}; p.forEach(function (x) { o[x.type] = +x.value; }); return o;
     } catch (e) { var n = new Date(); return { year: n.getFullYear(), month: n.getMonth() + 1, day: n.getDate() }; }
   }
-  // Turkey WOD — the in-gym Thanksgiving game day at CrossFit Willis & CrossFit Conroe.
-  // The homepage counts down to `start`, shows "today" until `end`, then the countdown disappears.
-  var EVENT = { name: 'Turkey WOD', start: '2026-11-24T05:00:00-06:00', end: '2026-11-25T00:00:00-06:00',
-                when: 'Tuesday, Nov 24', where: 'Every class at CrossFit Willis & CrossFit Conroe' };
   var T = today(), dow1 = new Date(Date.UTC(T.year, 10, 1)).getUTCDay();
   var thanks = 1 + ((4 - dow1 + 7) % 7) + 21;                            // 4th Thursday of November
   var isNov = T.month === 11;
   var season = isNov && T.day >= 2 && T.day <= thanks + 3;              // Nov 2 .. Sunday after
   var week = isNov && T.day >= thanks - 3 && T.day <= thanks + 3;       // Mon..Sun of Thanksgiving week
+  // Turkey WOD countdown: to Thanksgiving Day (midnight Central), worked out every year. Shows "today" on
+  // Thanksgiving, then disappears. Chicago is UTC-6 all of late November (standard time).
+  var tgPad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var EVENT = { name: 'Turkey WOD',
+                start: T.year + '-11-' + tgPad(thanks) + 'T00:00:00-06:00',
+                end: T.year + '-11-' + tgPad(thanks + 1) + 'T00:00:00-06:00' };
   if (force !== null) { season = force; week = force; }
   if (!season) return;
   // `on` drives the default board on the setup screen — Thanksgiving week only.
@@ -100,7 +102,7 @@
       var c = document.createElement('a'); c.className = 'tg-card'; c.href = 'board?board=thanksgiving&preset=gobble';
       c.innerHTML = '<img src="/assets/board-thanksgiving.jpg" alt="">'
         + '<div class="tx"><span class="nw">NEW · HOLIDAY</span><div class="h">Thanksgiving <b>board</b></div>'
-        + '<div class="s">Gobble Gauntlet deck: Turkey Trot, Pie Push-ups, Stuffing Squats. Earn the pie.</div></div>'
+        + '<div class="s">Turkey WOD deck: Turkey Trot, Pie Push-ups, Stuffing Squats. Earn the pie.</div></div>'
         + '<span class="go">Play it →</span>';
       vid.parentNode.insertBefore(c, vid);
       countdown(c);
@@ -111,15 +113,15 @@
     var start = Date.parse(EVENT.start), end = Date.parse(EVENT.end);
     if (!(start > 0) || Date.now() >= end) return;
     var el = document.createElement('div'); el.className = 'tg-cd'; el.setAttribute('role', 'timer');
-    el.innerHTML = '<div class="ey">🦃 CROSSFIT WILLIS · CROSSFIT CONROE</div><div class="nm">' + EVENT.name + '</div>'
-      + '<div class="wh">' + EVENT.when + ' · ' + EVENT.where + '</div><div class="slot"></div>'
-      + '<div class="tip">Grab a partner. Warm up at home: <a href="board?board=thanksgiving&preset=turkeyburn&team=2">try the Turkey WOD deck →</a></div>';
+    el.innerHTML = '<div class="ey">🦃 THANKSGIVING COUNTDOWN</div><div class="nm">' + EVENT.name + '</div>'
+      + '<div class="wh">The Thanksgiving fitness game. Play it with family and friends, no equipment needed.</div><div class="slot"></div>'
+      + '<div class="tip"><a href="board?board=thanksgiving&preset=gobble">Play the Turkey WOD →</a> <span class="tw">Warm up now, earn the pie on Thursday.</span></div>';
     before.parentNode.insertBefore(el, before);
     var slot = el.querySelector('.slot'), pad = function (n) { return (n < 10 ? '0' : '') + n; };
     function tick() {
       var now = Date.now();
       if (now >= end) { el.remove(); clearInterval(iv); return; }
-      if (now >= start) { slot.innerHTML = '<div class="today">It\'s Turkey WOD day! See you in class.</div>'; return; }
+      if (now >= start) { slot.innerHTML = '<div class="today">It\'s Turkey WOD day! Happy Thanksgiving.</div>'; var tw = el.querySelector('.tw'); if (tw) tw.textContent = 'Gather the family and earn the pie.'; return; }
       var t = Math.floor((start - now) / 1000), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600), m = Math.floor(t % 3600 / 60), sc = t % 60;
       slot.innerHTML = '<div class="clock">'
         + '<div class="u"><b>' + d + '</b><span>DAYS</span></div><div class="u"><b>' + pad(h) + '</b><span>HRS</span></div>'
