@@ -47,6 +47,17 @@
   .foot{text-align:center;margin-top:22px;font-size:12px;color:var(--text3);}
   .foot a{color:var(--orange);text-decoration:none;font-weight:700;}
   .refreshed{font-size:11px;color:var(--text3);text-align:center;margin-top:10px;}
+  .season{background:linear-gradient(150deg,#1a1408,#0d0a05);border:1px solid rgba(245,166,35,.45);border-radius:16px;padding:16px;margin-bottom:18px;}
+  .season h2{font-size:13px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:var(--gold);text-align:center;}
+  .season .ssub{font-size:12px;color:var(--text2);text-align:center;margin:4px 0 12px;line-height:1.5;}
+  .srow{display:flex;align-items:center;gap:10px;padding:8px 4px;border-top:1px solid #2a2a2a;}
+  .srow .sp{width:34px;text-align:center;font-weight:900;color:var(--text3);font-size:16px;}
+  .srow .sn{flex:1;min-width:0;font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .srow .sn small{display:block;font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.5px;}
+  .srow .sx{text-align:right;font-weight:900;color:var(--orange);font-size:18px;font-variant-numeric:tabular-nums;}
+  .srow .sx small{display:block;font-size:10px;color:var(--text3);font-weight:600;letter-spacing:1px;}
+  .sranks{font-size:11px;color:var(--text3);text-align:center;margin-top:10px;line-height:1.6;}
+  .sempty{font-size:13px;color:var(--text3);text-align:center;padding:12px 6px;line-height:1.6;}
 </style>
 <script src="/wodly-halloween.js"></script>
 <script src="/wodly-thanksgiving.js"></script>
@@ -58,6 +69,8 @@
     <div class="sub">What the community is grinding</div>
     <a class="back" href="/">← back to home</a>
   </div>
+
+  <div class="season" id="seasonBox" style="display:none"></div>
 
   <div class="headline"><b id="totReps">—</b><span>total reps by WODLY players</span></div>
   <div class="note">Every movement climbs the board each time someone plays. Rack up reps — they all count here.</div>
@@ -127,8 +140,26 @@ async function loadPace(){
     </div>`;
   }).join('');
 }
-load();loadPace();
-setInterval(()=>{load();loadPace();},30000);
+async function loadSeason(){
+  const box=document.getElementById('seasonBox');
+  try{
+    const c=await sb.rpc('season_current');const se=c.data;
+    if(c.error||!se){return;}
+    const l=await sb.rpc('season_leaderboard',{p_limit:25});
+    const rows=Array.isArray(l.data)?l.data:[];
+    let sub;
+    if(se.status==='upcoming')sub='Starts '+esc(se.starts_on)+'. Save your games with your email to earn XP and climb the ranks.';
+    else if(se.status==='ended')sub='Season ended '+esc(se.ends_on)+'. Final standings below.';
+    else sub=(+se.days_left)+' day'+(+se.days_left===1?'':'s')+' left · Save each game with your email to earn XP.';
+    let body;
+    if(!rows.length)body='<div class="sempty">'+(se.status==='upcoming'?'The ladder opens soon. Be the first on the board!':'No athletes ranked yet. Play a game and save it with your email!')+'</div>';
+    else body=rows.map(x=>{const p=+x.pos;const m=p===1?'🥇':p===2?'🥈':p===3?'🥉':p;return `<div class="srow"><div class="sp">${m}</div><div class="sn">${esc(x.name)}<small>${esc(x.rank)}</small></div><div class="sx">${nfmt(x.xp)}<small>XP</small></div></div>`;}).join('');
+    box.innerHTML='<h2>⚡ '+esc(se.name)+' Ranks</h2><div class="ssub">'+sub+'</div>'+body+'<div class="sranks">Rookie → Rep Runner → Grinder → Contender → Competitor → Elite → Champion<br>Every completed game earns XP. <a href="/me" style="color:var(--orange);font-weight:700;text-decoration:none">See your card</a></div>';
+    box.style.display='block';
+  }catch(e){}
+}
+load();loadPace();loadSeason();
+setInterval(()=>{load();loadPace();loadSeason();},30000);
 </script>
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}</script>
 <script defer src="/_vercel/insights/script.js"></script>

@@ -52,6 +52,13 @@
   .foot a{color:var(--orange);text-decoration:none;font-weight:700;}
   .note{font-size:11px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.5;}
   #results{display:none;}
+  .scard{background:linear-gradient(150deg,#1a1408,#0d0a05);border:1px solid rgba(245,166,35,.45);border-radius:16px;padding:16px;margin:0 0 14px;text-align:center;}
+  .scard .sl{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#e8d3a8;}
+  .scard .sr{font-size:28px;font-weight:900;color:#F5A623;margin:4px 0;}
+  .scard .sxp{font-size:13px;color:#aaa;}
+  .scard .bar{height:8px;border-radius:6px;background:#2a2a2a;margin:10px 0 6px;overflow:hidden;}
+  .scard .bar i{display:block;height:100%;background:linear-gradient(90deg,#E8363D,#F5A623);}
+  .scard .sn{font-size:12px;color:#777;line-height:1.5;}
 </style>
 <script src="/wodly-halloween.js"></script>
 <script src="/wodly-thanksgiving.js"></script>
@@ -77,6 +84,7 @@
   <div id="results">
     <div class="name" id="pname"></div>
     <div class="played" id="pplayed"></div>
+    <div id="seasonCard"></div>
     <div class="statgrid" id="statGrid"></div>
     <div class="sec">🏅 Badges</div>
     <div class="badges" id="badges"></div>
@@ -126,6 +134,17 @@ const BADGES=[
   {ic:'🚀',n:'On Fire (4wk)',ok:d=>d.streak>=4,pr:d=>`${Math.min(d.streak,4)}/4 wks`},
 ];
 
+async function renderSeason(email){
+  const el=$('seasonCard');if(!el)return;el.innerHTML='';
+  try{
+    const r=await sb.rpc('season_player',{p_email:email});const d=r.data;
+    if(r.error||!d||!d.season)return;
+    const se=d.season;
+    if(!d.found){el.innerHTML=`<div class="scard"><div class="sl">⚡ ${esc(se.name)}</div><div class="sr">Unranked</div><div class="sn">${se.status==='upcoming'?'Season starts '+esc(se.starts_on)+'. Games saved with this email will earn XP.':'Play a game and save it with this email to earn XP.'}</div></div>`;return;}
+    const next=d.next_xp?`<div class="bar"><i style="width:${Math.min(100,Math.round(100*d.xp/d.next_xp))}%"></i></div><div class="sxp">${nfmt(d.next_xp-d.xp)} XP to ${esc(d.next_rank)}</div>`:'<div class="sxp">Top rank reached 👑</div>';
+    el.innerHTML=`<div class="scard"><div class="sl">⚡ ${esc(se.name)}</div><div class="sr">${esc(d.rank)}</div><div class="sxp"><b style="color:#fff">${nfmt(d.xp)}</b> XP · #${nfmt(d.position)} of ${nfmt(d.athletes)} athletes</div>${next}<div class="sn">${nfmt(d.games)} games · ${nfmt(d.active_days)} active days · ${nfmt(d.streak_weeks)} week streak</div></div>`;
+  }catch(e){}
+}
 async function load(email){
   const msg=$('msg');msg.className='msg';msg.textContent='…';$('go').disabled=true;
   let d=null;
@@ -143,6 +162,7 @@ async function load(email){
   $('moves').innerHTML=mv.length?mv.map(x=>`<div class="bar"><span class="lbl" title="${esc(x.m)}">${esc(x.m)}</span><span class="track"><span class="fill" style="width:${Math.round(x.reps/max*100)}%"></span></span><span class="val">${nfmt(x.reps)} · PR ${nfmt(x.best)}</span></div>`).join(''):'<div class="note">No movements logged yet.</div>';
   const rec=d.recent||[];
   $('recent').innerHTML=rec.length?rec.map(r=>`<div class="rrow"><span>${esc(r.date)}</span><span>${nfmt(r.total)} reps ${r.place?`<span class="pl">· ${r.place==1?'🥇':r.place==2?'🥈':r.place==3?'🥉':(r.place+'th')}</span>`:''}</span></div>`).join(''):'<div class="note">No recent workouts.</div>';
+  renderSeason(email);
   $('results').style.display='block';
 }
 
