@@ -104,9 +104,12 @@
     [0,1].forEach(function(k){ const dx=x+gap+k*(d+gap), dy=y+(h-d)/2; const pts=k===0?[[.5,.5]]:[[.27,.27],[.73,.73]]; pts.forEach(function(pt){ ctx.beginPath(); ctx.arc(dx+d*pt[0],dy+d*pt[1],r,0,Math.PI*2); ctx.fill(); }); });
     ctx.restore(); }
   // ── Partner mode ──────────────────────────────────────────────────────────
-  // teamSize 2 doubles every card and the ace penalty; the team splits the reps however it likes.
+  // Each player (one phone / one board token) is Solo (1) or Partners (2), chosen when they join.
+  // Partners get every card and the ace penalty doubled and split the reps however they like.
   // Cards carry `each` (reps per partner) so screens can show "12 (6 each)".
+  // teamSizeOf(settings) is the legacy game-wide switch, still read for games set up before per-player teams.
   function teamSizeOf(s){ return (s && Number(s.teamSize) === 2) ? 2 : 1; }
+  function playerTeam(p, fallback){ const t = p && Number(p.team != null ? p.team : p.team_size); return t === 2 ? 2 : (t === 1 ? 1 : (fallback === 2 ? 2 : 1)); }
   function eachOf(reps, team){ return team > 1 ? Math.round(reps / team) : null; }
   // Recap from a player's history. `order` keeps the team's real reps (so time-per-rep stats stay
   // accurate: partners alternate, one works while one rests); byMove/total are each partner's share.
@@ -211,6 +214,6 @@
     BRAND, SUITS, SYM, SCOL, FACE_LABELS, DECK_SPACES, DIFF_MULT, PCOLS, AVATARS, PRESETS, BOARDS,
     DAILY_WODS, dailyKey, dailyWod, smartPresets,
     cardType, getReps, isMeters, repScore, buildDeck, genCode, clientId, pickDblSpots, drawDblBadge,
-    teamSizeOf, eachOf, recapFromHist, splitPartners
+    teamSizeOf, playerTeam, eachOf, recapFromHist, splitPartners
   };
 })(typeof window !== 'undefined' ? window : globalThis);

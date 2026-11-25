@@ -28,6 +28,10 @@
   label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;display:block;margin:14px 0 6px;}
   input{width:100%;font-size:18px;padding:13px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:#fff;}
   #codeIn{letter-spacing:8px;text-align:center;text-transform:uppercase;font-weight:800;}
+  .teamtog{display:flex;gap:8px;}
+  .teamtog button{flex:1;padding:11px 6px;border:2px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text3);cursor:pointer;line-height:1.4;font:inherit;}
+  .teamtog button b{display:block;font-size:15px;color:var(--text2);}.teamtog button small{font-size:11px;}
+  .teamtog button.sel{background:var(--orange);border-color:var(--orange);color:#000;}.teamtog button.sel b{color:#000;}
   .bigbtn{width:100%;padding:15px;font-size:16px;font-weight:800;letter-spacing:1px;background:var(--orange);border:none;border-radius:14px;color:#000;cursor:pointer;margin-top:20px;}
   .bigbtn:disabled{opacity:.4;}
   .err{color:var(--red);font-size:13px;text-align:center;margin-top:12px;min-height:16px;}
@@ -194,6 +198,11 @@
   <input id="codeIn" maxlength="4" placeholder="ABCD" autocomplete="off" autocapitalize="characters">
   <label>Team name</label>
   <input id="nameIn" maxlength="20" placeholder="Name, or partners: Ann &amp; Bo" autocomplete="off">
+  <label>Playing</label>
+  <div class="teamtog" id="teamTog">
+    <button type="button" data-v="1" class="sel"><b>Solo</b><small>just me</small></button>
+    <button type="button" data-v="2"><b>Partners</b><small>2 of us · reps ×2, split any way</small></button>
+  </div>
   <button class="bigbtn" id="toAvatars">NEXT: PICK CHARACTER →</button>
   <div class="err" id="joinErr"></div>
 </div>
@@ -291,6 +300,12 @@ $('discAccept').onclick=()=>{try{localStorage.setItem(DISC_KEY,'1');}catch(e){}$
 const params=new URLSearchParams(location.search);
 const pre=(params.get('room')||'').toUpperCase().slice(0,4);if(pre)$('codeIn').value=pre;
 
+// Solo (1) or Partners (2) for this phone — saved on the player row as team_size.
+let myTeam=1,teamTouched=false;
+function setMyTeam(v){myTeam=(String(v)==='2')?2:1;document.querySelectorAll('#teamTog button').forEach(b=>b.classList.toggle('sel',b.dataset.v===String(myTeam)));}
+$('teamTog').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;teamTouched=true;setMyTeam(b.dataset.v);});
+// "Ann & Bo" reads as a pair: switch to Partners unless they've already chosen.
+$('nameIn').addEventListener('input',()=>{if(!teamTouched)setMyTeam(W.splitPartners($('nameIn').value).length===2?2:1);});
 async function lookupRoom(code){const{data}=await sb.from('rooms').select('*').eq('code',code).maybeSingle();return data;}
 
 $('toAvatars').onclick=async()=>{
@@ -301,7 +316,7 @@ $('toAvatars').onclick=async()=>{
   const{data:existing}=await sb.from('players').select('*').eq('room_id',room.id).eq('client_id',myId).maybeSingle();
   const{data:roster}=await sb.from('players').select('avatar,client_id').eq('room_id',room.id);
   takenIds=(roster||[]).filter(p=>p.client_id!==myId).map(p=>p.avatar);
-  if(existing){me=existing;chosen=existing.avatar;}
+  if(existing){me=existing;chosen=existing.avatar;if(!teamTouched&&existing.team_size)setMyTeam(existing.team_size);}
   renderAvatars();show('avatarScreen');
 };
 function renderAvatars(){const g=$('avGrid');g.innerHTML='';
@@ -311,7 +326,7 @@ function renderAvatars(){const g=$('avGrid');g.innerHTML='';
   $('joinBtn').disabled=!chosen;}
 $('joinBtn').onclick=async()=>{if(!chosen)return;$('avErr').textContent='';const name=$('nameIn').value.trim();const av=W.AVATARS.find(a=>a.id===chosen);
   const{count}=await sb.from('players').select('*',{count:'exact',head:true}).eq('room_id',room.id);
-  const row={room_id:room.id,client_id:myId,name,avatar:chosen,color:av.color,connected:true,last_seen:new Date().toISOString()};if(!me)row.seat=count||0;
+  const row={room_id:room.id,client_id:myId,name,avatar:chosen,color:av.color,team_size:myTeam,connected:true,last_seen:new Date().toISOString()};if(!me)row.seat=count||0;
   const{data,error}=await sb.from('players').upsert(row,{onConflict:'room_id,client_id'}).select().single();
   if(error){$('avErr').textContent='Join failed: '+error.message;return;}me=data;try{wtrack('wodly_player_joined');}catch(e){}enterPlay();};
 
@@ -432,10 +447,10 @@ async function doSubscribe(source){const em=(($('subEmail')||{}).value||'').trim
   else{msg.textContent='Could not subscribe — try again later.';msg.className='submsg err';$('subBtn').disabled=false;}
 }
 function renderState(state){
-  gameTeam=(state&&state.team>1)?state.team:1;
   injectPacer(state);
   const body=$('playBody'), phase=state.phase;
   const mp=myPlayer(state);
+  gameTeam=W.playerTeam(mp,(state&&state.team>1)?state.team:1);   // this phone's own team; older games fall back to the game-wide setting
   lastState=state;
   const _hasBoard=!!(phase==='playing'&&state.total),mw=$('miniWrap');
   if(_hasBoard){mw.style.display='';const c=$('miniBoard'),want=((mw.clientWidth||340)*2);if(!mw.classList.contains('focus')&&Math.abs(c.width-want)>4)sizeMini();else drawMini();}else if(!mw.classList.contains('focus')){mw.style.display='none';}
@@ -560,5 +575,23 @@ function renderRecentLog(state){const wrap=$('logWrap'),list=$('logList');const 
 </script>
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};function wtrack(n,d){try{window.va&&window.va("event",Object.assign({name:n},d||{}));}catch(e){}}</script>
 <script defer src="/_vercel/insights/script.js"></script>
+<script src="wodly-guide.js"></script>
+<script>
+// ── Join guide: highlight + arrow walk each athlete through joining on their phone ──
+(function(){if(!window.WODLY_GUIDE)return;const T={};const q=s=>document.querySelector(s);
+  const tt=q('#teamTog');if(tt)tt.addEventListener('click',()=>{T.team=1;});
+  WODLY_GUIDE.start({key:'play',blockers:['#discOverlay.show'],screens:{
+    joinScreen:[
+      {id:'code',el:'#codeIn',text:'<b>Enter the room code</b> shown on the big screen.',done:()=>((q('#codeIn')||{}).value||'').trim().length===4},
+      {id:'name',el:'#nameIn',text:'<b>Your name</b>, or both names if you\'re partners (like <b>Ann &amp; Bo</b>).',done:()=>!!((q('#nameIn')||{}).value||'').trim()},
+      {id:'team',el:'#teamTog',text:'<b>Solo or Partners?</b> Partners get every card ×2 and split the reps.',done:()=>!!T.team},
+      {id:'next',el:'#toAvatars',text:'<b>Next:</b> pick your character.',done:()=>false}
+    ],
+    avatarScreen:[
+      {id:'pick',el:'#avGrid',text:'<b>Pick a character</b> for your game piece.',done:()=>!!q('#avGrid .av-card.sel')},
+      {id:'join',el:'#joinBtn',text:'<b>Join the game!</b>',done:()=>false}
+    ]}});
+})();
+</script>
 </body>
 </html>
