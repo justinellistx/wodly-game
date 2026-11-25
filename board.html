@@ -135,6 +135,18 @@
   .sp-qr{background:#fff;padding:6px;border-radius:8px;width:130px;height:130px;display:flex;align-items:center;justify-content:center;}
   .sp-scan{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;max-width:72px;line-height:1.3;}
   @media(max-width:600px){.sponsor{flex-wrap:wrap;gap:8px 12px;padding:10px 14px;}.sp-qrwrap{display:none;}.sp-logo{max-width:150px;}}
+  /* Game screen: the board is the focus. Sponsor is a slim strip inside the top bar; its QR sits in the right column. */
+  .wrap:has(#gameScreen.active){max-width:1880px;}
+  .gtop{gap:14px;margin-bottom:8px;padding-right:66px;}   /* clear the fixed sound button in the top-right corner */
+  .gtop .sponsor{flex:1;min-width:0;margin:0;padding:5px 14px;gap:12px;border-radius:12px;flex-wrap:nowrap;overflow:hidden;}
+  .gtop .sp-lbl{font-size:9px;letter-spacing:1.5px;white-space:nowrap;}
+  .gtop .sp-logo{max-height:28px;max-width:130px;}
+  .gtop .sp-name{font-size:14px;white-space:nowrap;}
+  .gtop .sp-web{white-space:nowrap;}
+  .gtop .sp-deal{font-size:12px;padding:2px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .spqrcard .sp-qr{width:auto;height:auto;margin:6px auto 4px;display:inline-flex;}
+  .spqrcard .sp-scan{max-width:none;display:block;}
+  @media(max-width:760px){.gtop{flex-wrap:wrap;}.gtop .sponsor{order:3;flex-basis:100%;flex-wrap:wrap;gap:6px 10px;}.gtop .sp-web{display:none;}}
   #boardWrap{position:relative;margin:0 auto 18px;line-height:0;}
   #boardCanvas{width:100%;border-radius:14px;display:block;}
   #tokenCanvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:14px;pointer-events:none;}
@@ -462,8 +474,7 @@
 
   <!-- GAME -->
   <div id="gameScreen" class="screen">
-    <div class="gtop"><h2>WODLY</h2><button class="ghost" id="quitBtn">End game</button></div>
-    <div class="sponsor" id="sponsor" style="display:none;"></div>
+    <div class="gtop"><h2>WODLY</h2><div class="sponsor" id="sponsor" style="display:none;"></div><button class="ghost" id="quitBtn">End game</button></div>
     <div class="gamegrid">
       <aside class="gcol gleft">
         <div class="sec">Standings</div>
@@ -481,6 +492,7 @@
         <div class="clock"><div class="cl">Game clock</div><div class="cv" id="gameClock">0:00</div></div>
         <div class="clock" id="capBox" style="display:none;"><div class="cl">Time cap</div><div class="cv" id="capClock">—</div></div>
         <div class="clock"><div class="cl">Room</div><div class="room" id="gameCode">····</div></div>
+        <div class="clock spqrcard" id="spQrCard" style="display:none;"></div>
         <button class="ghost" id="endResultsBtn" style="display:none;width:100%;margin-top:10px;">🏁 End &amp; show results</button>
       </aside>
     </div>
@@ -1256,12 +1268,17 @@ function pickSponsor(){
   try{localStorage.setItem('wodly_sponsor_bag',JSON.stringify({key,bag}));}catch(e){}
   renderSponsor();
 }
-function renderSponsor(){const el=$('sponsor');if(!el)return;const s=chosenSponsor;if(!s){el.style.display='none';return;}
+function renderSponsor(){const el=$('sponsor');if(!el)return;const s=chosenSponsor;const card=$('spQrCard');
+  if(!s){el.style.display='none';if(card)card.style.display='none';return;}
   el.style.display='flex';
   const hasDest=s.website_url||s.social_url;
   const qtarget=hasDest?(s.id?('https://wodlygame.com/go?s='+s.id+'&src=board'+(s.tagline?'&redeem=1':'')):hasDest):'';
-  el.innerHTML=`<span class="sp-lbl">Presented by</span>${s.logo?`<img class="sp-logo" src="${s.logo}" alt="${esc(s.name)}">`:''}<span class="sp-name">${esc(s.name)}</span>${s.website_url?`<span class="sp-web">${esc(s.website_url.replace(/^https?:\/\//,''))}</span>`:''}${s.tagline?`<span class="sp-deal">${esc(s.tagline)}</span>`:''}${qtarget?`<div class="sp-qrwrap"><div class="sp-qr" id="spQr"></div><span class="sp-scan">${s.website_url?'Scan to visit':'Scan for socials'}</span></div>`:''}`;
-  if(qtarget){const q=$('spQr');q.innerHTML='';try{new QRCode(q,{text:qtarget,width:118,height:118,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}}}
+  el.innerHTML=`<span class="sp-lbl">Presented by</span>${s.logo?`<img class="sp-logo" src="${s.logo}" alt="${esc(s.name)}">`:''}<span class="sp-name">${esc(s.name)}</span>${s.website_url?`<span class="sp-web">${esc(s.website_url.replace(/^https?:\/\//,''))}</span>`:''}${s.tagline?`<span class="sp-deal">${esc(s.tagline)}</span>`:''}`;
+  if(!card)return;
+  if(!qtarget){card.style.display='none';card.innerHTML='';return;}
+  card.style.display='';
+  card.innerHTML=`<div class="cl">${esc(s.name)}</div><div class="sp-qr" id="spQr"></div><span class="sp-scan">${s.website_url?'Scan to visit':'Scan for socials'}${s.tagline?' · '+esc(s.tagline):''}</span>`;
+  const q=$('spQr');try{new QRCode(q,{text:qtarget,width:140,height:140,colorDark:'#0d0d0d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}}
 loadSponsors();
 
 function setFocus(on){const gs=$('gameScreen');if(!gs)return;gs.classList.toggle('focus',!!on);sizeCanvas();if(game){drawBoard();drawTokens();}}
