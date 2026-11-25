@@ -626,6 +626,7 @@ loadSettings();
     if(p.units){if($('mvu-hearts'))$('mvu-hearts').value=p.units.hearts||'reps';if($('mvu-diamonds'))$('mvu-diamonds').value=p.units.diamonds||'reps';if($('mvu-clubs'))$('mvu-clubs').value=p.units.clubs||'reps';if($('mvu-spades'))$('mvu-spades').value=p.units.spades||'reps';if($('ace-unit')&&p.aceUnit)$('ace-unit').value=p.aceUnit;}
     else syncAllUnits();
     if(p.diff)document.querySelectorAll('#diffRow .ob').forEach(function(x){x.classList.toggle('sel',x.dataset.v===p.diff);});
+    if(p.deckSz)document.querySelectorAll('#deckRow .ob').forEach(function(x){x.classList.toggle('sel',x.dataset.v===p.deckSz);});
     $('presetNote').textContent='✓ '+p.name+(p.note?' — '+p.note:'')+' · tweak any movement below if you like';
     if(typeof updateWEstimate==='function')updateWEstimate();
   }
